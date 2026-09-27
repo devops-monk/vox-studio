@@ -1,0 +1,15 @@
+# Dependencies & builds
+node_modules
+dist
+src-tauri/target
+src-tauri/gen
+voxd/.venv
+
+# Python
+__pycache__
+*.pyc
+.pytest_cache
+
+# OS / logs
+.DS_Store
+*.log

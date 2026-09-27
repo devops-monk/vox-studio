@@ -1,0 +1,103 @@
+/*
+ * Glass design tokens.
+ * The native window supplies the vibrancy (macOS NSVisualEffectView / Windows Mica);
+ * CSS layers translucent tints, hairlines and blur on top of it.
+ */
+:root {
+  color-scheme: light;
+
+  --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', 'Segoe UI Variable', 'Segoe UI', system-ui, sans-serif;
+  --font-display: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', system-ui, sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, monospace;
+
+  --accent: #0a84ff;
+  --accent-contrast: #ffffff;
+
+  --text-1: rgba(0, 0, 0, 0.86);
+  --text-2: rgba(0, 0, 0, 0.56);
+  --text-3: rgba(0, 0, 0, 0.34);
+
+  /* Surfaces, from least to most opaque */
+  --glass-0: rgba(255, 255, 255, 0.18); /* sidebar tint over vibrancy */
+  --glass-1: rgba(255, 255, 255, 0.62); /* content area */
+  --glass-2: rgba(255, 255, 255, 0.72); /* cards, popovers */
+  --glass-3: rgba(255, 255, 255, 0.86); /* modals, palette */
+  --fill-hover: rgba(0, 0, 0, 0.05);
+  --fill-active: rgba(0, 0, 0, 0.09);
+  --fill-control: rgba(0, 0, 0, 0.055);
+
+  --hairline: rgba(0, 0, 0, 0.1);
+  --hairline-strong: rgba(0, 0, 0, 0.16);
+  --highlight: rgba(255, 255, 255, 0.7); /* inner top edge light */
+
+  --shadow-card: 0 0.5px 0 var(--highlight) inset, 0 1px 2px rgba(0, 0, 0, 0.05), 0 4px 16px rgba(0, 0, 0, 0.05);
+  --shadow-pop: 0 0.5px 0 var(--highlight) inset, 0 12px 48px rgba(0, 0, 0, 0.18), 0 2px 8px rgba(0, 0, 0, 0.08);
+
+  --blur: 30px;
+  --saturate: 180%;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+
+  --sidebar-width: 232px;
+  --toolbar-height: 52px;
+
+  --ease-spring: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  --text-1: rgba(255, 255, 255, 0.9);
+  --text-2: rgba(255, 255, 255, 0.58);
+  --text-3: rgba(255, 255, 255, 0.34);
+
+  --glass-0: rgba(30, 30, 32, 0.12);
+  --glass-1: rgba(28, 28, 30, 0.58);
+  --glass-2: rgba(44, 44, 48, 0.62);
+  --glass-3: rgba(40, 40, 44, 0.84);
+  --fill-hover: rgba(255, 255, 255, 0.06);
+  --fill-active: rgba(255, 255, 255, 0.11);
+  --fill-control: rgba(255, 255, 255, 0.08);
+
+  --hairline: rgba(255, 255, 255, 0.09);
+  --hairline-strong: rgba(255, 255, 255, 0.15);
+  --highlight: rgba(255, 255, 255, 0.08);
+
+  --shadow-card: 0 0.5px 0 var(--highlight) inset, 0 1px 2px rgba(0, 0, 0, 0.3), 0 4px 16px rgba(0, 0, 0, 0.2);
+  --shadow-pop: 0 0.5px 0 var(--highlight) inset, 0 16px 56px rgba(0, 0, 0, 0.5), 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* No native vibrancy (plain browser during `npm run dev`): paint a backdrop so glass still reads as glass. */
+:root[data-native-glass='false'] body {
+  background:
+    radial-gradient(1200px 700px at 10% -10%, #c9dcff 0%, transparent 60%),
+    radial-gradient(900px 600px at 110% 20%, #ffd9ec 0%, transparent 55%),
+    radial-gradient(900px 700px at 40% 120%, #d6f5e8 0%, transparent 60%),
+    #eef0f4;
+}
+:root[data-native-glass='false'][data-theme='dark'] body {
+  background:
+    radial-gradient(1200px 700px at 10% -10%, #1d2b4a 0%, transparent 60%),
+    radial-gradient(900px 600px at 110% 20%, #3a1d33 0%, transparent 55%),
+    radial-gradient(900px 700px at 40% 120%, #13332a 0%, transparent 60%),
+    #111214;
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  :root {
+    --glass-0: #ececef;
+    --glass-1: #f6f6f8;
+    --glass-2: #ffffff;
+    --glass-3: #ffffff;
+    --blur: 0px;
+  }
+  :root[data-theme='dark'] {
+    --glass-0: #1f1f22;
+    --glass-1: #1a1a1c;
+    --glass-2: #2a2a2e;
+    --glass-3: #2a2a2e;
+  }
+}

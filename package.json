@@ -1,0 +1,41 @@
+{
+  "name": "voxstudio",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "license": "Apache-2.0",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "tauri": "tauri",
+    "api:gen": "uv run --project voxd python -m voxd.openapi_dump > voxd/openapi.json && npx -y -p openapi-typescript@7 -p typescript@5 openapi-typescript voxd/openapi.json -o src/lib/voxd/schema.d.ts"
+  },
+  "dependencies": {
+    "@tanstack/react-query": "^5.104.0",
+    "@tanstack/react-router": "^1.170.40",
+    "@tauri-apps/api": "^2.12.0",
+    "@tauri-apps/plugin-dialog": "^2.8.0",
+    "clsx": "^2.1.1",
+    "cmdk": "^1.1.1",
+    "lucide-react": "^1.48.0",
+    "openapi-fetch": "^0.17.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "sonner": "^2.0.8",
+    "zustand": "^5.0.15"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.3",
+    "@tauri-apps/cli": "^2.12.0",
+    "@types/node": "^26.6.3",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.1",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.1",
+    "vitest": "^3.2.7"
+  }
+}

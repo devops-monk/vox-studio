@@ -1,0 +1,186 @@
+@import 'tailwindcss';
+@import './tokens.css';
+
+@theme inline {
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+  --color-accent: var(--accent);
+  --color-text-1: var(--text-1);
+  --color-text-2: var(--text-2);
+  --color-text-3: var(--text-3);
+  --color-hairline: var(--hairline);
+  --color-fill-hover: var(--fill-hover);
+  --color-fill-active: var(--fill-active);
+  --color-fill-control: var(--fill-control);
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: transparent;
+  color: var(--text-1);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  -webkit-user-select: none;
+  user-select: none;
+  cursor: default;
+  overflow: hidden;
+}
+
+input,
+textarea,
+[contenteditable='true'] {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--accent) 70%, transparent);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+::selection {
+  background: color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+/* Thin overlay scrollbars, macOS style */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--hairline-strong);
+  border: 3px solid transparent;
+  background-clip: content-box;
+  border-radius: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+@layer components {
+  .glass {
+    background: var(--glass-2);
+    backdrop-filter: blur(var(--blur)) saturate(var(--saturate));
+    -webkit-backdrop-filter: blur(var(--blur)) saturate(var(--saturate));
+    border: 0.5px solid var(--hairline);
+    box-shadow: var(--shadow-card);
+  }
+  .glass-pop {
+    background: var(--glass-3);
+    backdrop-filter: blur(40px) saturate(200%);
+    -webkit-backdrop-filter: blur(40px) saturate(200%);
+    border: 0.5px solid var(--hairline-strong);
+    box-shadow: var(--shadow-pop);
+  }
+  .drag-region {
+    -webkit-app-region: drag;
+  }
+  .no-drag {
+    -webkit-app-region: no-drag;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Toasts (sonner) in the glass style */
+[data-sonner-toaster] [data-sonner-toast][data-styled='true'] {
+  background: var(--glass-3);
+  backdrop-filter: blur(40px) saturate(200%);
+  -webkit-backdrop-filter: blur(40px) saturate(200%);
+  border: 0.5px solid var(--hairline-strong);
+  box-shadow: var(--shadow-pop);
+  border-radius: var(--radius-lg);
+  color: var(--text-1);
+  font-family: var(--font-sans);
+  padding: 12px 14px;
+}
+[data-sonner-toast] [data-description] {
+  color: var(--text-2);
+}
+[data-sonner-toast] [data-button] {
+  background: var(--accent) !important;
+  color: var(--accent-contrast) !important;
+  border-radius: 7px !important;
+  font-weight: 600;
+}
+[data-sonner-toast][data-type='success'] [data-icon] {
+  color: #30d158;
+}
+[data-sonner-toast][data-type='error'] [data-icon] {
+  color: #ff453a;
+}
+
+@keyframes shimmer {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+
+/* Range slider: accent fill up to the thumb, glassy knob */
+.vox-range {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 18px;
+  background: transparent;
+  cursor: pointer;
+}
+.vox-range::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 999px;
+  background: linear-gradient(to right, var(--accent) var(--pct), var(--fill-active) var(--pct));
+}
+.vox-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  margin-top: -7px;
+  border-radius: 999px;
+  background: #fff;
+  border: 0.5px solid rgba(0, 0, 0, 0.12);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25), 0 0 0 0.5px rgba(0, 0, 0, 0.04);
+  transition: transform 120ms var(--ease-spring);
+}
+.vox-range:active::-webkit-slider-thumb {
+  transform: scale(1.12);
+}
+.vox-range:disabled {
+  cursor: default;
+}

@@ -1,0 +1,8 @@
+VoxStudio
+Copyright 2026 Abhay Pratap Singh
+
+This product is licensed under the Apache License, Version 2.0 (see LICENSE).
+
+Third-party AI models are not bundled with VoxStudio; they are downloaded on
+request and used under their own licenses, which are listed in
+voxd/src/voxd/engines/LICENSES.md and on the app's About screen.

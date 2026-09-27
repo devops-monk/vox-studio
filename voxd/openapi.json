@@ -1,0 +1,2705 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "voxd",
+    "description": "\nThe local API behind VoxStudio. Everything the app does, your scripts can do too.\n\n**Authentication:** send `Authorization: Bearer <token>` on every request except\n`GET /v1/status`. Audio URLs used directly in `<audio>` tags may pass `?token=<token>` instead.\n\n**Errors** always look like `{\"error\": \"<code>\", \"message\": \"<human text>\"}`.\n\n**Long work** runs as a job: queue it, then follow `GET /v1/jobs/{id}/events` (server-sent events)\nor the app-wide `WS /v1/events` stream.\n",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/v1/status": {
+      "get": {
+        "tags": [
+          "System"
+        ],
+        "summary": "Daemon status",
+        "description": "Always answers, even while booting. Poll until `phase` is `ready`.",
+        "operationId": "status_v1_status_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StatusOut"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/system": {
+      "get": {
+        "tags": [
+          "System"
+        ],
+        "summary": "This computer",
+        "description": "Hardware facts used to recommend models: chip, memory and free disk space.",
+        "operationId": "system_v1_system_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemOut"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/models": {
+      "get": {
+        "tags": [
+          "Models"
+        ],
+        "summary": "Model catalog",
+        "description": "Every downloadable model, whether it's installed, and how well it fits this computer.",
+        "operationId": "list_models_v1_models_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ModelOut"
+                  },
+                  "type": "array",
+                  "title": "Response List Models V1 Models Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/models/{model_id}/download": {
+      "post": {
+        "tags": [
+          "Models"
+        ],
+        "summary": "Download a model",
+        "description": "Starts (or returns the already-running) download job. Interrupted downloads resume where they stopped.",
+        "operationId": "download_model_v1_models__model_id__download_post",
+        "parameters": [
+          {
+            "name": "model_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Model Id"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobOut"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/models/{model_id}": {
+      "delete": {
+        "tags": [
+          "Models"
+        ],
+        "summary": "Remove a model",
+        "description": "Deletes the model's files and frees the disk space. Takes made with it are kept.",
+        "operationId": "delete_model_v1_models__model_id__delete",
+        "parameters": [
+          {
+            "name": "model_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Model Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/engines": {
+      "get": {
+        "tags": [
+          "Engines"
+        ],
+        "summary": "List engines",
+        "operationId": "engines_v1_engines_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/EngineOut"
+                  },
+                  "type": "array",
+                  "title": "Response Engines V1 Engines Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/voices": {
+      "get": {
+        "tags": [
+          "Voices"
+        ],
+        "summary": "List voices",
+        "operationId": "voices_v1_voices_get",
+        "parameters": [
+          {
+            "name": "engine",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "Engine id",
+              "default": "system",
+              "title": "Engine"
+            },
+            "description": "Engine id"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/VoiceOut"
+                  },
+                  "title": "Response Voices V1 Voices Get"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/speech": {
+      "post": {
+        "tags": [
+          "Speech"
+        ],
+        "summary": "Generate speech",
+        "description": "Render short text (up to 5,000 characters) and wait for the result. For longer text use `POST /v1/jobs/speech`.",
+        "operationId": "speech_v1_speech_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SpeechIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TakeOut"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/jobs/speech": {
+      "post": {
+        "tags": [
+          "Jobs"
+        ],
+        "summary": "Generate long speech in the background",
+        "description": "Queue text of any length. Track it with `GET /v1/jobs/{id}/events`; on success `result` holds the `take_id` and `audio_url`.",
+        "operationId": "speech_job_v1_jobs_speech_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SpeechJobIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobOut"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/takes": {
+      "get": {
+        "tags": [
+          "Takes"
+        ],
+        "summary": "List recent takes",
+        "operationId": "takes_v1_takes_get",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 500,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TakeOut"
+                  },
+                  "title": "Response Takes V1 Takes Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/takes/{take_id}/audio": {
+      "get": {
+        "tags": [
+          "Takes"
+        ],
+        "summary": "Download take audio",
+        "operationId": "take_audio_v1_takes__take_id__audio_get",
+        "parameters": [
+          {
+            "name": "take_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Take Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/takes/{take_id}/star": {
+      "put": {
+        "tags": [
+          "Takes"
+        ],
+        "summary": "Star or unstar a take",
+        "operationId": "star_take_v1_takes__take_id__star_put",
+        "parameters": [
+          {
+            "name": "take_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Take Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StarIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TakeOut"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/takes/{take_id}/export": {
+      "post": {
+        "tags": [
+          "Takes"
+        ],
+        "summary": "Save a take to a file",
+        "description": "Copies the take's WAV to `path` (for example, a location picked in a save dialog).",
+        "operationId": "export_take_v1_takes__take_id__export_post",
+        "parameters": [
+          {
+            "name": "take_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Take Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExportIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/settings": {
+      "get": {
+        "tags": [
+          "Settings"
+        ],
+        "summary": "Get settings",
+        "operationId": "get_settings_v1_settings_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SettingsOut"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Settings"
+        ],
+        "summary": "Update settings",
+        "description": "Only the fields you send change. A new `compute_device` applies the next time an engine starts.",
+        "operationId": "patch_settings_v1_settings_patch",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SettingsPatch"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SettingsOut"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/voices/custom": {
+      "get": {
+        "tags": [
+          "Voices"
+        ],
+        "summary": "List your voices",
+        "operationId": "list_custom_voices_v1_voices_custom_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/CustomVoiceOut"
+                  },
+                  "type": "array",
+                  "title": "Response List Custom Voices V1 Voices Custom Get"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Voices"
+        ],
+        "summary": "Create a voice from a recording",
+        "description": "Stores the recording as a new voice that cloning engines (e.g. `chatterbox`) can speak with.",
+        "operationId": "create_custom_voice_v1_voices_custom_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_create_custom_voice_v1_voices_custom_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomVoiceOut"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/voices/custom/{voice_id}": {
+      "patch": {
+        "tags": [
+          "Voices"
+        ],
+        "summary": "Rename a voice",
+        "operationId": "rename_custom_voice_v1_voices_custom__voice_id__patch",
+        "parameters": [
+          {
+            "name": "voice_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Voice Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CustomVoicePatch"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomVoiceOut"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Voices"
+        ],
+        "summary": "Delete a voice",
+        "description": "Deletes the voice and its recording. Takes already made with it are kept.",
+        "operationId": "delete_custom_voice_v1_voices_custom__voice_id__delete",
+        "parameters": [
+          {
+            "name": "voice_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Voice Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/voices/custom/{voice_id}/audio": {
+      "get": {
+        "tags": [
+          "Voices"
+        ],
+        "summary": "Download a voice's recording",
+        "operationId": "custom_voice_audio_v1_voices_custom__voice_id__audio_get",
+        "parameters": [
+          {
+            "name": "voice_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Voice Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/voices/custom/{voice_id}/export": {
+      "post": {
+        "tags": [
+          "Voices"
+        ],
+        "summary": "Export a voice as .voxvoice",
+        "description": "Writes a portable `.voxvoice` file (recording, name, tags and consent record) to `path`.",
+        "operationId": "export_custom_voice_v1_voices_custom__voice_id__export_post",
+        "parameters": [
+          {
+            "name": "voice_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Voice Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExportPathIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/voices/custom/import": {
+      "post": {
+        "tags": [
+          "Voices"
+        ],
+        "summary": "Import a .voxvoice file",
+        "description": "Adds the voice to your library. The original consent record is kept alongside yours.",
+        "operationId": "import_custom_voice_v1_voices_custom_import_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_import_custom_voice_v1_voices_custom_import_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomVoiceOut"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/voices/library": {
+      "get": {
+        "tags": [
+          "Voices"
+        ],
+        "summary": "All voices, with favorites and tags",
+        "description": "Every voice across installed engines plus your custom voices, with your favorites and tags.\nCustom voices are listed even when no cloning engine is installed (`available: false`).",
+        "operationId": "voice_library_v1_voices_library_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/LibraryVoiceOut"
+                  },
+                  "type": "array",
+                  "title": "Response Voice Library V1 Voices Library Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/voices/meta": {
+      "put": {
+        "tags": [
+          "Voices"
+        ],
+        "summary": "Favorite or tag a voice",
+        "description": "Set `favorite` and/or `tags` for any voice. For custom voices pass their `cv_\u2026` id (any `engine`).",
+        "operationId": "set_voice_meta_v1_voices_meta_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VoiceMetaIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/jobs": {
+      "get": {
+        "tags": [
+          "Jobs"
+        ],
+        "summary": "List jobs",
+        "operationId": "list_jobs_v1_jobs_get",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 500,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/JobOut"
+                  },
+                  "title": "Response List Jobs V1 Jobs Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Jobs"
+        ],
+        "summary": "Clear finished jobs",
+        "description": "Deletes every job that is no longer queued or running. Takes they produced are kept.",
+        "operationId": "clear_jobs_v1_jobs_delete",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClearedOut"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/jobs/{job_id}": {
+      "get": {
+        "tags": [
+          "Jobs"
+        ],
+        "summary": "Get a job",
+        "operationId": "get_job_v1_jobs__job_id__get",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobOut"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/jobs/{job_id}/cancel": {
+      "post": {
+        "tags": [
+          "Jobs"
+        ],
+        "summary": "Cancel a job",
+        "description": "Queued jobs cancel immediately; running jobs stop at their next checkpoint. Cancelling a finished job is a no-op.",
+        "operationId": "cancel_job_v1_jobs__job_id__cancel_post",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobOut"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/jobs/{job_id}/events": {
+      "get": {
+        "tags": [
+          "Jobs"
+        ],
+        "summary": "Stream job events",
+        "description": "Server-sent events for one job: every past event after `after`, then live ones.\nThe stream closes after the job finishes. Reconnect with `after=<last seq>` to resume without gaps.",
+        "operationId": "job_events_v1_jobs__job_id__events_get",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Job Id"
+            }
+          },
+          {
+            "name": "after",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Only events with `seq` greater than this",
+              "default": 0,
+              "title": "After"
+            },
+            "description": "Only events with `seq` greater than this"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Server-sent events",
+            "content": {
+              "application/json": {
+                "schema": {}
+              },
+              "text/event-stream": {}
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Body_create_custom_voice_v1_voices_custom_post": {
+        "properties": {
+          "audio": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "Audio",
+            "description": "WAV recording, 3\u201360 seconds, of one person speaking"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 60,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "consent": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 10,
+            "title": "Consent",
+            "description": "Statement confirming you have the speaker's permission"
+          },
+          "language": {
+            "type": "string",
+            "title": "Language",
+            "default": "en-US"
+          },
+          "consent_by": {
+            "type": "string",
+            "maxLength": 120,
+            "title": "Consent By",
+            "description": "Who gave consent \u2014 the speaker, or who granted permission",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "required": [
+          "audio",
+          "name",
+          "consent"
+        ],
+        "title": "Body_create_custom_voice_v1_voices_custom_post"
+      },
+      "Body_import_custom_voice_v1_voices_custom_import_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "description": "A .voxvoice file exported from VoxStudio"
+          },
+          "consent": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 10,
+            "title": "Consent",
+            "description": "Your statement that you may use this voice"
+          },
+          "consent_by": {
+            "type": "string",
+            "maxLength": 120,
+            "title": "Consent By",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "required": [
+          "file",
+          "consent"
+        ],
+        "title": "Body_import_custom_voice_v1_voices_custom_import_post"
+      },
+      "ClearedOut": {
+        "properties": {
+          "deleted": {
+            "type": "integer",
+            "title": "Deleted"
+          }
+        },
+        "type": "object",
+        "required": [
+          "deleted"
+        ],
+        "title": "ClearedOut"
+      },
+      "CustomVoiceOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "language": {
+            "type": "string",
+            "title": "Language"
+          },
+          "duration_s": {
+            "type": "number",
+            "title": "Duration S",
+            "description": "Length of the reference recording"
+          },
+          "consent": {
+            "type": "string",
+            "title": "Consent",
+            "description": "The consent statement recorded when the voice was created"
+          },
+          "consent_by": {
+            "type": "string",
+            "title": "Consent By",
+            "description": "Who gave consent (the speaker, or who granted permission)",
+            "default": ""
+          },
+          "created_at": {
+            "type": "number",
+            "title": "Created At"
+          },
+          "audio_url": {
+            "type": "string",
+            "title": "Audio Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "language",
+          "duration_s",
+          "consent",
+          "created_at",
+          "audio_url"
+        ],
+        "title": "CustomVoiceOut"
+      },
+      "CustomVoicePatch": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 60,
+            "minLength": 1,
+            "title": "Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "CustomVoicePatch"
+      },
+      "EngineOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "capabilities": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Capabilities"
+          },
+          "license": {
+            "type": "string",
+            "title": "License"
+          },
+          "available": {
+            "type": "boolean",
+            "title": "Available"
+          },
+          "unavailable_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unavailable Reason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "capabilities",
+          "license",
+          "available"
+        ],
+        "title": "EngineOut"
+      },
+      "ErrorOut": {
+        "properties": {
+          "error": {
+            "type": "string",
+            "title": "Error",
+            "description": "Stable machine-readable code"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "error",
+          "message"
+        ],
+        "title": "ErrorOut"
+      },
+      "ExportIn": {
+        "properties": {
+          "path": {
+            "type": "string",
+            "title": "Path",
+            "description": "Absolute destination path ending in .wav"
+          },
+          "overwrite": {
+            "type": "boolean",
+            "title": "Overwrite",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "path"
+        ],
+        "title": "ExportIn"
+      },
+      "ExportPathIn": {
+        "properties": {
+          "path": {
+            "type": "string",
+            "title": "Path",
+            "description": "Absolute destination path"
+          },
+          "overwrite": {
+            "type": "boolean",
+            "title": "Overwrite",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "path"
+        ],
+        "title": "ExportPathIn"
+      },
+      "FitOut": {
+        "properties": {
+          "level": {
+            "type": "string",
+            "title": "Level",
+            "description": "great | ok | no"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "level",
+          "reason"
+        ],
+        "title": "FitOut"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "JobOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "kind": {
+            "type": "string",
+            "title": "Kind",
+            "description": "Job type, e.g. `speech`"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "queued | running | succeeded | failed | cancelled"
+          },
+          "progress": {
+            "type": "number",
+            "title": "Progress",
+            "description": "0.0 \u2013 1.0"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message",
+            "description": "Human-readable current step"
+          },
+          "result": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Result",
+            "description": "Set when status is `succeeded`; shape depends on `kind`"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error",
+            "description": "Set when status is `failed`"
+          },
+          "created_at": {
+            "type": "number",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "number",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "kind",
+          "title",
+          "status",
+          "progress",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "JobOut"
+      },
+      "LibraryVoiceOut": {
+        "properties": {
+          "engine": {
+            "type": "string",
+            "title": "Engine",
+            "description": "Engine that speaks this voice; custom voices use the cloning engine"
+          },
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "language": {
+            "type": "string",
+            "title": "Language"
+          },
+          "gender": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gender"
+          },
+          "custom": {
+            "type": "boolean",
+            "title": "Custom",
+            "description": "A voice you created from a recording"
+          },
+          "available": {
+            "type": "boolean",
+            "title": "Available",
+            "description": "Whether its engine is installed and usable now"
+          },
+          "favorite": {
+            "type": "boolean",
+            "title": "Favorite"
+          },
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Tags"
+          },
+          "duration_s": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration S",
+            "description": "Custom voices: length of the reference recording"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "engine",
+          "id",
+          "name",
+          "language",
+          "custom",
+          "available",
+          "favorite",
+          "tags"
+        ],
+        "title": "LibraryVoiceOut"
+      },
+      "ModelOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "engine": {
+            "type": "string",
+            "title": "Engine",
+            "description": "Engine this model powers"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "tagline": {
+            "type": "string",
+            "title": "Tagline"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "license": {
+            "type": "string",
+            "title": "License"
+          },
+          "license_url": {
+            "type": "string",
+            "title": "License Url"
+          },
+          "homepage": {
+            "type": "string",
+            "title": "Homepage"
+          },
+          "size_bytes": {
+            "type": "integer",
+            "title": "Size Bytes"
+          },
+          "languages": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Languages"
+          },
+          "voice_count": {
+            "type": "integer",
+            "title": "Voice Count"
+          },
+          "featured": {
+            "type": "boolean",
+            "title": "Featured"
+          },
+          "kind": {
+            "type": "string",
+            "title": "Kind",
+            "description": "`tts` (ready-made voices) or `clone` (speaks in voices you provide)"
+          },
+          "runtime_bytes": {
+            "type": "integer",
+            "title": "Runtime Bytes",
+            "description": "Approximate size of the engine runtime installed alongside the files",
+            "default": 0
+          },
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "not_installed | downloading | installed"
+          },
+          "job_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Job Id",
+            "description": "The active download job, while `downloading`"
+          },
+          "fit": {
+            "$ref": "#/components/schemas/FitOut"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "engine",
+          "name",
+          "tagline",
+          "description",
+          "license",
+          "license_url",
+          "homepage",
+          "size_bytes",
+          "languages",
+          "voice_count",
+          "featured",
+          "kind",
+          "status",
+          "fit"
+        ],
+        "title": "ModelOut"
+      },
+      "SettingsOut": {
+        "properties": {
+          "compute_device": {
+            "type": "string",
+            "title": "Compute Device",
+            "description": "auto | cpu | mps | cuda \u2014 where PyTorch engines run"
+          },
+          "compute_device_in_use": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Compute Device In Use",
+            "description": "What the running engine actually uses, if one is loaded"
+          }
+        },
+        "type": "object",
+        "required": [
+          "compute_device"
+        ],
+        "title": "SettingsOut"
+      },
+      "SettingsPatch": {
+        "properties": {
+          "compute_device": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(auto|cpu|mps|cuda)$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Compute Device"
+          }
+        },
+        "type": "object",
+        "title": "SettingsPatch"
+      },
+      "SpeechIn": {
+        "properties": {
+          "text": {
+            "type": "string",
+            "maxLength": 5000,
+            "minLength": 1,
+            "title": "Text",
+            "examples": [
+              "Hello from VoxStudio."
+            ]
+          },
+          "voice": {
+            "type": "string",
+            "title": "Voice",
+            "description": "Voice id from GET /v1/voices",
+            "examples": [
+              "Samantha"
+            ]
+          },
+          "engine": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Engine",
+            "description": "Engine id; defaults to the first available TTS engine"
+          },
+          "speed": {
+            "type": "number",
+            "maximum": 2.0,
+            "minimum": 0.5,
+            "title": "Speed",
+            "description": "Playback rate multiplier",
+            "default": 1.0
+          },
+          "emotion": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Emotion",
+            "description": "Emotional intensity, 0 (flat) \u2013 1 (dramatic); 0.5 is natural. Used by engines with the `emotion` capability."
+          }
+        },
+        "type": "object",
+        "required": [
+          "text",
+          "voice"
+        ],
+        "title": "SpeechIn"
+      },
+      "SpeechJobIn": {
+        "properties": {
+          "text": {
+            "type": "string",
+            "maxLength": 200000,
+            "minLength": 1,
+            "title": "Text",
+            "description": "Any length; rendered in chunks"
+          },
+          "voice": {
+            "type": "string",
+            "title": "Voice",
+            "description": "Voice id from GET /v1/voices",
+            "examples": [
+              "Samantha"
+            ]
+          },
+          "engine": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Engine",
+            "description": "Engine id; defaults to the first available TTS engine"
+          },
+          "speed": {
+            "type": "number",
+            "maximum": 2.0,
+            "minimum": 0.5,
+            "title": "Speed",
+            "description": "Playback rate multiplier",
+            "default": 1.0
+          },
+          "emotion": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Emotion",
+            "description": "Emotional intensity, 0 (flat) \u2013 1 (dramatic); 0.5 is natural. Used by engines with the `emotion` capability."
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 120
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title",
+            "description": "Shown in the Activity list; defaults to the text's start"
+          }
+        },
+        "type": "object",
+        "required": [
+          "text",
+          "voice"
+        ],
+        "title": "SpeechJobIn"
+      },
+      "StarIn": {
+        "properties": {
+          "starred": {
+            "type": "boolean",
+            "title": "Starred"
+          }
+        },
+        "type": "object",
+        "required": [
+          "starred"
+        ],
+        "title": "StarIn"
+      },
+      "StatusOut": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "default": "voxd"
+          },
+          "version": {
+            "type": "string",
+            "title": "Version"
+          },
+          "phase": {
+            "type": "string",
+            "title": "Phase",
+            "description": "booting | loading_engines | ready | error"
+          },
+          "detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Detail"
+          },
+          "uptime_s": {
+            "type": "number",
+            "title": "Uptime S"
+          }
+        },
+        "type": "object",
+        "required": [
+          "version",
+          "phase",
+          "uptime_s"
+        ],
+        "title": "StatusOut"
+      },
+      "SystemOut": {
+        "properties": {
+          "accelerators": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Accelerators",
+            "description": "Compute devices available: `cpu`, `mps` (Apple GPU), `cuda` (NVIDIA)"
+          },
+          "os": {
+            "type": "string",
+            "title": "Os"
+          },
+          "os_version": {
+            "type": "string",
+            "title": "Os Version"
+          },
+          "arch": {
+            "type": "string",
+            "title": "Arch"
+          },
+          "chip": {
+            "type": "string",
+            "title": "Chip"
+          },
+          "cpu_count": {
+            "type": "integer",
+            "title": "Cpu Count"
+          },
+          "ram_bytes": {
+            "type": "integer",
+            "title": "Ram Bytes"
+          },
+          "disk_free_bytes": {
+            "type": "integer",
+            "title": "Disk Free Bytes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "accelerators",
+          "os",
+          "os_version",
+          "arch",
+          "chip",
+          "cpu_count",
+          "ram_bytes",
+          "disk_free_bytes"
+        ],
+        "title": "SystemOut"
+      },
+      "TakeOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "engine": {
+            "type": "string",
+            "title": "Engine"
+          },
+          "voice": {
+            "type": "string",
+            "title": "Voice"
+          },
+          "text": {
+            "type": "string",
+            "title": "Text"
+          },
+          "duration_s": {
+            "type": "number",
+            "title": "Duration S"
+          },
+          "starred": {
+            "type": "boolean",
+            "title": "Starred"
+          },
+          "created_at": {
+            "type": "number",
+            "title": "Created At",
+            "description": "Unix timestamp (seconds)"
+          },
+          "audio_url": {
+            "type": "string",
+            "title": "Audio Url",
+            "description": "Relative URL of the WAV file"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "engine",
+          "voice",
+          "text",
+          "duration_s",
+          "starred",
+          "created_at",
+          "audio_url"
+        ],
+        "title": "TakeOut"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "VoiceMetaIn": {
+        "properties": {
+          "engine": {
+            "type": "string",
+            "title": "Engine"
+          },
+          "voice": {
+            "type": "string",
+            "title": "Voice"
+          },
+          "favorite": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Favorite"
+          },
+          "tags": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array",
+                "maxItems": 12
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tags"
+          }
+        },
+        "type": "object",
+        "required": [
+          "engine",
+          "voice"
+        ],
+        "title": "VoiceMetaIn"
+      },
+      "VoiceOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "language": {
+            "type": "string",
+            "title": "Language",
+            "description": "BCP-47 tag, e.g. en-US"
+          },
+          "sample": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sample",
+            "description": "A sample sentence in the voice's language"
+          },
+          "gender": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gender",
+            "description": "`female`, `male`, or null when unknown"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "language"
+        ],
+        "title": "VoiceOut"
+      }
+    }
+  }
+}
