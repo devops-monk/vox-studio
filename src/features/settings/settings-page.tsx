@@ -43,6 +43,32 @@ function Performance() {
   )
 }
 
+function History() {
+  const settings = useSettings().data
+  const update = useUpdateSettings()
+  if (!settings) return null
+  return (
+    <section className="space-y-2">
+      <h3 className="px-1 text-[12px] font-semibold tracking-wide text-text-3">History</h3>
+      <GlassPanel className="divide-y-[0.5px] divide-[var(--hairline)]">
+        <Row label="Keep takes" hint="Older takes are deleted automatically. Starred takes are always kept.">
+          <SegmentedControl<string>
+            aria-label="Keep takes"
+            value={String(settings.history_retention_days)}
+            onChange={(v) => update.mutate({ history_retention_days: Number(v) })}
+            options={[
+              { value: '0', label: 'Forever' },
+              { value: '90', label: '90 days' },
+              { value: '30', label: '30 days' },
+              { value: '7', label: '7 days' },
+            ]}
+          />
+        </Row>
+      </GlassPanel>
+    </section>
+  )
+}
+
 /** Settings shell. Appearance lands in M0; remaining sections arrive in M15. */
 export function SettingsPage() {
   const { theme, setTheme } = usePrefs()
@@ -67,6 +93,7 @@ export function SettingsPage() {
         </GlassPanel>
       </section>
       <Performance />
+      <History />
       <p className="px-1 text-[12px] text-text-3">Storage, privacy, shortcuts and the rest of settings are coming in M15.</p>
     </div>
   )

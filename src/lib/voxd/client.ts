@@ -41,6 +41,10 @@ export const voxd = {
   voices: (engine: string) => call(api().GET('/v1/voices', { params: { query: { engine } } })),
   speak: (body: SpeechRequest) => call(api().POST('/v1/speech', { body })),
   takes: (limit = 50) => call(api().GET('/v1/takes', { params: { query: { limit } } })),
+  searchTakes: (query: { q?: string; engine?: string; starred?: boolean; before?: number; limit?: number }) =>
+    call(api().GET('/v1/takes', { params: { query } })),
+  takeStats: () => call(api().GET('/v1/takes/stats')),
+  deleteTakes: (ids: string[]) => call(api().POST('/v1/takes/delete', { body: { ids } })),
 
   jobs: (limit = 50) => call(api().GET('/v1/jobs', { params: { query: { limit } } })),
   job: (id: string) => call(api().GET('/v1/jobs/{job_id}', { params: { path: { job_id: id } } })),
@@ -54,7 +58,7 @@ export const voxd = {
   deleteModel: (id: string) => noContent(api().DELETE('/v1/models/{model_id}', { params: { path: { model_id: id } } })),
 
   settings: () => call(api().GET('/v1/settings')),
-  updateSettings: (body: { compute_device?: string }) => call(api().PATCH('/v1/settings', { body })),
+  updateSettings: (body: { compute_device?: string; history_retention_days?: number }) => call(api().PATCH('/v1/settings', { body })),
 
   customVoices: () => call(api().GET('/v1/voices/custom')),
   /** Upload a WAV recording as a new voice (multipart). */

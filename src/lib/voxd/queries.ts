@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { voxd } from './client'
 import { useLive } from './events'
 import { useVoxd } from './state'
@@ -195,4 +195,30 @@ export function useSaveDesigned() {
       void qc.invalidateQueries({ queryKey: ['designed-voices'] })
     },
   })
+}
+
+export interface HistoryFilter {
+  q?: string
+  engine?: string
+  starred?: boolean
+}
+
+const PAGE = 40
+
+/** Take history, newest first, paged by creation time. */
+export function useHistory(filter: HistoryFilter) {
+  return useInfiniteQuery({
+    queryKey: ['takes', 'history', filter],
+    queryFn: ({ pageParam }) => voxd.searchTakes({ ...filter, before: pageParam, limit: PAGE }),
+    initialPageParam: undefined as number | undefined,
+    getNextPageParam: (last) => (last.length === PAGE ? last[last.length - 1].created_at : undefined),
+    enabled: useReady(),
+  })
+}
+
+export const useTakeStats = () => useQuery({ queryKey: ['takes', 'stats'], queryFn: voxd.takeStats, enabled: useReady() })
+
+export function useDeleteTakes() {
+  const qc = useQueryClient()
+  return useMutation({ mutationFn: voxd.deleteTakes, onSuccess: () => qc.invalidateQueries({ queryKey: ['takes'] }) })
 }

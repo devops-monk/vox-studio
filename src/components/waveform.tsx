@@ -8,23 +8,34 @@ interface Props {
   url: string
   duration: number
   className?: string
+  /** Number of bars; use fewer for narrow waveforms so bars keep a visible width. */
+  bars?: number
 }
 
 /** Bar waveform that fills with the accent as the shared player plays this item. Click to seek. */
-export function Waveform({ id, url, duration, className }: Props) {
+export function Waveform({ id, url, duration, className, bars: count = 96 }: Props) {
   const [bars, setBars] = useState<number[] | null>(null)
   const [progress, setProgress] = useState(0)
   const { current, play, seek } = usePlayer()
   const active = current === id
   const box = useRef<HTMLDivElement>(null)
 
+  // Decode only once the waveform scrolls into view (long lists stay fast).
   useEffect(() => {
+    const el = box.current
+    if (!el) return
     let alive = true
-    loadPeaks(id, url).then((p) => alive && setBars(p), () => alive && setBars([]))
+    const io = new IntersectionObserver((entries) => {
+      if (!entries[0].isIntersecting) return
+      io.disconnect()
+      loadPeaks(id, url, count).then((p) => alive && setBars(p), () => alive && setBars([]))
+    })
+    io.observe(el)
     return () => {
       alive = false
+      io.disconnect()
     }
-  }, [id, url])
+  }, [id, url, count])
 
   useEffect(() => {
     if (!active) return setProgress(0)
@@ -57,7 +68,7 @@ export function Waveform({ id, url, duration, className }: Props) {
       onClick={(e) => void onClick(e)}
       className={cn('flex h-9 cursor-pointer items-center gap-[2px]', className)}
     >
-      {(bars ?? Array.from({ length: 96 }, () => 0.15)).map((h, i, all) => {
+      {(bars ?? Array.from({ length: count }, () => 0.15)).map((h, i, all) => {
         const played = i / all.length < progress
         return (
           <span

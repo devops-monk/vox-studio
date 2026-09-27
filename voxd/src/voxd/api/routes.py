@@ -19,6 +19,7 @@ from ..runtimes import PACKS
 from ..store import CustomVoice
 from ..voices import export_bundle, read_bundle
 from ..design import apply_sliders, design, parse_description, parse_recipe
+from ..history import RETENTION_CHOICES, RETENTION_KEY, delete_takes, sweep, usage_bytes
 from ..store import DesignedVoice
 from ..speech import resolve_engine, save_take
 from ..store import Job, Take
@@ -32,6 +33,9 @@ from .schemas import (
     DesignOut,
     DesignStatusOut,
     DesignTargetOut,
+    DeletedOut,
+    DeleteTakesIn,
+    TakeStatsOut,
     EngineOut,
     ExportIn,
     ExportPathIn,
@@ -207,9 +211,39 @@ def speech_job(request: Request, body: SpeechJobIn) -> JobOut:
 # --- Takes ------------------------------------------------------------------
 
 
-@router.get("/takes", response_model=list[TakeOut], tags=["Takes"], summary="List recent takes")
-def takes(request: Request, limit: int = Query(50, ge=1, le=500)) -> list[TakeOut]:
-    return [_take_out(t) for t in _services(request).store.list_takes(limit)]
+@router.get("/takes", response_model=list[TakeOut], tags=["Takes"], summary="List and search takes")
+def takes(
+    request: Request,
+    limit: int = Query(50, ge=1, le=500),
+    q: str | None = Query(None, max_length=200, description="Text contains (case-insensitive)"),
+    engine: str | None = Query(None),
+    voice: str | None = Query(None),
+    starred: bool | None = Query(None),
+    before: float | None = Query(None, description="Only takes created before this unix time — pass the last `created_at` to get the next page"),
+) -> list[TakeOut]:
+    """Newest first. Page through history with `before`."""
+    found = _services(request).store.list_takes(limit, query=q, engine=engine, voice=voice, starred=starred, before=before)
+    return [_take_out(t) for t in found]
+
+
+@router.get("/takes/stats", response_model=TakeStatsOut, tags=["Takes"], summary="History size")
+def take_stats(request: Request) -> TakeStatsOut:
+    services = _services(request)
+    count, starred = services.store.take_counts()
+    return TakeStatsOut(count=count, starred=starred, bytes=usage_bytes(services))
+
+
+@router.delete("/takes/{take_id}", status_code=204, responses=ERRORS, tags=["Takes"], summary="Delete a take")
+def delete_take(request: Request, take_id: str) -> Response:
+    if not delete_takes(_services(request), [take_id]):
+        raise HTTPException(404, detail=("not_found", "No such take"))
+    return Response(status_code=204)
+
+
+@router.post("/takes/delete", response_model=DeletedOut, tags=["Takes"], summary="Delete several takes")
+def delete_many_takes(request: Request, body: DeleteTakesIn) -> DeletedOut:
+    """Deletes the takes and their audio. Unknown ids are ignored; `deleted` lists what was removed."""
+    return DeletedOut(deleted=delete_takes(_services(request), body.ids))
 
 
 @router.get("/takes/{take_id}/audio", response_class=FileResponse, responses=ERRORS, tags=["Takes"], summary="Download take audio")
@@ -258,6 +292,7 @@ def export_take(request: Request, take_id: str, body: ExportIn) -> Response:
 def _settings_out(services) -> SettingsOut:
     chatterbox = services.registry.raw("chatterbox")
     return SettingsOut(
+        history_retention_days=int(services.store.get_setting(RETENTION_KEY, 0) or 0),
         compute_device=services.store.get_setting("compute_device", "auto"),
         compute_device_in_use=getattr(chatterbox, "device_in_use", None),
     )
@@ -276,6 +311,11 @@ def patch_settings(request: Request, body: SettingsPatch) -> SettingsOut:
         if body.compute_device not in ("auto", *system_info(services.settings.data_dir)["accelerators"]):
             raise HTTPException(400, detail=("unsupported_device", f"This computer has no {body.compute_device} device"))
         services.store.set_setting("compute_device", body.compute_device)
+    if body.history_retention_days is not None:
+        if body.history_retention_days not in RETENTION_CHOICES:
+            raise HTTPException(400, detail=("invalid_setting", f"history_retention_days must be one of {RETENTION_CHOICES}"))
+        services.store.set_setting(RETENTION_KEY, body.history_retention_days)
+        sweep(services)  # apply the new policy right away
     return _settings_out(services)
 
 

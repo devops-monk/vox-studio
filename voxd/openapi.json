@@ -468,7 +468,8 @@
         "tags": [
           "Takes"
         ],
-        "summary": "List recent takes",
+        "summary": "List and search takes",
+        "description": "Newest first. Page through history with `before`.",
         "operationId": "takes_v1_takes_get",
         "parameters": [
           {
@@ -482,6 +483,91 @@
               "default": 50,
               "title": "Limit"
             }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 200
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Text contains (case-insensitive)",
+              "title": "Q"
+            },
+            "description": "Text contains (case-insensitive)"
+          },
+          {
+            "name": "engine",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Engine"
+            }
+          },
+          {
+            "name": "voice",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Voice"
+            }
+          },
+          {
+            "name": "starred",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Starred"
+            }
+          },
+          {
+            "name": "before",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Only takes created before this unix time \u2014 pass the last `created_at` to get the next page",
+              "title": "Before"
+            },
+            "description": "Only takes created before this unix time \u2014 pass the last `created_at` to get the next page"
           }
         ],
         "responses": {
@@ -495,6 +581,134 @@
                     "$ref": "#/components/schemas/TakeOut"
                   },
                   "title": "Response Takes V1 Takes Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/takes/stats": {
+      "get": {
+        "tags": [
+          "Takes"
+        ],
+        "summary": "History size",
+        "operationId": "take_stats_v1_takes_stats_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TakeStatsOut"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/takes/{take_id}": {
+      "delete": {
+        "tags": [
+          "Takes"
+        ],
+        "summary": "Delete a take",
+        "operationId": "delete_take_v1_takes__take_id__delete",
+        "parameters": [
+          {
+            "name": "take_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Take Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/takes/delete": {
+      "post": {
+        "tags": [
+          "Takes"
+        ],
+        "summary": "Delete several takes",
+        "description": "Deletes the takes and their audio. Unknown ids are ignored; `deleted` lists what was removed.",
+        "operationId": "delete_many_takes_v1_takes_delete_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteTakesIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeletedOut"
                 }
               }
             }
@@ -2245,6 +2459,40 @@
         ],
         "title": "CustomVoicePatch"
       },
+      "DeleteTakesIn": {
+        "properties": {
+          "ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 1000,
+            "minItems": 1,
+            "title": "Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ids"
+        ],
+        "title": "DeleteTakesIn"
+      },
+      "DeletedOut": {
+        "properties": {
+          "deleted": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Deleted"
+          }
+        },
+        "type": "object",
+        "required": [
+          "deleted"
+        ],
+        "title": "DeletedOut"
+      },
       "DesignIn": {
         "properties": {
           "description": {
@@ -2966,6 +3214,12 @@
             "title": "Compute Device",
             "description": "auto | cpu | mps | cuda \u2014 where PyTorch engines run"
           },
+          "history_retention_days": {
+            "type": "integer",
+            "title": "History Retention Days",
+            "description": "Delete unstarred takes older than this many days; 0 keeps everything",
+            "default": 0
+          },
           "compute_device_in_use": {
             "anyOf": [
               {
@@ -2998,6 +3252,18 @@
               }
             ],
             "title": "Compute Device"
+          },
+          "history_retention_days": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "History Retention Days",
+            "description": "One of 0, 7, 30, 90"
           }
         },
         "type": "object",
@@ -3290,6 +3556,30 @@
           "audio_url"
         ],
         "title": "TakeOut"
+      },
+      "TakeStatsOut": {
+        "properties": {
+          "count": {
+            "type": "integer",
+            "title": "Count"
+          },
+          "starred": {
+            "type": "integer",
+            "title": "Starred"
+          },
+          "bytes": {
+            "type": "integer",
+            "title": "Bytes",
+            "description": "Disk space used by take audio"
+          }
+        },
+        "type": "object",
+        "required": [
+          "count",
+          "starred",
+          "bytes"
+        ],
+        "title": "TakeStatsOut"
       },
       "ValidationError": {
         "properties": {

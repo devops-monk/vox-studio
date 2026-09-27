@@ -19,6 +19,8 @@ Every message is JSON: `{"type": "...", "data": {...}}`.
 | `models.changed` | `{"id": "kokoro-v1", "installed": true}` | A model finished downloading or was removed. Refresh engines, voices and models. |
 | `voices.changed` | `{"id": "cv_…"}` | A custom voice was created, renamed or deleted |
 | `take.updated` | a take object | A take was starred or unstarred |
+| `takes.deleted` | `{"ids": […]}` | Takes were deleted, by you or by retention |
+| `design.ready` | `{"voices": 28}` | Voice analysis for design finished |
 | `take.created` | a [take object](takes.md#take-object), without `audio_url` | Whenever a new take is saved, by any client |
 
 More event types will be added over time. Ignore any `type` you don't recognize.

@@ -13,6 +13,7 @@ type Message =
   | { type: 'voices.changed'; data: { id: string } }
   | { type: 'take.updated'; data: Take }
   | { type: 'design.ready'; data: { voices: number } }
+  | { type: 'takes.deleted'; data: { ids: string[] } }
 
 /** Whether live events are flowing; queries fall back to polling while they aren't. */
 export const useLive = create<{ connected: boolean }>(() => ({ connected: false }))
@@ -81,6 +82,7 @@ function apply(message: Message) {
       break
     case 'take.created':
     case 'take.updated':
+    case 'takes.deleted':
       void queryClient.invalidateQueries({ queryKey: ['takes'] })
       break
     case 'design.ready':

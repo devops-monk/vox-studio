@@ -114,11 +114,13 @@ class SystemOut(BaseModel):
 
 class SettingsOut(BaseModel):
     compute_device: str = Field(description="auto | cpu | mps | cuda — where PyTorch engines run")
+    history_retention_days: int = Field(0, description="Delete unstarred takes older than this many days; 0 keeps everything")
     compute_device_in_use: str | None = Field(None, description="What the running engine actually uses, if one is loaded")
 
 
 class SettingsPatch(BaseModel):
     compute_device: str | None = Field(None, pattern="^(auto|cpu|mps|cuda)$")
+    history_retention_days: int | None = Field(None, description="One of 0, 7, 30, 90")
 
 
 class CustomVoiceOut(BaseModel):
@@ -224,3 +226,17 @@ class DesignedVoiceOut(BaseModel):
     gender: str | None
     speed: float
     created_at: float
+
+
+class TakeStatsOut(BaseModel):
+    count: int
+    starred: int
+    bytes: int = Field(description="Disk space used by take audio")
+
+
+class DeleteTakesIn(BaseModel):
+    ids: list[str] = Field(min_length=1, max_length=1000)
+
+
+class DeletedOut(BaseModel):
+    deleted: list[str]

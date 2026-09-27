@@ -150,8 +150,13 @@ Work goes one milestone at a time. Tick `[x]` only after the item is verified in
 - [x] Docs: design reference (including the vocabulary) and guide
 - Measured on M1 Pro: analysis of 28 voices ≈ 51 s; candidates are instant; previews about 1 s
 
-### M7 — History
-- [ ] Inspector panel listing all takes, with search, filter, star and retention
+### M7 — History ✅
+- [x] Take search (literal text match), engine/voice/starred filters, cursor paging; stats; delete one or many (files removed)
+- [x] Retention setting (forever/90/30/7 days) with a background sweep every 6 h; starred takes always kept
+- [x] History page: day groups, compact waveforms, star/save/delete on hover, select mode with bulk delete, infinite scroll, empty states
+- [x] Inspector panel (toolbar) shows the 12 most recent takes from any page
+- [x] Fixes found in testing: `cn()` now uses tailwind-merge (class overrides were silently lost); waveforms share one decoder, decode at most 3 at a time, and load only when visible; narrow waveforms use fewer bars
+- [x] Docs: takes reference (search, paging, delete, retention), History guide
 
 ### M8 — Transcribe & Dictate
 - [ ] Whisper engine: transcribe a file, export (txt/srt/vtt)

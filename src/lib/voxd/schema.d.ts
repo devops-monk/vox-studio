@@ -185,10 +185,67 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List recent takes */
+        /**
+         * List and search takes
+         * @description Newest first. Page through history with `before`.
+         */
         get: operations["takes_v1_takes_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/takes/stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** History size */
+        get: operations["take_stats_v1_takes_stats_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/takes/{take_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete a take */
+        delete: operations["delete_take_v1_takes__take_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/takes/delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Delete several takes
+         * @description Deletes the takes and their audio. Unknown ids are ignored; `deleted` lists what was removed.
+         */
+        post: operations["delete_many_takes_v1_takes_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -693,6 +750,16 @@ export interface components {
             /** Name */
             name: string;
         };
+        /** DeleteTakesIn */
+        DeleteTakesIn: {
+            /** Ids */
+            ids: string[];
+        };
+        /** DeletedOut */
+        DeletedOut: {
+            /** Deleted */
+            deleted: string[];
+        };
         /** DesignIn */
         DesignIn: {
             /**
@@ -1014,6 +1081,12 @@ export interface components {
              */
             compute_device: string;
             /**
+             * History Retention Days
+             * @description Delete unstarred takes older than this many days; 0 keeps everything
+             * @default 0
+             */
+            history_retention_days: number;
+            /**
              * Compute Device In Use
              * @description What the running engine actually uses, if one is loaded
              */
@@ -1023,6 +1096,11 @@ export interface components {
         SettingsPatch: {
             /** Compute Device */
             compute_device?: string | null;
+            /**
+             * History Retention Days
+             * @description One of 0, 7, 30, 90
+             */
+            history_retention_days?: number | null;
         };
         /** SpeechIn */
         SpeechIn: {
@@ -1159,6 +1237,18 @@ export interface components {
              * @description Relative URL of the WAV file
              */
             audio_url: string;
+        };
+        /** TakeStatsOut */
+        TakeStatsOut: {
+            /** Count */
+            count: number;
+            /** Starred */
+            starred: number;
+            /**
+             * Bytes
+             * @description Disk space used by take audio
+             */
+            bytes: number;
         };
         /** ValidationError */
         ValidationError: {
@@ -1592,6 +1682,13 @@ export interface operations {
         parameters: {
             query?: {
                 limit?: number;
+                /** @description Text contains (case-insensitive) */
+                q?: string | null;
+                engine?: string | null;
+                voice?: string | null;
+                starred?: boolean | null;
+                /** @description Only takes created before this unix time — pass the last `created_at` to get the next page */
+                before?: number | null;
             };
             header?: never;
             path?: never;
@@ -1606,6 +1703,115 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TakeOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    take_stats_v1_takes_stats_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TakeStatsOut"];
+                };
+            };
+        };
+    };
+    delete_take_v1_takes__take_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                take_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_many_takes_v1_takes_delete_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeleteTakesIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeletedOut"];
                 };
             };
             /** @description Validation Error */

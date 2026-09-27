@@ -25,6 +25,7 @@ from .lifecycle import Lifecycle, Phase
 from .models import CATALOG, ModelSpec, ModelStore
 from .runtimes import PACKS, RuntimeManager
 from .design import TraitStore
+from .history import sweeper
 from .speech import render_long
 from .voices import CustomVoices
 from .store import Store
@@ -110,6 +111,7 @@ def create_app(
         services.jobs.register("model.download", partial(download_model, services), lane="network")
         services.jobs.register("design.analyze", partial(analyze_voices, services))
         services.jobs.start()
+        cleanup = asyncio.create_task(sweeper(services), name="retention")
         services.lifecycle.set(Phase.LOADING_ENGINES, "Checking engines")
         try:
             await asyncio.to_thread(services.registry.probe_all)
@@ -118,6 +120,7 @@ def create_app(
             log.exception("engine probe failed")
             services.lifecycle.set(Phase.ERROR, str(exc))
         yield
+        cleanup.cancel()
         for engine_id in ("chatterbox", "kokoro"):
             if engine := services.registry.raw(engine_id):
                 engine.unload()

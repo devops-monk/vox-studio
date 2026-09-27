@@ -194,9 +194,53 @@ class Store:
         row = self._db.execute("SELECT * FROM takes WHERE id = ?", (take_id,)).fetchone()
         return _take(row) if row else None
 
-    def list_takes(self, limit: int = 50) -> list[Take]:
-        rows = self._db.execute("SELECT * FROM takes ORDER BY created_at DESC LIMIT ?", (limit,))
-        return [_take(r) for r in rows]
+    def list_takes(
+        self,
+        limit: int = 50,
+        *,
+        query: str | None = None,
+        engine: str | None = None,
+        voice: str | None = None,
+        starred: bool | None = None,
+        before: float | None = None,
+    ) -> list[Take]:
+        where, args = [], []
+        if query:
+            where.append("text LIKE ? ESCAPE '\\'")
+            args.append("%" + query.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + "%")
+        if engine:
+            where.append("engine = ?")
+            args.append(engine)
+        if voice:
+            where.append("voice = ?")
+            args.append(voice)
+        if starred is not None:
+            where.append("starred = ?")
+            args.append(int(starred))
+        if before is not None:
+            where.append("created_at < ?")
+            args.append(before)
+        sql = "SELECT * FROM takes" + (" WHERE " + " AND ".join(where) if where else "") + " ORDER BY created_at DESC LIMIT ?"
+        return [_take(r) for r in self._db.execute(sql, (*args, limit))]
+
+    def delete_takes(self, ids: list[str]) -> list[str]:
+        """Delete takes by id; returns the ids that existed."""
+        if not ids:
+            return []
+        marks = ",".join("?" * len(ids))
+        with self._lock:
+            found = [r[0] for r in self._db.execute(f"SELECT id FROM takes WHERE id IN ({marks})", ids)]
+            self._db.execute(f"DELETE FROM takes WHERE id IN ({marks})", ids)
+        return found
+
+    def expired_takes(self, older_than: float) -> list[str]:
+        """Unstarred takes created before ``older_than`` (unix seconds)."""
+        rows = self._db.execute("SELECT id FROM takes WHERE starred = 0 AND created_at < ?", (older_than,))
+        return [r[0] for r in rows]
+
+    def take_counts(self) -> tuple[int, int]:
+        row = self._db.execute("SELECT COUNT(*), COALESCE(SUM(starred), 0) FROM takes").fetchone()
+        return row[0], row[1]
 
     # --- jobs -------------------------------------------------------------
 
