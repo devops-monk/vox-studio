@@ -152,6 +152,7 @@ class LibraryVoiceOut(BaseModel):
     language: str
     gender: str | None = None
     custom: bool = Field(description="A voice you created from a recording")
+    designed: bool = Field(False, description="A voice you designed (a saved blend)")
     available: bool = Field(description="Whether its engine is installed and usable now")
     favorite: bool
     tags: list[str]
@@ -169,3 +170,57 @@ class VoiceMetaIn(BaseModel):
 class ExportPathIn(BaseModel):
     path: str = Field(description="Absolute destination path")
     overwrite: bool = False
+
+
+class DesignStatusOut(BaseModel):
+    ready: bool = Field(description="Voices have been analyzed and design is available")
+    analyzed_voices: int
+    job_id: str | None = Field(None, description="The running analysis job, if any")
+
+
+class DesignIn(BaseModel):
+    description: str = Field(max_length=500, examples=["A warm, deep British narrator, calm and measured"])
+    depth: float | None = Field(None, ge=0, le=1, description="Override: 0 light/high – 1 deep/low")
+    warmth: float | None = Field(None, ge=0, le=1, description="Override: 0 crisp/bright – 1 warm/soft")
+    energy: float | None = Field(None, ge=0, le=1, description="Override: 0 calm/steady – 1 lively/expressive")
+    gender: str | None = Field(None, pattern="^(female|male)$", description="Override the gender read from the description")
+
+
+class DesignTargetOut(BaseModel):
+    gender: str | None
+    language: str | None
+    depth: float | None
+    warmth: float | None
+    energy: float | None
+    speed: float
+    matched: list[str] = Field(description="Words in the description that were understood")
+
+
+class CandidateOut(BaseModel):
+    recipe: str = Field(description="Blend voice id, usable as `voice` with engine `kokoro`")
+    voices: list[str] = Field(description="The Kokoro voices being blended")
+    score: float = Field(description="0–1, how closely the blend matches the target")
+    traits: list[float] = Field(description="[depth, warmth, energy] of the blend, 0–1")
+
+
+class DesignOut(BaseModel):
+    target: DesignTargetOut
+    candidates: list[CandidateOut]
+
+
+class DesignedVoiceIn(BaseModel):
+    name: str = Field(min_length=1, max_length=60)
+    recipe: str = Field(description="A candidate's `recipe`")
+    description: str = Field("", max_length=500)
+    speed: float = Field(1.0, ge=0.7, le=1.4, description="Built-in pace for this voice")
+
+
+class DesignedVoiceOut(BaseModel):
+    id: str
+    name: str
+    recipe: str
+    description: str
+    language: str
+    gender: str | None
+    speed: float
+    created_at: float

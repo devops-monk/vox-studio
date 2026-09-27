@@ -96,6 +96,7 @@ function useInvalidateVoices() {
     void qc.invalidateQueries({ queryKey: ['custom-voices'] })
     void qc.invalidateQueries({ queryKey: ['voices'] })
     void qc.invalidateQueries({ queryKey: ['library'] })
+    void qc.invalidateQueries({ queryKey: ['designed-voices'] })
   }
 }
 
@@ -159,4 +160,39 @@ export function useImportVoice() {
 export function useRenameVoice() {
   const invalidate = useInvalidateVoices()
   return useMutation({ mutationFn: ({ id, name }: { id: string; name: string }) => voxd.renameCustomVoice(id, name), onSuccess: invalidate })
+}
+
+export function useDesignStatus() {
+  const live = useLive((s) => s.connected)
+  return useQuery({
+    queryKey: ['design-status'],
+    queryFn: voxd.designStatus,
+    enabled: useReady(),
+    refetchInterval: (q) => (q.state.data?.job_id && !live ? POLL_MS : false),
+  })
+}
+
+export function useDesignAnalyze() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: voxd.designAnalyze,
+    onSuccess: (job) => {
+      qc.setQueryData<Job>(['job', job.id], (seen) => newer(seen, job))
+      void qc.invalidateQueries({ queryKey: ['design-status'] })
+    },
+  })
+}
+
+export const useDesignedVoices = () => useQuery({ queryKey: ['designed-voices'], queryFn: voxd.designedVoices, enabled: useReady() })
+
+export function useSaveDesigned() {
+  const qc = useQueryClient()
+  const invalidate = useInvalidateVoices()
+  return useMutation({
+    mutationFn: voxd.saveDesigned,
+    onSuccess: () => {
+      invalidate()
+      void qc.invalidateQueries({ queryKey: ['designed-voices'] })
+    },
+  })
 }

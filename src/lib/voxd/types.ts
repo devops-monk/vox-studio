@@ -14,6 +14,10 @@ export type SystemInfo = Schemas['SystemOut']
 export type Settings = Schemas['SettingsOut']
 export type CustomVoice = Schemas['CustomVoiceOut']
 export type LibraryVoice = Schemas['LibraryVoiceOut']
+export type DesignResult = Schemas['DesignOut']
+export type DesignCandidate = Schemas['CandidateOut']
+export type DesignedVoice = Schemas['DesignedVoiceOut']
+export type DesignRequest = Schemas['DesignIn']
 
 export type JobStatus = 'queued' | 'running' | 'succeeded' | 'failed' | 'cancelled'
 export const isActive = (job: Job) => job.status === 'queued' || job.status === 'running'

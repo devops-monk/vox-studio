@@ -7,7 +7,7 @@ import { VoiceAvatar } from '@/components/voice-avatar'
 import { isTauri } from '@/lib/platform'
 import { usePrefs } from '@/lib/store/prefs'
 import { voxd } from '@/lib/voxd/client'
-import { useDeleteCustomVoice, useRenameVoice, useVoiceMeta } from '@/lib/voxd/queries'
+import { useDeleteCustomVoice, useDesignedVoices, useRenameVoice, useVoiceMeta } from '@/lib/voxd/queries'
 import type { LibraryVoice } from '@/lib/voxd/types'
 import { useCustomVoices } from '@/lib/voxd/queries'
 import { languageName } from '@/lib/format'
@@ -44,6 +44,8 @@ export function VoiceDetail({ voice, allTags, onClose }: { voice: LibraryVoice; 
   const rename = useRenameVoice()
   const remove = useDeleteCustomVoice()
   const custom = useCustomVoices().data?.find((c) => c.id === voice.id)
+  const designed = useDesignedVoices().data?.find((d) => d.id === voice.id)
+  const editable = voice.custom || voice.designed
   const preview = usePreview()
   const navigate = useNavigate()
   const { setEngine, setVoice } = usePrefs()
@@ -59,7 +61,10 @@ export function VoiceDetail({ voice, allTags, onClose }: { voice: LibraryVoice; 
 
   const commitName = () => {
     const next = name.trim()
-    if (next && next !== voice.name) rename.mutate({ id: voice.id, name: next }, { onError: (e) => toast.error(e.message) })
+    if (next && next !== voice.name) {
+      if (voice.designed) void voxd.renameDesigned(voice.id, next).catch((e: Error) => toast.error(e.message))
+      else rename.mutate({ id: voice.id, name: next }, { onError: (e) => toast.error(e.message) })
+    }
     else setName(voice.name)
   }
 
@@ -76,7 +81,7 @@ export function VoiceDetail({ voice, allTags, onClose }: { voice: LibraryVoice; 
           <X size={15} />
         </Button>
         <VoiceAvatar id={voice.id} name={voice.name} size={72} />
-        {voice.custom ? (
+        {editable ? (
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
@@ -118,6 +123,16 @@ export function VoiceDetail({ voice, allTags, onClose }: { voice: LibraryVoice; 
           {voice.created_at != null && <Field label="Created">{new Date(voice.created_at * 1000).toLocaleDateString(undefined, { dateStyle: 'medium' })}</Field>}
         </section>
 
+        {designed && (
+          <section className="rounded-[var(--radius-md)] border-[0.5px] border-hairline bg-fill-control p-3">
+            <div className="mb-1.5 text-[12px] font-semibold">Designed from</div>
+            <p className="text-[12px] leading-relaxed text-text-2">{designed.description ? `“${designed.description}”` : 'A blend of Kokoro voices'}</p>
+            <p className="mt-1.5 text-[11px] text-text-3">
+              Blend of {designed.recipe.replace('mix:', '').split(',').map((p) => p.split('=')[0].split('_')[1]).map((n) => n[0].toUpperCase() + n.slice(1)).join(', ')} · pace {designed.speed.toFixed(2)}×
+            </p>
+          </section>
+        )}
+
         {custom && (
           <section className="rounded-[var(--radius-md)] border-[0.5px] border-hairline bg-fill-control p-3">
             <div className="mb-1.5 flex items-center gap-1.5 text-[12px] font-semibold">
@@ -136,18 +151,22 @@ export function VoiceDetail({ voice, allTags, onClose }: { voice: LibraryVoice; 
         <Button variant="primary" className="w-full justify-center" onClick={use} disabled={!voice.available}>
           Use in Studio <ArrowRight size={13} />
         </Button>
-        {voice.custom && (
+        {editable && (
           <div className="flex gap-2">
-            <Button className="flex-1 justify-center" onClick={() => void exportVoice(voice)}>
-              <Download size={13} /> Export
-            </Button>
+            {voice.custom && (
+              <Button className="flex-1 justify-center" onClick={() => void exportVoice(voice)}>
+                <Download size={13} /> Export
+              </Button>
+            )}
             <Button
               variant="ghost"
               className={cn('flex-1 justify-center', confirmDelete && 'bg-[#ff453a]/12 text-[#ff453a] hover:bg-[#ff453a]/20 hover:text-[#ff453a]')}
               onClick={() =>
-                confirmDelete
-                  ? remove.mutate(voice.id, { onSuccess: () => (toast(`${voice.name} deleted`), onClose()) })
-                  : setConfirmDelete(true)
+                !confirmDelete
+                  ? setConfirmDelete(true)
+                  : voice.designed
+                    ? void voxd.deleteDesigned(voice.id).then(() => (toast(`${voice.name} deleted`), onClose()))
+                    : remove.mutate(voice.id, { onSuccess: () => (toast(`${voice.name} deleted`), onClose()) })
               }
               onBlur={() => setConfirmDelete(false)}
             >

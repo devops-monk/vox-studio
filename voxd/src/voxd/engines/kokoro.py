@@ -5,6 +5,7 @@ from __future__ import annotations
 import threading
 import wave
 from pathlib import Path
+from collections.abc import Callable
 from typing import TYPE_CHECKING
 
 from .base import Engine, EngineError, Voice
@@ -32,8 +33,9 @@ class KokoroEngine(Engine):
     name = "Kokoro"
     license = "Apache-2.0"
 
-    def __init__(self, models: ModelStore):
+    def __init__(self, models: ModelStore, designed: Callable[[], list] | None = None):
         self._models = models
+        self._designed = designed or (lambda: [])
         self._model = None
         self._lock = threading.Lock()
 
@@ -78,16 +80,46 @@ class KokoroEngine(Engine):
                     gender=_GENDER.get(vid[1]),
                 )
             )
-        return voices
+        designed = [Voice(id=d.id, name=d.name, language=d.language, gender=d.gender) for d in self._designed()]
+        return designed + voices
 
-    def synthesize(self, text: str, voice_id: str, speed: float, out: Path, emotion: float | None = None) -> None:
+    def _style(self, voice_id: str):
+        """A voice id → (style vector or name, espeak language, speed multiplier).
+
+        Supports plain voices (``af_heart``), blends (``mix:af_heart=0.6,bf_emma=0.4``)
+        and saved designed voices (``dv_…``, which store a blend recipe).
+        """
+        from ..design import MIX_PREFIX, parse_recipe
+
         model = self._load()
+        speed = 1.0
+        if voice_id.startswith("dv_"):
+            designed = next((d for d in self._designed() if d.id == voice_id), None)
+            if designed is None:
+                raise EngineError(f"Unknown voice: {voice_id}")
+            voice_id, speed = designed.recipe, designed.speed
+        if voice_id.startswith(MIX_PREFIX):
+            parts = parse_recipe(voice_id)
+            known = set(model.get_voices())
+            if any(name not in known for name, _ in parts):
+                raise EngineError(f"Unknown voice in blend: {voice_id}")
+            total = sum(w for _, w in parts)
+            style = sum(model.get_voice_style(name) * (w / total) for name, w in parts)
+            return style, _LANG[parts[0][0][0]][1], speed
         if voice_id not in model.get_voices():
             raise EngineError(f"Unknown voice: {voice_id}")
+        return voice_id, _LANG[voice_id[0]][1], speed
+
+    def render(self, text: str, voice_id: str, speed: float):
+        """(float samples, sample rate) without writing a file."""
+        style, lang, voice_speed = self._style(voice_id)
+        with self._lock:
+            return self._model.create(text, voice=style, speed=speed * voice_speed, lang=lang)
+
+    def synthesize(self, text: str, voice_id: str, speed: float, out: Path, emotion: float | None = None) -> None:
         import numpy as np
 
-        with self._lock:
-            samples, rate = model.create(text, voice=voice_id, speed=speed, lang=_LANG[voice_id[0]][1])
+        samples, rate = self.render(text, voice_id, speed)
         pcm = (np.clip(samples, -1.0, 1.0) * 32767).astype("<i2")
         with wave.open(str(out), "wb") as w:
             w.setnchannels(1)

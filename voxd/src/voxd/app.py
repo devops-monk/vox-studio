@@ -24,6 +24,7 @@ from .jobs import JobContext, JobManager
 from .lifecycle import Lifecycle, Phase
 from .models import CATALOG, ModelSpec, ModelStore
 from .runtimes import PACKS, RuntimeManager
+from .design import TraitStore
 from .speech import render_long
 from .voices import CustomVoices
 from .store import Store
@@ -58,6 +59,7 @@ class Services:
     models: ModelStore
     runtimes: RuntimeManager
     custom: CustomVoices
+    traits: TraitStore
     store: Store = None  # type: ignore[assignment]  # opened in lifespan
     jobs: JobManager = None  # type: ignore[assignment]
 
@@ -74,6 +76,13 @@ def download_model(services: Services, ctx: JobContext, spec: dict) -> dict:
     return {"model_id": model.id}
 
 
+def analyze_voices(services: Services, ctx: JobContext, _spec: dict) -> dict:
+    engine = services.registry.get("kokoro")
+    result = services.traits.analyze(ctx, engine)  # type: ignore[arg-type]
+    services.bus.publish("design.ready", result)
+    return result
+
+
 def create_app(
     settings: Settings, registry: Registry | None = None, catalog: tuple[ModelSpec, ...] = CATALOG
 ) -> FastAPI:
@@ -85,11 +94,11 @@ def create_app(
     registry = registry or Registry(
         [
             SystemEngine(),
-            KokoroEngine(models),
+            KokoroEngine(models, designed=lambda: services.store.list_designed_voices()),
             ChatterboxEngine(models, runtimes, custom, device=lambda: services.store.get_setting("compute_device", "auto")),
         ]
     )
-    services = Services(settings, Lifecycle(), registry, EventBus(), models, runtimes, custom)
+    services = Services(settings, Lifecycle(), registry, EventBus(), models, runtimes, custom, TraitStore(settings.data_dir / "voice-traits.json"))
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
@@ -99,6 +108,7 @@ def create_app(
         services.jobs = JobManager(services.store, services.bus)
         services.jobs.register("speech", partial(render_long, services))
         services.jobs.register("model.download", partial(download_model, services), lane="network")
+        services.jobs.register("design.analyze", partial(analyze_voices, services))
         services.jobs.start()
         services.lifecycle.set(Phase.LOADING_ENGINES, "Checking engines")
         try:

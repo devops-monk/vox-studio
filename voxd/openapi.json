@@ -1371,6 +1371,390 @@
         }
       }
     },
+    "/v1/design/status": {
+      "get": {
+        "tags": [
+          "Design"
+        ],
+        "summary": "Is voice design ready?",
+        "description": "Design needs a one-time analysis of Kokoro's voices (about a minute). Start it with `POST /v1/design/analyze`.",
+        "operationId": "design_status_v1_design_status_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DesignStatusOut"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/design/analyze": {
+      "post": {
+        "tags": [
+          "Design"
+        ],
+        "summary": "Analyze voices for design",
+        "operationId": "design_analyze_v1_design_analyze_post",
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobOut"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/design/candidates": {
+      "post": {
+        "tags": [
+          "Design"
+        ],
+        "summary": "Design voices from a description",
+        "description": "Reads the description (plus any slider overrides) and returns up to four blends that match it.\nSpeak a candidate by passing its `recipe` as the `voice` with engine `kokoro`.",
+        "operationId": "design_candidates_v1_design_candidates_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DesignIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DesignOut"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/voices/designed": {
+      "get": {
+        "tags": [
+          "Design"
+        ],
+        "summary": "List designed voices",
+        "operationId": "list_designed_voices_v1_voices_designed_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/DesignedVoiceOut"
+                  },
+                  "type": "array",
+                  "title": "Response List Designed Voices V1 Voices Designed Get"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Design"
+        ],
+        "summary": "Save a designed voice",
+        "operationId": "save_designed_voice_v1_voices_designed_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DesignedVoiceIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DesignedVoiceOut"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/voices/designed/{voice_id}": {
+      "patch": {
+        "tags": [
+          "Design"
+        ],
+        "summary": "Rename a designed voice",
+        "operationId": "rename_designed_voice_v1_voices_designed__voice_id__patch",
+        "parameters": [
+          {
+            "name": "voice_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Voice Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CustomVoicePatch"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DesignedVoiceOut"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Design"
+        ],
+        "summary": "Delete a designed voice",
+        "operationId": "delete_designed_voice_v1_voices_designed__voice_id__delete",
+        "parameters": [
+          {
+            "name": "voice_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Voice Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/jobs": {
       "get": {
         "tags": [
@@ -1744,6 +2128,44 @@
         ],
         "title": "Body_import_custom_voice_v1_voices_custom_import_post"
       },
+      "CandidateOut": {
+        "properties": {
+          "recipe": {
+            "type": "string",
+            "title": "Recipe",
+            "description": "Blend voice id, usable as `voice` with engine `kokoro`"
+          },
+          "voices": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Voices",
+            "description": "The Kokoro voices being blended"
+          },
+          "score": {
+            "type": "number",
+            "title": "Score",
+            "description": "0\u20131, how closely the blend matches the target"
+          },
+          "traits": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "title": "Traits",
+            "description": "[depth, warmth, energy] of the blend, 0\u20131"
+          }
+        },
+        "type": "object",
+        "required": [
+          "recipe",
+          "voices",
+          "score",
+          "traits"
+        ],
+        "title": "CandidateOut"
+      },
       "ClearedOut": {
         "properties": {
           "deleted": {
@@ -1822,6 +2244,301 @@
           "name"
         ],
         "title": "CustomVoicePatch"
+      },
+      "DesignIn": {
+        "properties": {
+          "description": {
+            "type": "string",
+            "maxLength": 500,
+            "title": "Description",
+            "examples": [
+              "A warm, deep British narrator, calm and measured"
+            ]
+          },
+          "depth": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Depth",
+            "description": "Override: 0 light/high \u2013 1 deep/low"
+          },
+          "warmth": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Warmth",
+            "description": "Override: 0 crisp/bright \u2013 1 warm/soft"
+          },
+          "energy": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Energy",
+            "description": "Override: 0 calm/steady \u2013 1 lively/expressive"
+          },
+          "gender": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(female|male)$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gender",
+            "description": "Override the gender read from the description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "description"
+        ],
+        "title": "DesignIn"
+      },
+      "DesignOut": {
+        "properties": {
+          "target": {
+            "$ref": "#/components/schemas/DesignTargetOut"
+          },
+          "candidates": {
+            "items": {
+              "$ref": "#/components/schemas/CandidateOut"
+            },
+            "type": "array",
+            "title": "Candidates"
+          }
+        },
+        "type": "object",
+        "required": [
+          "target",
+          "candidates"
+        ],
+        "title": "DesignOut"
+      },
+      "DesignStatusOut": {
+        "properties": {
+          "ready": {
+            "type": "boolean",
+            "title": "Ready",
+            "description": "Voices have been analyzed and design is available"
+          },
+          "analyzed_voices": {
+            "type": "integer",
+            "title": "Analyzed Voices"
+          },
+          "job_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Job Id",
+            "description": "The running analysis job, if any"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ready",
+          "analyzed_voices"
+        ],
+        "title": "DesignStatusOut"
+      },
+      "DesignTargetOut": {
+        "properties": {
+          "gender": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gender"
+          },
+          "language": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Language"
+          },
+          "depth": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Depth"
+          },
+          "warmth": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Warmth"
+          },
+          "energy": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Energy"
+          },
+          "speed": {
+            "type": "number",
+            "title": "Speed"
+          },
+          "matched": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Matched",
+            "description": "Words in the description that were understood"
+          }
+        },
+        "type": "object",
+        "required": [
+          "gender",
+          "language",
+          "depth",
+          "warmth",
+          "energy",
+          "speed",
+          "matched"
+        ],
+        "title": "DesignTargetOut"
+      },
+      "DesignedVoiceIn": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 60,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "recipe": {
+            "type": "string",
+            "title": "Recipe",
+            "description": "A candidate's `recipe`"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 500,
+            "title": "Description",
+            "default": ""
+          },
+          "speed": {
+            "type": "number",
+            "maximum": 1.4,
+            "minimum": 0.7,
+            "title": "Speed",
+            "description": "Built-in pace for this voice",
+            "default": 1.0
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "recipe"
+        ],
+        "title": "DesignedVoiceIn"
+      },
+      "DesignedVoiceOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "recipe": {
+            "type": "string",
+            "title": "Recipe"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "language": {
+            "type": "string",
+            "title": "Language"
+          },
+          "gender": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gender"
+          },
+          "speed": {
+            "type": "number",
+            "title": "Speed"
+          },
+          "created_at": {
+            "type": "number",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "recipe",
+          "description",
+          "language",
+          "gender",
+          "speed",
+          "created_at"
+        ],
+        "title": "DesignedVoiceOut"
       },
       "EngineOut": {
         "properties": {
@@ -2076,6 +2793,12 @@
             "type": "boolean",
             "title": "Custom",
             "description": "A voice you created from a recording"
+          },
+          "designed": {
+            "type": "boolean",
+            "title": "Designed",
+            "description": "A voice you designed (a saved blend)",
+            "default": false
           },
           "available": {
             "type": "boolean",

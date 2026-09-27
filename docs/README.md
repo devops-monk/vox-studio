@@ -11,7 +11,7 @@ VoxStudio is a private voice studio that runs entirely on your computer. These d
 | [Studio](guides/studio.md) | Write a script, pick a voice, shape the delivery |
 | [Clone a voice](guides/clone.md) | Make a voice from a short recording |
 | [Your voice library](guides/voices.md) | Browse, favorite, tag, share and import voices |
-| Design a voice *(M6)* | Describe a voice in words |
+| [Design a voice](guides/design.md) | Describe a voice in words and fine-tune it by ear |
 | Dub a video *(M9)* | Translate and re-voice a video |
 | Stories & audiobooks *(M10)* | Long-form, multi-voice narration |
 | Transcribe & dictate *(M8)* | Speech to text, anywhere |
@@ -32,6 +32,7 @@ VoxStudio is a private voice studio that runs entirely on your computer. These d
 | [Models](api/reference/models.md) | `GET /v1/models`, download, remove, mirrors |
 | [Voices](api/reference/voices.md) | `GET /v1/voices`, library, favorites and tags |
 | [Custom voices](api/reference/custom-voices.md) | Create, rename or delete voices; export and import `.voxvoice` |
+| [Voice design](api/reference/design.md) | Analyze, candidates from a description, designed voices |
 | [Settings](api/reference/settings.md) | `GET`/`PATCH /v1/settings` (compute device) |
 | [Speech](api/reference/speech.md) | `POST /v1/speech` |
 | [Jobs](api/reference/jobs.md) | `POST /v1/jobs/speech`, `GET /v1/jobs`, events (SSE), cancel, clear |

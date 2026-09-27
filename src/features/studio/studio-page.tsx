@@ -6,7 +6,7 @@ import { VoiceOrb } from '@/components/voice-orb'
 import { usePlayer } from '@/lib/audio/player'
 import { usePrefs } from '@/lib/store/prefs'
 import { useStudio } from '@/lib/store/studio'
-import { useCustomVoices, useEngines, useTakes, useVoices } from '@/lib/voxd/queries'
+import { useCustomVoices, useDesignedVoices, useEngines, useTakes, useVoices } from '@/lib/voxd/queries'
 import { LONG_TEXT, useSpeechRunner } from '@/lib/voxd/use-speech'
 import { cn } from '@/lib/cn'
 import { TakeCard } from './take-card'
@@ -33,6 +33,7 @@ export function StudioPage() {
   const voice = voiceByEngine[engineId] ?? ''
   const takes = useTakes(30).data ?? []
   const custom = useCustomVoices().data ?? []
+  const designed = useDesignedVoices().data ?? []
   const runner = useSpeechRunner()
   const { current, analyser } = usePlayer()
   const cloning = !!engine?.capabilities.includes('clone')
@@ -100,7 +101,7 @@ export function StudioPage() {
               {!!takes.length && <span className="text-[11px] text-text-3">{takes.length} recent</span>}
             </div>
             {takes.length ? (
-              takes.map((t) => <TakeCard key={t.id} take={t} custom={custom} />)
+              takes.map((t) => <TakeCard key={t.id} take={t} custom={custom} designed={designed} />)
             ) : (
               <div className="flex flex-col items-center gap-2 rounded-[var(--radius-lg)] border border-dashed border-[var(--hairline-strong)] px-6 py-10 text-center">
                 <AudioLines size={26} strokeWidth={1.4} className="text-text-3" />

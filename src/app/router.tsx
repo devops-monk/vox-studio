@@ -8,6 +8,7 @@ import { ModelsPage } from '@/features/models/models-page'
 import { StudioPage } from '@/features/studio/studio-page'
 import { ClonePage } from '@/features/clone/clone-page'
 import { VoicesPage } from '@/features/voices/voices-page'
+import { DesignPage } from '@/features/design/design-page'
 
 const rootRoute = createRootRoute({ component: AppShell })
 
@@ -19,6 +20,7 @@ const pages: Record<string, () => React.ReactNode> = {
   '/studio': StudioPage,
   '/clone': ClonePage,
   '/voices': VoicesPage,
+  '/design': DesignPage,
 }
 
 const routes = ALL_NAV_ITEMS.map((item) =>

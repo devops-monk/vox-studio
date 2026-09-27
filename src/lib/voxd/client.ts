@@ -75,6 +75,15 @@ export const voxd = {
   importVoice: (file: Blob, consent: string, consentBy = '') =>
     upload<import('./types').CustomVoice>('/v1/voices/custom/import', { file, consent, consent_by: consentBy }, 'file'),
 
+  designStatus: () => call(api().GET('/v1/design/status')),
+  designAnalyze: () => call(api().POST('/v1/design/analyze')),
+  designCandidates: (body: import('./types').DesignRequest) => call(api().POST('/v1/design/candidates', { body })),
+  designedVoices: () => call(api().GET('/v1/voices/designed')),
+  saveDesigned: (body: { name: string; recipe: string; description: string; speed: number }) => call(api().POST('/v1/voices/designed', { body })),
+  renameDesigned: (id: string, name: string) =>
+    call(api().PATCH('/v1/voices/designed/{voice_id}', { params: { path: { voice_id: id } }, body: { name } })),
+  deleteDesigned: (id: string) => noContent(api().DELETE('/v1/voices/designed/{voice_id}', { params: { path: { voice_id: id } } })),
+
   starTake: (id: string, starred: boolean) => call(api().PUT('/v1/takes/{take_id}/star', { params: { path: { take_id: id } }, body: { starred } })),
   exportTake: (id: string, path: string, overwrite = false) =>
     noContent(api().POST('/v1/takes/{take_id}/export', { params: { path: { take_id: id } }, body: { path, overwrite } })),

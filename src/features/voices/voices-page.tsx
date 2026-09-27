@@ -76,8 +76,8 @@ function VoiceCard({ voice, selected, onOpen }: { voice: LibraryVoice; selected:
         </button>
       </div>
       <div className="flex flex-wrap items-center gap-1.5">
-        <span className={cn('rounded-full px-2 py-0.5 text-[10px] font-semibold', voice.custom ? 'bg-[color-mix(in_srgb,var(--accent)_14%,transparent)] text-[var(--accent)]' : 'bg-fill-control text-text-2')}>
-          {voice.custom ? 'Your voice' : ENGINE[voice.engine] ?? voice.engine}
+ <span className={cn('rounded-full px-2 py-0.5 text-[10px] font-semibold', voice.custom || voice.designed ? 'bg-[color-mix(in_srgb,var(--accent)_14%,transparent)] text-[var(--accent)]' : 'bg-fill-control text-text-2')}>
+          {voice.custom ? 'Your voice' : voice.designed ? 'Designed' : ENGINE[voice.engine] ?? voice.engine}
         </span>
         {voice.tags.slice(0, 3).map((t) => (
           <span key={t} className="rounded-full bg-fill-control px-2 py-0.5 text-[10px] text-text-2">
@@ -107,20 +107,20 @@ export function VoicesPage() {
   const shown = useMemo(() => {
     const q = query.trim().toLowerCase()
     return voices
-      .filter((v) => (filter === 'favorites' ? v.favorite : filter === 'yours' ? v.custom : filter === 'builtin' ? !v.custom : true))
+      .filter((v) => (filter === 'favorites' ? v.favorite : filter === 'yours' ? v.custom || v.designed : filter === 'builtin' ? !v.custom && !v.designed : true))
       .filter((v) => engine === 'all' || v.custom || v.engine === engine)
       .filter((v) => !tag || v.tags.includes(tag))
       .filter((v) => !q || v.name.toLowerCase().includes(q) || languageName(v.language).toLowerCase().includes(q) || v.tags.some((t) => t.includes(q)))
       .sort(
         (a, b) =>
           Number(b.favorite) - Number(a.favorite) ||
-          Number(b.custom) - Number(a.custom) ||
+          Number(b.custom || b.designed) - Number(a.custom || a.designed) ||
           (ENGINE_RANK[a.engine] ?? 5) - (ENGINE_RANK[b.engine] ?? 5),
       )
   }, [voices, filter, engine, tag, query])
 
   const selected = voices.find((v) => keyOf(v) === selectedKey) ?? null
-  const counts = { favorites: voices.filter((v) => v.favorite).length, yours: voices.filter((v) => v.custom).length }
+  const counts = { favorites: voices.filter((v) => v.favorite).length, yours: voices.filter((v) => v.custom || v.designed).length }
 
   return (
     <div className="flex h-full gap-4 p-6">

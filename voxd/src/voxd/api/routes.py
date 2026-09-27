@@ -18,12 +18,20 @@ from ..models import ModelSpec, fit, system_info
 from ..runtimes import PACKS
 from ..store import CustomVoice
 from ..voices import export_bundle, read_bundle
+from ..design import apply_sliders, design, parse_description, parse_recipe
+from ..store import DesignedVoice
 from ..speech import resolve_engine, save_take
 from ..store import Job, Take
 from .schemas import (
     ClearedOut,
     CustomVoiceOut,
     CustomVoicePatch,
+    DesignedVoiceIn,
+    DesignedVoiceOut,
+    DesignIn,
+    DesignOut,
+    DesignStatusOut,
+    DesignTargetOut,
     EngineOut,
     ExportIn,
     ExportPathIn,
@@ -411,6 +419,7 @@ def voice_library(request: Request) -> list[LibraryVoiceOut]:
             m = meta.get((info.id, v.id))
             out.append(LibraryVoiceOut(
                 engine=info.id, id=v.id, name=v.name, language=v.language, gender=v.gender, custom=False,
+                designed=v.id.startswith("dv_"),
                 available=True, favorite=bool(m and m.favorite), tags=m.tags if m else [],
             ))
     return out
@@ -424,6 +433,94 @@ def set_voice_meta(request: Request, body: VoiceMetaIn) -> Response:
     key = "custom" if body.voice.startswith("cv_") else body.engine
     services.store.set_voice_meta(key, body.voice, body.favorite, tags)
     services.bus.publish("voices.changed", {"id": body.voice})
+    return Response(status_code=204)
+
+
+# --- Voice design ---------------------------------------------------------------
+
+
+@router.get("/design/status", response_model=DesignStatusOut, tags=["Design"], summary="Is voice design ready?")
+def design_status(request: Request) -> DesignStatusOut:
+    """Design needs a one-time analysis of Kokoro's voices (about a minute). Start it with `POST /v1/design/analyze`."""
+    services = _services(request)
+    traits = services.traits.load()
+    job = services.jobs.active("design.analyze", lambda _i: True)
+    return DesignStatusOut(ready=bool(traits), analyzed_voices=len(traits or []), job_id=job.id if job else None)
+
+
+@router.post("/design/analyze", response_model=JobOut, status_code=202, responses=ERRORS, tags=["Design"], summary="Analyze voices for design")
+def design_analyze(request: Request) -> JobOut:
+    services = _services(request)
+    try:
+        services.registry.get("kokoro")
+    except EngineError as exc:
+        raise HTTPException(400, detail=("engine_unavailable", "Voice design needs Kokoro — download it from Models")) from exc
+    running = services.jobs.active("design.analyze", lambda _i: True)
+    return _job_out(running or services.jobs.submit("design.analyze", "Analyzing voices for design", {}))
+
+
+@router.post("/design/candidates", response_model=DesignOut, responses=ERRORS, tags=["Design"], summary="Design voices from a description")
+def design_candidates(request: Request, body: DesignIn) -> DesignOut:
+    """Reads the description (plus any slider overrides) and returns up to four blends that match it.
+    Speak a candidate by passing its `recipe` as the `voice` with engine `kokoro`."""
+    services = _services(request)
+    traits = services.traits.load()
+    if not traits:
+        raise HTTPException(409, detail=("not_analyzed", "Analyze voices first (POST /v1/design/analyze)"))
+    target = apply_sliders(parse_description(body.description), body.model_dump())
+    if body.gender:
+        target.gender = body.gender
+    return DesignOut(
+        target=DesignTargetOut(**{k: getattr(target, k) for k in ("gender", "language", "depth", "warmth", "energy", "speed")}, matched=list(target.matched)),
+        candidates=design(traits, target),
+    )
+
+
+def _designed_out(v: DesignedVoice) -> DesignedVoiceOut:
+    return DesignedVoiceOut(**v.public())
+
+
+@router.post("/voices/designed", response_model=DesignedVoiceOut, status_code=201, responses=ERRORS, tags=["Design"], summary="Save a designed voice")
+def save_designed_voice(request: Request, body: DesignedVoiceIn) -> DesignedVoiceOut:
+    services = _services(request)
+    try:
+        parts = parse_recipe(body.recipe)
+    except EngineError as exc:
+        raise HTTPException(400, detail=("invalid_recipe", str(exc))) from exc
+    traits = {t.voice: t for t in services.traits.load() or []}
+    lead = traits.get(parts[0][0])
+    lang = {"a": "en-US", "b": "en-GB"}.get(parts[0][0][0], "en-US")
+    voice = DesignedVoice(
+        id=f"dv_{uuid.uuid4().hex[:12]}", name=body.name.strip(), recipe=body.recipe, description=body.description.strip(),
+        language=lead.language if lead else lang, gender=lead.gender if lead else None, speed=body.speed, created_at=time.time(),
+    )
+    services.store.add_designed_voice(voice)
+    services.bus.publish("voices.changed", {"id": voice.id})
+    return _designed_out(voice)
+
+
+@router.get("/voices/designed", response_model=list[DesignedVoiceOut], tags=["Design"], summary="List designed voices")
+def list_designed_voices(request: Request) -> list[DesignedVoiceOut]:
+    return [_designed_out(v) for v in _services(request).store.list_designed_voices()]
+
+
+@router.patch("/voices/designed/{voice_id}", response_model=DesignedVoiceOut, responses=ERRORS, tags=["Design"], summary="Rename a designed voice")
+def rename_designed_voice(request: Request, voice_id: str, body: CustomVoicePatch) -> DesignedVoiceOut:
+    services = _services(request)
+    voice = services.store.rename_designed_voice(voice_id, body.name.strip())
+    if voice is None:
+        raise HTTPException(404, detail=("not_found", "No such voice"))
+    services.bus.publish("voices.changed", {"id": voice_id})
+    return _designed_out(voice)
+
+
+@router.delete("/voices/designed/{voice_id}", status_code=204, responses=ERRORS, tags=["Design"], summary="Delete a designed voice")
+def delete_designed_voice(request: Request, voice_id: str) -> Response:
+    services = _services(request)
+    if not services.store.delete_designed_voice(voice_id):
+        raise HTTPException(404, detail=("not_found", "No such voice"))
+    services.store.delete_voice_meta("kokoro", voice_id)
+    services.bus.publish("voices.changed", {"id": voice_id})
     return Response(status_code=204)
 
 

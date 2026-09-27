@@ -141,9 +141,14 @@ Work goes one milestone at a time. Tick `[x]` only after the item is verified in
 - [x] Studio voice picker shows a Favorites section
 - [x] Docs: library, meta, bundles; Voices guide
 
-### M6 — Voice Design
-- [ ] Describe a voice in text, generate candidate voices, pick one and save it
-- [ ] Sliders for traits (pitch, pace, warmth, energy)
+### M6 — Voice Design ✅
+- [x] Our own design method: measure Kokoro voices (YIN pitch, spectral brightness, loudness expressiveness; cached), read the description into depth/warmth/energy targets plus gender, accent and pace, then blend the nearest voices' style vectors
+- [x] Kokoro speaks blends (`mix:…` recipes) and saved designed voices (`dv_…`)
+- [x] API: design status, one-time analysis job, candidates (with slider overrides), designed voices CRUD; schema migration v5
+- [x] Design page: description with "Understood" chips and examples, 4 candidates (match %, trait bars, Listen), live sliders, pace, save; list of designed voices
+- [x] Designed voices in the library (badge, rename, delete, "Designed from"), Studio's "Your voices", take labels
+- [x] Docs: design reference (including the vocabulary) and guide
+- Measured on M1 Pro: analysis of 28 voices ≈ 51 s; candidates are instant; previews about 1 s
 
 ### M7 — History
 - [ ] Inspector panel listing all takes, with search, filter, star and retention

@@ -9,15 +9,15 @@ import { voiceLabel } from '@/lib/voice-label'
 import { timeAgo } from '@/lib/time'
 import { voxd } from '@/lib/voxd/client'
 import { useStarTake } from '@/lib/voxd/queries'
-import type { CustomVoice, Take } from '@/lib/voxd/types'
+import type { CustomVoice, DesignedVoice, Take } from '@/lib/voxd/types'
 import { cn } from '@/lib/cn'
 
-export function TakeCard({ take, custom }: { take: Take; custom: CustomVoice[] }) {
+export function TakeCard({ take, custom, designed = [] }: { take: Take; custom: CustomVoice[]; designed?: DesignedVoice[] }) {
   const { current, play, stop } = usePlayer()
   const star = useStarTake()
   const playing = current === take.id
   const url = voxd.audioUrl(take)
-  const name = voiceLabel(take, custom)
+  const name = voiceLabel(take, custom, designed)
 
   return (
     <article className="glass group rounded-[var(--radius-lg)] p-3.5 animate-[pop-in_260ms_var(--ease-spring)]">

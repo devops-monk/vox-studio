@@ -71,6 +71,18 @@ MIGRATIONS: list[str] = [
         PRIMARY KEY (engine, voice_id)
     );
     """,
+    """
+    CREATE TABLE designed_voices (
+        id           TEXT PRIMARY KEY,
+        name         TEXT NOT NULL,
+        recipe       TEXT NOT NULL,
+        description  TEXT NOT NULL,
+        language     TEXT NOT NULL,
+        gender       TEXT,
+        speed        REAL NOT NULL DEFAULT 1.0,
+        created_at   REAL NOT NULL
+    );
+    """,
 ]
 
 ACTIVE = ("queued", "running")
@@ -129,6 +141,21 @@ class CustomVoice:
     consent: str
     created_at: float
     consent_by: str = ""
+
+    def public(self) -> dict:
+        return asdict(self)
+
+
+@dataclass
+class DesignedVoice:
+    id: str
+    name: str
+    recipe: str
+    description: str
+    language: str
+    gender: str | None
+    speed: float
+    created_at: float
 
     def public(self) -> dict:
         return asdict(self)
@@ -269,6 +296,31 @@ class Store:
     def delete_custom_voice(self, voice_id: str) -> bool:
         with self._lock:
             return self._db.execute("DELETE FROM custom_voices WHERE id = ?", (voice_id,)).rowcount > 0
+
+    # --- designed voices ----------------------------------------------------
+
+    def add_designed_voice(self, v: DesignedVoice) -> None:
+        with self._lock:
+            self._db.execute(
+                "INSERT INTO designed_voices VALUES (?,?,?,?,?,?,?,?)",
+                (v.id, v.name, v.recipe, v.description, v.language, v.gender, v.speed, v.created_at),
+            )
+
+    def list_designed_voices(self) -> list[DesignedVoice]:
+        return [DesignedVoice(**dict(r)) for r in self._db.execute("SELECT * FROM designed_voices ORDER BY created_at DESC")]
+
+    def get_designed_voice(self, voice_id: str) -> DesignedVoice | None:
+        row = self._db.execute("SELECT * FROM designed_voices WHERE id = ?", (voice_id,)).fetchone()
+        return DesignedVoice(**dict(row)) if row else None
+
+    def rename_designed_voice(self, voice_id: str, name: str) -> DesignedVoice | None:
+        with self._lock:
+            self._db.execute("UPDATE designed_voices SET name = ? WHERE id = ?", (name, voice_id))
+        return self.get_designed_voice(voice_id)
+
+    def delete_designed_voice(self, voice_id: str) -> bool:
+        with self._lock:
+            return self._db.execute("DELETE FROM designed_voices WHERE id = ?", (voice_id,)).rowcount > 0
 
     # --- favorites & tags (any voice) ----------------------------------------
 

@@ -410,6 +410,100 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/design/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Is voice design ready?
+         * @description Design needs a one-time analysis of Kokoro's voices (about a minute). Start it with `POST /v1/design/analyze`.
+         */
+        get: operations["design_status_v1_design_status_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/design/analyze": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Analyze voices for design */
+        post: operations["design_analyze_v1_design_analyze_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/design/candidates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Design voices from a description
+         * @description Reads the description (plus any slider overrides) and returns up to four blends that match it.
+         *     Speak a candidate by passing its `recipe` as the `voice` with engine `kokoro`.
+         */
+        post: operations["design_candidates_v1_design_candidates_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/voices/designed": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List designed voices */
+        get: operations["list_designed_voices_v1_voices_designed_get"];
+        put?: never;
+        /** Save a designed voice */
+        post: operations["save_designed_voice_v1_voices_designed_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/voices/designed/{voice_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete a designed voice */
+        delete: operations["delete_designed_voice_v1_voices_designed__voice_id__delete"];
+        options?: never;
+        head?: never;
+        /** Rename a designed voice */
+        patch: operations["rename_designed_voice_v1_voices_designed__voice_id__patch"];
+        trace?: never;
+    };
     "/v1/jobs": {
         parameters: {
             query?: never;
@@ -537,6 +631,29 @@ export interface components {
              */
             consent_by: string;
         };
+        /** CandidateOut */
+        CandidateOut: {
+            /**
+             * Recipe
+             * @description Blend voice id, usable as `voice` with engine `kokoro`
+             */
+            recipe: string;
+            /**
+             * Voices
+             * @description The Kokoro voices being blended
+             */
+            voices: string[];
+            /**
+             * Score
+             * @description 0–1, how closely the blend matches the target
+             */
+            score: number;
+            /**
+             * Traits
+             * @description [depth, warmth, energy] of the blend, 0–1
+             */
+            traits: number[];
+        };
         /** ClearedOut */
         ClearedOut: {
             /** Deleted */
@@ -575,6 +692,115 @@ export interface components {
         CustomVoicePatch: {
             /** Name */
             name: string;
+        };
+        /** DesignIn */
+        DesignIn: {
+            /**
+             * Description
+             * @example A warm, deep British narrator, calm and measured
+             */
+            description: string;
+            /**
+             * Depth
+             * @description Override: 0 light/high – 1 deep/low
+             */
+            depth?: number | null;
+            /**
+             * Warmth
+             * @description Override: 0 crisp/bright – 1 warm/soft
+             */
+            warmth?: number | null;
+            /**
+             * Energy
+             * @description Override: 0 calm/steady – 1 lively/expressive
+             */
+            energy?: number | null;
+            /**
+             * Gender
+             * @description Override the gender read from the description
+             */
+            gender?: string | null;
+        };
+        /** DesignOut */
+        DesignOut: {
+            target: components["schemas"]["DesignTargetOut"];
+            /** Candidates */
+            candidates: components["schemas"]["CandidateOut"][];
+        };
+        /** DesignStatusOut */
+        DesignStatusOut: {
+            /**
+             * Ready
+             * @description Voices have been analyzed and design is available
+             */
+            ready: boolean;
+            /** Analyzed Voices */
+            analyzed_voices: number;
+            /**
+             * Job Id
+             * @description The running analysis job, if any
+             */
+            job_id?: string | null;
+        };
+        /** DesignTargetOut */
+        DesignTargetOut: {
+            /** Gender */
+            gender: string | null;
+            /** Language */
+            language: string | null;
+            /** Depth */
+            depth: number | null;
+            /** Warmth */
+            warmth: number | null;
+            /** Energy */
+            energy: number | null;
+            /** Speed */
+            speed: number;
+            /**
+             * Matched
+             * @description Words in the description that were understood
+             */
+            matched: string[];
+        };
+        /** DesignedVoiceIn */
+        DesignedVoiceIn: {
+            /** Name */
+            name: string;
+            /**
+             * Recipe
+             * @description A candidate's `recipe`
+             */
+            recipe: string;
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /**
+             * Speed
+             * @description Built-in pace for this voice
+             * @default 1
+             */
+            speed: number;
+        };
+        /** DesignedVoiceOut */
+        DesignedVoiceOut: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /** Recipe */
+            recipe: string;
+            /** Description */
+            description: string;
+            /** Language */
+            language: string;
+            /** Gender */
+            gender: string | null;
+            /** Speed */
+            speed: number;
+            /** Created At */
+            created_at: number;
         };
         /** EngineOut */
         EngineOut: {
@@ -705,6 +931,12 @@ export interface components {
              * @description A voice you created from a recording
              */
             custom: boolean;
+            /**
+             * Designed
+             * @description A voice you designed (a saved blend)
+             * @default false
+             */
+            designed: boolean;
             /**
              * Available
              * @description Whether its engine is installed and usable now
@@ -2058,6 +2290,331 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    design_status_v1_design_status_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DesignStatusOut"];
+                };
+            };
+        };
+    };
+    design_analyze_v1_design_analyze_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    design_candidates_v1_design_candidates_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DesignIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DesignOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_designed_voices_v1_voices_designed_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DesignedVoiceOut"][];
+                };
+            };
+        };
+    };
+    save_designed_voice_v1_voices_designed_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DesignedVoiceIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DesignedVoiceOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_designed_voice_v1_voices_designed__voice_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                voice_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    rename_designed_voice_v1_voices_designed__voice_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                voice_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CustomVoicePatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DesignedVoiceOut"];
+                };
             };
             /** @description Bad Request */
             400: {

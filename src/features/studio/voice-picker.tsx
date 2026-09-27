@@ -26,8 +26,9 @@ export function VoicePicker({ engine, value, onChange, cloning }: Props) {
     const match = (v: Voice) => !q || v.name.toLowerCase().includes(q) || languageName(v.language).toLowerCase().includes(q)
     const favorite = new Set((library ?? []).filter((v) => v.favorite && (v.custom || v.engine === engine)).map((v) => v.id))
     const favs = voices.filter((v) => favorite.has(v.id) && match(v))
-    const mine = voices.filter((v) => v.id.startsWith('cv_') && !favorite.has(v.id) && match(v))
-    const rest = voices.filter((v) => !v.id.startsWith('cv_') && !favorite.has(v.id) && match(v))
+    const own = (v: Voice) => v.id.startsWith('cv_') || v.id.startsWith('dv_')
+    const mine = voices.filter((v) => own(v) && !favorite.has(v.id) && match(v))
+    const rest = voices.filter((v) => !own(v) && !favorite.has(v.id) && match(v))
     const byLang = new Map<string, Voice[]>()
     for (const v of rest) byLang.set(v.language, [...(byLang.get(v.language) ?? []), v])
     const userLang = navigator.language.split('-')[0]
