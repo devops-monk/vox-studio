@@ -271,7 +271,10 @@ Work goes one milestone at a time. Tick `[x]` only after the item is verified in
   - [x] `markup: true` on `/v1/speech` and `/v1/jobs/speech` (with job progress per part), plus `POST /v1/markup/preview`
   - [x] Studio: toolbar (Pause, Slower, Faster, Emphasis, Say as…), colour-coded markup behind the text, “Performance” strip, time estimate including pauses, Markup switch with a help card
   - [x] Verified: unit tests (parser, rendering, literal mode, jobs, preview) and a browser e2e (toolbar edits, then a take generated with clean text)
-- [ ] **M22 Drop Anywhere:** drop audio to clone, video to dub, a book to make an audiobook
+- [x] **M22 Drop Anywhere:** drop audio to clone, video to dub, a book to make an audiobook ✅
+  - [x] Window-wide drop hint that doesn't block pages' own drop zones (drops they already handled are skipped), then a “What should VoxStudio do?” sheet with actions by file type: clone, transcribe (batch for several files, with a “ready” toast linking to the transcript), clean up, change voice, dub (language on the card), audiobook, story, open in Studio
+  - [x] Hand-off to pages through a small inbox (Clone, Tools) and the existing focus store (Dub, Books, Transcripts)
+  - [x] Verified: browser e2e with real drag events (audio to Clean up, audio to Clone, text to Studio, EPUB to Audiobook, audio to Transcribe)
 - [ ] **M23 Shortcuts & Finder:** `voxstudio://speak?...` for the Shortcuts app, and a "Dub with VoxStudio" action in Finder
 - [ ] **M24 Collections & Tags:** organize voices, takes and projects
 

@@ -9,6 +9,7 @@ import { Onboarding } from '@/features/onboarding/onboarding'
 import { useApplyAppearance, useApplyTheme } from '@/lib/use-theme'
 import { useAppShortcuts, useStartPage } from './shortcuts'
 import { useDesktopIntegration } from './desktop'
+import { DropAnywhere } from './drop-anywhere'
 import { usePrefs } from '@/lib/store/prefs'
 import { useEffect } from 'react'
 import { dictation } from '@/lib/dictation'
@@ -49,6 +50,7 @@ export function AppShell() {
         </div>
       </div>
       <CommandPalette />
+      <DropAnywhere />
       <EngineGate />
       <Onboarding />
       <Toaster position="bottom-right" theme={theme} />

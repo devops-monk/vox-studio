@@ -13,6 +13,7 @@ import { useCreateCustomVoice, useCustomVoices, useModels } from '@/lib/voxd/que
 import { useSpeechRunner } from '@/lib/voxd/use-speech'
 import type { CustomVoice } from '@/lib/voxd/types'
 import { cn } from '@/lib/cn'
+import { useInbox } from '@/lib/store/inbox'
 import { ModelActions, ModelArt } from '@/features/models/model-parts'
 import { useRecorder } from './recorder'
 
@@ -249,6 +250,18 @@ export function ClonePage() {
 
   const [clip, setClip] = useState<Clip | null>(null)
   const [name, setName] = useState('')
+  // A recording dropped anywhere in the app ("Clone this voice").
+  useEffect(() => {
+    const dropped = useInbox.getState().take('clone')
+    if (!dropped) return
+    dropped
+      .arrayBuffer()
+      .then(toClip)
+      .then(
+        (c) => (setClip(c), setName((n) => n || dropped.name.replace(/\.[^.]+$/, '').slice(0, 40))),
+        () => toast.error('Couldn’t read that audio', { description: 'Try a WAV, MP3 or M4A file.' }),
+      )
+  }, [])
   const [consented, setConsented] = useState(false)
   const [consentBy, setConsentBy] = useState('')
   const [created, setCreated] = useState<CustomVoice | null>(null)

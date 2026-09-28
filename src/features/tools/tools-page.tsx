@@ -10,6 +10,7 @@ import { voxd } from '@/lib/voxd/client'
 import { useCustomVoices, useEngines, useJob, usePronunciations, useTakes } from '@/lib/voxd/queries'
 import type { Pronunciation, Take } from '@/lib/voxd/types'
 import { cn } from '@/lib/cn'
+import { useInbox } from '@/lib/store/inbox'
 
 type Tool = 'clean' | 'convert' | 'pronounce'
 
@@ -185,8 +186,23 @@ function Meter({ label, before, after }: { label: string; before: number; after:
   )
 }
 
-function CleanTool() {
+/** A file dropped anywhere in the app for this tool, as a Source (duration filled in when known). */
+function useDropped(target: 'clean' | 'convert') {
   const [source, setSource] = useState<Source | null>(null)
+  useEffect(() => {
+    const file = useInbox.getState().take(target)
+    if (!file) return
+    const url = URL.createObjectURL(file)
+    const probe = new Audio(url)
+    const done = () => setSource({ kind: 'file', file, url, duration: Number.isFinite(probe.duration) ? probe.duration : 0 })
+    probe.onloadedmetadata = done
+    probe.onerror = done
+  }, [target])
+  return [source, setSource] as const
+}
+
+function CleanTool() {
+  const [source, setSource] = useDropped('clean')
   const [denoise, setDenoise] = useState(true)
   const [trim, setTrim] = useState(true)
   const [normalize, setNormalize] = useState(true)
@@ -265,7 +281,7 @@ function CleanTool() {
 // --------------------------------------------------------------------------- convert
 
 function ConvertTool() {
-  const [source, setSource] = useState<Source | null>(null)
+  const [source, setSource] = useDropped('convert')
   const [voice, setVoice] = useState('default')
   const [result, setResult] = useState<{ take_id: string; before: Source } | null>(null)
   const custom = useCustomVoices().data ?? []
@@ -439,7 +455,7 @@ function PronounceTool() {
 // --------------------------------------------------------------------------- page
 
 export function ToolsPage() {
-  const [tool, setTool] = useState<Tool>('clean')
+  const [tool, setTool] = useState<Tool>(() => (useInbox.getState().target === 'convert' ? 'convert' : 'clean'))
   const active = TOOLS.find((t) => t.id === tool)!
   return (
     <div className="mx-auto max-w-4xl space-y-6 px-8 py-8">

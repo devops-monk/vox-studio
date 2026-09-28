@@ -6,6 +6,7 @@ VoxStudio is a private voice studio that runs entirely on your computer. These d
 | Guide | What you'll do |
 |---|---|
 | [Your first voice in 60 seconds](guides/first-voice.md) | Launch VoxStudio and hear a voice |
+| [Drop anywhere](guides/drop-anywhere.md) | Drag in audio, video, books or text and pick what to do |
 | [Background work & Activity](guides/activity.md) | Long renders, progress and cancelling |
 | [Voice models](guides/models.md) | Download natural voices and manage disk space |
 | [Studio](guides/studio.md) | Write a script, pick a voice, shape the delivery |
