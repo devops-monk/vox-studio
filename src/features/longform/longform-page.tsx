@@ -123,7 +123,7 @@ function Library({ kind, onOpen }: { kind: Kind; onOpen: (id: string) => void })
                 <div className="h-full rounded-full bg-[var(--accent)]" style={{ width: `${(b.rendered / Math.max(1, b.chapters)) * 100}%` }} />
               </div>
               <div className="text-[11px] text-text-3">
-                {b.rendered}/{b.chapters} chapters · {b.words.toLocaleString()} words · {timeAgo(b.updated_at)}
+                {b.rendered}/{b.chapters} chapter{b.chapters === 1 ? '' : 's'} · {b.words.toLocaleString()} words · {timeAgo(b.updated_at)}
               </div>
             </div>
           </button>
@@ -306,7 +306,7 @@ function BookView({ id, kind, onBack }: { id: string; kind: Kind; onBack: () => 
           />
           <div className="text-[12px] text-text-3">
             {book.author ? `${book.author} · ` : ''}
-            {book.chapters.length} chapters · {renderedCount} narrated
+            {book.chapters.length} chapter{book.chapters.length === 1 ? '' : 's'} · {renderedCount} narrated
           </div>
         </div>
         <SegmentedControl

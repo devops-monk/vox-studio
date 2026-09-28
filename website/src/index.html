@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>VoxStudio — a private voice studio that runs on your Mac</title>
+  <meta name="description" content="Text to speech, voice cloning, voice design, video dubbing, transcription, dictation and audiobooks — all running privately on your own computer." />
+  <meta property="og:title" content="VoxStudio — your private voice studio" />
+  <meta property="og:description" content="Speak, clone, design, dub, transcribe and narrate — entirely on your computer." />
+  <meta property="og:image" content="https://vox-studio.devops-monk.com/screens/studio.jpg" />
+  <meta name="theme-color" content="#0a84ff" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div class="ambient" aria-hidden="true"></div>
+
+  <nav class="top glass" aria-label="Main">
+    <a class="brand" href="/"><img src="/favicon.svg" alt="" /> VoxStudio</a>
+    <div class="links">
+      <a href="#features">Features</a>
+      <a class="optional" href="#privacy">Privacy</a>
+      <a class="optional" href="#models">Models</a>
+      <a class="optional" href="#developers">Developers</a>
+      <a href="/docs/">Docs</a>
+    </div>
+  </nav>
+
+  <header class="hero wrap">
+    <canvas id="orb" aria-hidden="true"></canvas>
+    <span class="eyebrow">Now in development · macOS first</span>
+    <h1>Your voice studio. <span class="grad">On your Mac.</span></h1>
+    <p class="lead">Speak any script, clone a voice from ten seconds of audio, dub videos into nine languages, transcribe, dictate and narrate whole books — privately, with no cloud and no subscriptions.</p>
+    <div class="cta">
+      <a class="btn primary" href="/docs/guides/first-voice.html">See how it works</a>
+      <a class="btn" href="/docs/">Read the docs</a>
+    </div>
+    <p class="fine">Free and open under Apache-2.0 · Downloads for macOS are coming soon</p>
+    <div class="shot glass"><img src="/screens/home.jpg" alt="VoxStudio home screen with the voice orb and quick speech card" width="1440" height="900" loading="eager" /></div>
+  </header>
+
+  <main class="wrap">
+    <section class="block" id="features">
+      <h2>Everything you need to work with voice.</h2>
+      <p class="section-lead">Eight tools in one app, designed like the Mac apps you already love — and every one of them runs on your own computer.</p>
+
+      <div class="feature">
+        <div class="copy">
+          <span class="tag">Studio</span>
+          <h3>Write it. Hear it. Keep the best take.</h3>
+          <p>A calm editor for scripts of any length, with a voice panel on the side. Shape delivery with pace and emotion, then compare takes on real waveforms.</p>
+          <ul><li>54 natural voices in nine languages</li><li>Long scripts render in the background</li><li>Star, save and export any take</li></ul>
+        </div>
+        <figure class="glass"><img src="/screens/studio.jpg" alt="Studio with script editor, takes and voice picker" loading="lazy" /></figure>
+      </div>
+
+      <div class="feature flip">
+        <div class="copy">
+          <span class="tag">Clone & Design</span>
+          <h3>A voice from ten seconds — or from a sentence.</h3>
+          <p>Record or upload a short sample and VoxStudio speaks in that voice, with a dial for emotion. Or simply describe one — “a warm, deep British narrator” — and pick from four new voices made to match.</p>
+          <ul><li>Consent is recorded with every cloned voice</li><li>Cloned audio carries an inaudible AI watermark</li><li>Share voices as portable <code>.voxvoice</code> files</li></ul>
+        </div>
+        <figure class="glass"><img src="/screens/design.jpg" alt="Voice design with description, candidates and fine-tune sliders" loading="lazy" /></figure>
+      </div>
+
+      <div class="feature">
+        <div class="copy">
+          <span class="tag">Dub</span>
+          <h3>Your video, in another language.</h3>
+          <p>Drop in a video. VoxStudio transcribes it, translates every line offline, and re-voices it in time with the picture — then writes a new MP4 with the original video untouched.</p>
+          <ul><li>English, Spanish, French, German, Italian, Portuguese, Hindi, Japanese, Chinese</li><li>A voice per speaker, lines you can edit and preview</li><li>Subtitles in SRT and VTT</li></ul>
+        </div>
+        <figure class="glass"><img src="/screens/dub.jpg" alt="Dub editor with video player, cast and translated lines" loading="lazy" /></figure>
+      </div>
+
+      <div class="feature flip">
+        <div class="copy">
+          <span class="tag">Stories & Audiobooks</span>
+          <h3>Books that read themselves.</h3>
+          <p>Import an EPUB, Word document or text file. Give the narrator a voice and every character their own. Follow along as each sentence lights up — then export an M4B with chapters.</p>
+          <ul><li>Chapters and dialogue found automatically</li><li>Resumes where it stopped</li><li>M4B for Apple Books, or MP3</li></ul>
+        </div>
+        <figure class="glass"><img src="/screens/stories.jpg" alt="Read-along reader with character voices" loading="lazy" /></figure>
+      </div>
+
+      <div class="feature">
+        <div class="copy">
+          <span class="tag">Transcribe & Dictate</span>
+          <h3>Type with your voice. Anywhere.</h3>
+          <p>Press <strong>⇧⌘Space</strong> in any app and a small glass pill starts listening. Stop talking and your words appear where your cursor is. Transcribe meetings and videos too, with timestamps and subtitles.</p>
+          <ul><li>Whisper speech recognition, ~99 languages</li><li>Live text as you speak</li><li>Your clipboard is left as you had it</li></ul>
+        </div>
+        <figure class="glass"><img src="/screens/transcribe.jpg" alt="Transcription viewer and live transcription" loading="lazy" /></figure>
+      </div>
+    </section>
+
+    <section class="block" id="privacy">
+      <h2>Private by design.</h2>
+      <p class="section-lead">VoxStudio never uploads what you type, record or import. Models download once and then work offline.</p>
+      <div class="grid-3">
+        <div class="card glass"><div class="icon">🔒</div><h4>Nothing leaves your Mac</h4><p>Speech, cloning, translation and transcription all run locally. There’s no account to create.</p></div>
+        <div class="card glass"><div class="icon">✈︎</div><h4>Works offline</h4><p>Once a model is downloaded, you can unplug from the internet and keep working.</p></div>
+        <div class="card glass"><div class="icon">✓</div><h4>Verified downloads</h4><p>Every model file is pinned and checked against a known SHA-256 fingerprint before it’s used.</p></div>
+        <div class="card glass"><div class="icon">∞</div><h4>No credits, no limits</h4><p>Generate as much as you like. Your computer, your voices.</p></div>
+        <div class="card glass"><div class="icon">✍︎</div><h4>Consent built in</h4><p>Cloning asks for, and keeps, a consent record. Cloned speech carries an inaudible watermark.</p></div>
+        <div class="card glass"><div class="icon">◎</div><h4>Open source</h4><p>VoxStudio is Apache-2.0. Every model it uses is openly licensed, and credited in the app.</p></div>
+      </div>
+    </section>
+
+    <section class="block" id="models">
+      <h2>Built on open models.</h2>
+      <p class="section-lead">Pick what you need; each model is a one-time download. VoxStudio tells you how well each will run on your computer.</p>
+      <div class="glass" style="padding: 6px 4px; overflow-x: auto;">
+        <table class="models">
+          <thead><tr><th>Model</th><th>What it does</th><th>Size</th><th>License</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Kokoro</strong></td><td>54 natural voices, 9 languages</td><td>354 MB</td><td><span class="pill">Apache-2.0</span></td></tr>
+            <tr><td><strong>Chatterbox</strong></td><td>Voice cloning with emotion control</td><td>3.2 GB</td><td><span class="pill">MIT</span></td></tr>
+            <tr><td><strong>Whisper</strong> Base · Small · Large v3 Turbo</td><td>Transcription and dictation</td><td>145 MB – 1.6 GB</td><td><span class="pill">MIT</span></td></tr>
+            <tr><td><strong>Argos Translate</strong></td><td>Offline translation for dubbing</td><td>65 – 150 MB per pair</td><td><span class="pill">MIT / CC0</span></td></tr>
+            <tr><td><strong>System voices</strong></td><td>Instant speech, no download</td><td>—</td><td><span class="pill">Built in</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="fine">Designed for Apple silicon Macs. Voice cloning uses the Apple GPU when it’s available.</p>
+    </section>
+
+    <section class="block" id="developers">
+      <div class="feature" style="margin-top: 0;">
+        <div class="copy">
+          <span class="tag">For developers</span>
+          <h3>Everything in the app is an API.</h3>
+          <p>VoxStudio’s engine, <strong>voxd</strong>, is a local HTTP API with jobs, progress streams and live events. Generate speech, clone voices, transcribe files or stream dictation from your own scripts.</p>
+          <p><a href="/docs/api/quickstart.html">API quickstart →</a> &nbsp; <a href="/docs/api/overview.html">Overview →</a></p>
+        </div>
+        <pre class="code glass"><span class="c"># Speak with any voice</span>
+curl -X POST http://127.0.0.1:4870/v1/speech \
+  -H <span class="s">"Authorization: Bearer $TOKEN"</span> \
+  -d <span class="s">'{"text": "Hello from VoxStudio!", "voice": "af_heart"}'</span>
+
+<span class="c"># Transcribe live over a WebSocket</span>
+<span class="k">ws</span>://127.0.0.1:4870/v1/transcribe/live</pre>
+      </div>
+    </section>
+  </main>
+
+  <footer class="wrap">
+    <div class="row">
+      <div class="grow">© 2026 VoxStudio · Apache-2.0</div>
+      <a href="/docs/">Documentation</a>
+      <a href="/docs/api/overview.html">API</a>
+      <a href="/docs/guides/models.html">Models & licenses</a>
+    </div>
+  </footer>
+  <script src="/orb.js"></script>
+</body>
+</html>
