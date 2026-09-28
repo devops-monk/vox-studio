@@ -84,71 +84,93 @@ def main():
     except Exception as exc:
         send({"ready": False, "error": f"Couldn't load Chatterbox: {exc}"})
         return
-    default_conds = model.conds
-    voices = {}  # reference path -> prepared conditionals
+    state = {"model": model, "device": device, "default_conds": model.conds, "voices": {}}
     send({"ready": True, "device": device, "torch": torch.__version__, "sample_rate": model.sr})
 
     for line in sys.stdin:
         req = json.loads(line)
+        if req["op"] == "ping":
+            send({"id": req["id"], "ok": True})
+            continue
         try:
-            if req["op"] == "ping":
-                send({"id": req["id"], "ok": True})
-                continue
-            if req["op"] == "convert":
-                # Speech-to-speech: keep the words and timing of `src`, speak them in the target voice.
-                import librosa
-                import torch
-                from chatterbox.models.s3gen import S3GEN_SR
-                from chatterbox.models.s3tokenizer import S3_SR
+            try:
+                handle(state, req)
+            except Exception as exc:
+                # Some operations aren't supported by every GPU backend (e.g. "Output channels >
+                # 65536 not supported at the MPS device" for some voices). Move to the CPU for the
+                # rest of this session and try the request again there.
+                if state["device"] == "cpu" or not gpu_limitation(exc):
+                    raise
+                print(f"{state['device']} can't run this ({exc}); switching to cpu", file=sys.stderr)
+                from chatterbox.tts import ChatterboxTTS
 
-                s3 = model.s3gen
-                if req.get("ref"):
-                    ref_wav, _ = librosa.load(req["ref"], sr=S3GEN_SR)
-                    ref_dict = s3.embed_ref(ref_wav[: getattr(model, "DEC_COND_LEN", 10 * S3GEN_SR)], S3GEN_SR, device=model.device)
-                else:
-                    ref_dict = default_conds.gen
-                import numpy as np
-
-                audio_16, _ = librosa.load(req["src"], sr=S3_SR)
-                pieces = []
-                spans = split_quiet(audio_16, S3_SR)
-                with torch.inference_mode():
-                    for n, (a, b) in enumerate(spans):
-                        tokens, _ = s3.tokenizer(torch.from_numpy(audio_16[a:b]).float().to(model.device)[None,])
-                        wav, _ = s3.inference(speech_tokens=tokens, ref_dict=ref_dict)
-                        pieces.append(wav.squeeze(0).detach().cpu().numpy())
-                        send({"id": req["id"], "progress": (n + 1) / len(spans)})
-                samples = model.watermarker.apply_watermark(np.concatenate(pieces), sample_rate=model.sr)
-                write_wav(req["out"], samples, model.sr)
-                send({"id": req["id"], "ok": True, "sample_rate": model.sr})
-                continue
-            if req["op"] != "synthesize":
-                raise ValueError(f"unknown op {req['op']}")
-            ref = req.get("ref")
-            exaggeration = float(req.get("exaggeration", 0.5))
-            if ref:
-                if ref not in voices:
-                    model.prepare_conditionals(ref, exaggeration=exaggeration)
-                    voices[ref] = model.conds
-                model.conds = voices[ref]
-            else:
-                model.conds = default_conds
-            wav = model.generate(
-                req["text"],
-                exaggeration=exaggeration,
-                cfg_weight=float(req.get("cfg_weight", 0.5)),
-                temperature=float(req.get("temperature", 0.8)),
-            )
-            samples = wav.squeeze(0).detach().cpu().numpy()
-            speed = float(req.get("speed", 1.0))
-            if abs(speed - 1.0) > 0.01:
-                import librosa
-
-                samples = librosa.effects.time_stretch(samples, rate=speed)
-            write_wav(req["out"], samples, model.sr)
-            send({"id": req["id"], "ok": True, "sample_rate": model.sr})
+                state["model"] = ChatterboxTTS.from_local(args.model_dir, "cpu")
+                state.update(device="cpu", default_conds=state["model"].conds, voices={})
+                handle(state, req)
         except Exception as exc:
             send({"id": req["id"], "ok": False, "error": str(exc)})
+
+
+def gpu_limitation(exc):
+    text = str(exc).lower()
+    return isinstance(exc, NotImplementedError) or "mps" in text or "cuda" in text or "metal" in text
+
+
+def handle(state, req):
+    """Run one synthesize/convert request and send its reply."""
+    model, default_conds, voices = state["model"], state["default_conds"], state["voices"]
+    if req["op"] == "convert":
+        # Speech-to-speech: keep the words and timing of `src`, speak them in the target voice.
+        import librosa
+        import numpy as np
+        import torch
+        from chatterbox.models.s3gen import S3GEN_SR
+        from chatterbox.models.s3tokenizer import S3_SR
+
+        s3 = model.s3gen
+        if req.get("ref"):
+            ref_wav, _ = librosa.load(req["ref"], sr=S3GEN_SR)
+            ref_dict = s3.embed_ref(ref_wav[: getattr(model, "DEC_COND_LEN", 10 * S3GEN_SR)], S3GEN_SR, device=model.device)
+        else:
+            ref_dict = default_conds.gen
+        audio_16, _ = librosa.load(req["src"], sr=S3_SR)
+        pieces = []
+        spans = split_quiet(audio_16, S3_SR)
+        with torch.inference_mode():
+            for n, (a, b) in enumerate(spans):
+                tokens, _ = s3.tokenizer(torch.from_numpy(audio_16[a:b]).float().to(model.device)[None,])
+                wav, _ = s3.inference(speech_tokens=tokens, ref_dict=ref_dict)
+                pieces.append(wav.squeeze(0).detach().cpu().numpy())
+                send({"id": req["id"], "progress": (n + 1) / len(spans)})
+        samples = model.watermarker.apply_watermark(np.concatenate(pieces), sample_rate=model.sr)
+        write_wav(req["out"], samples, model.sr)
+        send({"id": req["id"], "ok": True, "sample_rate": model.sr, "device": state["device"]})
+        return
+    if req["op"] != "synthesize":
+        raise ValueError(f"unknown op {req['op']}")
+    ref = req.get("ref")
+    exaggeration = float(req.get("exaggeration", 0.5))
+    if ref:
+        if ref not in voices:
+            model.prepare_conditionals(ref, exaggeration=exaggeration)
+            voices[ref] = model.conds
+        model.conds = voices[ref]
+    else:
+        model.conds = default_conds
+    wav = model.generate(
+        req["text"],
+        exaggeration=exaggeration,
+        cfg_weight=float(req.get("cfg_weight", 0.5)),
+        temperature=float(req.get("temperature", 0.8)),
+    )
+    samples = wav.squeeze(0).detach().cpu().numpy()
+    speed = float(req.get("speed", 1.0))
+    if abs(speed - 1.0) > 0.01:
+        import librosa
+
+        samples = librosa.effects.time_stretch(samples, rate=speed)
+    write_wav(req["out"], samples, model.sr)
+    send({"id": req["id"], "ok": True, "sample_rate": model.sr, "device": state["device"]})
 
 
 if __name__ == "__main__":
