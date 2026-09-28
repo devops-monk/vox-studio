@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from '@tanstack/react-router'
 import { AudioLines, Loader2, Play, Sparkles, X } from 'lucide-react'
 import { Button, Kbd, SegmentedControl, Slider } from '@/components/glass'
@@ -11,10 +11,13 @@ import { LONG_TEXT, useSpeechRunner } from '@/lib/voxd/use-speech'
 import { cn } from '@/lib/cn'
 import { TakeCard } from './take-card'
 import { VoicePicker } from './voice-picker'
+import { HAS_MARKUP, MarkupEditor } from './markup-editor'
 
 const PLACEHOLDER = `Paste or write your script here.
 
-Tip: punctuation shapes delivery — commas add a breath, an ellipsis… adds a pause, and an exclamation mark lifts the energy!`
+Tip: select words and use the buttons above to add pauses, change the pace, stress a word or fix a pronunciation.`
+
+const fmtSeconds = (secs: number) => (secs < 60 ? `${Math.round(secs)}s` : `${Math.floor(secs / 60)}m ${String(Math.round(secs % 60)).padStart(2, '0')}s`)
 
 /** Rough speaking time at a natural pace (~155 words per minute). */
 function estimate(text: string, speed: number) {
@@ -24,7 +27,8 @@ function estimate(text: string, speed: number) {
 }
 
 export function StudioPage() {
-  const { text, setText, speed, setSpeed, emotion, setEmotion } = useStudio()
+  const { text, setText, speed, setSpeed, emotion, setEmotion, markup, setMarkup } = useStudio()
+  const [markupSeconds, setMarkupSeconds] = useState<number | null>(null)
   const { engine: preferred, setEngine, voiceByEngine, setVoice } = usePrefs()
   const engines = (useEngines().data ?? []).filter((e) => e.available && e.capabilities.includes('tts'))
   const engine = engines.find((e) => e.id === preferred) ?? engines.find((e) => e.id === 'kokoro') ?? engines[0]
@@ -47,7 +51,7 @@ export function StudioPage() {
 
   const generate = () => {
     if (!text.trim() || !voice || runner.busy) return
-    void runner.generate({ text, voice, engine: engineId, speed, emotion: emotive ? emotion : null })
+    void runner.generate({ text, voice, engine: engineId, speed, emotion: emotive ? emotion : null, markup: markup && HAS_MARKUP.test(text) })
   }
 
   const orbMode = runner.busy ? 'busy' : current ? 'speaking' : 'idle'
@@ -57,23 +61,19 @@ export function StudioPage() {
       <div className="min-h-0 overflow-y-auto">
         <div className="mx-auto max-w-3xl space-y-6 px-8 py-6">
           <section className="glass overflow-hidden rounded-[var(--radius-xl)]">
-            <textarea
+            <MarkupEditor
               value={text}
-              onChange={(e) => setText(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
-                  e.preventDefault()
-                  generate()
-                }
-              }}
+              onChange={setText}
+              onSubmit={generate}
               placeholder={PLACEHOLDER}
-              aria-label="Script"
-              spellCheck
-              className="block min-h-[300px] w-full resize-y bg-transparent px-6 py-5 font-[var(--font-display)] text-[17px] leading-[1.7] text-text-1 outline-none placeholder:text-text-3"
+              markup={markup}
+              onMarkup={setMarkup}
+              speed={speed}
+              onEstimate={setMarkupSeconds}
             />
             <div className="flex items-center gap-3 border-t-[0.5px] border-hairline bg-[var(--glass-1)] px-4 py-2.5">
               <span className="text-[12px] tabular-nums text-text-3">
-                {est.words} words · ~{est.label}
+                {est.words} words · ~{markupSeconds != null ? fmtSeconds(markupSeconds) : est.label}
               </span>
               {text.length > LONG_TEXT && <span className="text-[12px] text-[var(--accent)]">Renders in the background</span>}
               <div className="flex-1" />

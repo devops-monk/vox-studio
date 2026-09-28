@@ -9,6 +9,7 @@ VoxStudio is a private voice studio that runs entirely on your computer. These d
 | [Background work & Activity](guides/activity.md) | Long renders, progress and cancelling |
 | [Voice models](guides/models.md) | Download natural voices and manage disk space |
 | [Studio](guides/studio.md) | Write a script, pick a voice, shape the delivery |
+| [Script markup](guides/script-markup.md) | Pauses, pace, emphasis and pronunciation inside your script |
 | [Clone a voice](guides/clone.md) | Make a voice from a short recording |
 | [Your voice library](guides/voices.md) | Browse, favorite, tag, share and import voices |
 | [Editor](guides/editor.md) | Trim, split, splice, fade and polish takes on a timeline |

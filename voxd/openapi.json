@@ -391,6 +391,48 @@
         }
       }
     },
+    "/v1/markup/preview": {
+      "post": {
+        "tags": [
+          "Speech"
+        ],
+        "summary": "Check script markup",
+        "description": "How a script with markup will be performed: speech runs with their speed and emphasis, pauses, and an estimated length.",
+        "operationId": "markup_preview_v1_markup_preview_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MarkupIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MarkupOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/jobs/speech": {
       "post": {
         "tags": [
@@ -9249,6 +9291,121 @@
         ],
         "title": "LibraryVoiceOut"
       },
+      "MarkupIn": {
+        "properties": {
+          "text": {
+            "type": "string",
+            "maxLength": 200000,
+            "title": "Text"
+          },
+          "speed": {
+            "type": "number",
+            "maximum": 2.0,
+            "minimum": 0.5,
+            "title": "Speed",
+            "default": 1.0
+          }
+        },
+        "type": "object",
+        "required": [
+          "text"
+        ],
+        "title": "MarkupIn"
+      },
+      "MarkupOut": {
+        "properties": {
+          "display": {
+            "type": "string",
+            "title": "Display",
+            "description": "The script with markup removed (what's stored as the take's text)"
+          },
+          "segments": {
+            "items": {
+              "$ref": "#/components/schemas/MarkupSegmentOut"
+            },
+            "type": "array",
+            "title": "Segments"
+          },
+          "estimated_s": {
+            "type": "number",
+            "title": "Estimated S",
+            "description": "Rough length of the result"
+          },
+          "has_markup": {
+            "type": "boolean",
+            "title": "Has Markup"
+          }
+        },
+        "type": "object",
+        "required": [
+          "display",
+          "segments",
+          "estimated_s",
+          "has_markup"
+        ],
+        "title": "MarkupOut"
+      },
+      "MarkupSegmentOut": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "speech",
+              "pause"
+            ],
+            "title": "Kind"
+          },
+          "text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Text"
+          },
+          "speed": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Speed"
+          },
+          "emphasis": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Emphasis"
+          },
+          "seconds": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Seconds"
+          }
+        },
+        "type": "object",
+        "required": [
+          "kind"
+        ],
+        "title": "MarkupSegmentOut"
+      },
       "ModelOut": {
         "properties": {
           "id": {
@@ -10041,6 +10198,12 @@
             ],
             "title": "Emotion",
             "description": "Emotional intensity, 0 (flat) \u2013 1 (dramatic); 0.5 is natural. Used by engines with the `emotion` capability."
+          },
+          "markup": {
+            "type": "boolean",
+            "title": "Markup",
+            "description": "Interpret script markup: `[pause 1s]`, `[slow]\u2026[/slow]`, `[fast]\u2026[/fast]`, `[speed 1.3]\u2026[/speed]`, `*emphasis*`, `{written|spoken}`",
+            "default": false
           }
         },
         "type": "object",
@@ -10100,6 +10263,12 @@
             ],
             "title": "Emotion",
             "description": "Emotional intensity, 0 (flat) \u2013 1 (dramatic); 0.5 is natural. Used by engines with the `emotion` capability."
+          },
+          "markup": {
+            "type": "boolean",
+            "title": "Markup",
+            "description": "Interpret script markup: `[pause 1s]`, `[slow]\u2026[/slow]`, `[fast]\u2026[/fast]`, `[speed 1.3]\u2026[/speed]`, `*emphasis*`, `{written|spoken}`",
+            "default": false
           },
           "title": {
             "anyOf": [

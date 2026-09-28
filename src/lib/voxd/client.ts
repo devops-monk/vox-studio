@@ -39,7 +39,7 @@ async function call<T>(promise: Promise<{ data?: T; error?: unknown; response: R
 export const voxd = {
   engines: () => call(api().GET('/v1/engines')),
   voices: (engine: string) => call(api().GET('/v1/voices', { params: { query: { engine } } })),
-  speak: (body: SpeechRequest) => call(api().POST('/v1/speech', { body })),
+  speak: (body: SpeechRequest) => call(api().POST('/v1/speech', { body: { markup: false, ...body } })),
   takes: (limit = 50) => call(api().GET('/v1/takes', { params: { query: { limit } } })),
   searchTakes: (query: { q?: string; engine?: string; starred?: boolean; before?: number; limit?: number }) =>
     call(api().GET('/v1/takes', { params: { query } })),
@@ -48,7 +48,7 @@ export const voxd = {
 
   jobs: (limit = 50) => call(api().GET('/v1/jobs', { params: { query: { limit } } })),
   job: (id: string) => call(api().GET('/v1/jobs/{job_id}', { params: { path: { job_id: id } } })),
-  speakLong: (body: SpeechJobRequest) => call(api().POST('/v1/jobs/speech', { body })),
+  speakLong: (body: SpeechJobRequest) => call(api().POST('/v1/jobs/speech', { body: { markup: false, ...body } })),
   cancelJob: (id: string) => call(api().POST('/v1/jobs/{job_id}/cancel', { params: { path: { job_id: id } } })),
   clearJobs: () => call(api().DELETE('/v1/jobs')),
 
@@ -224,6 +224,7 @@ export const voxd = {
   rate: (body: import('./schema').components['schemas']['RatingIn']) => call(api().POST('/v1/ratings', { body })),
   leaderboard: (language?: string) => call(api().GET('/v1/ratings/leaderboard', { params: { query: language ? { language } : {} } })),
   clearRatings: (language?: string) => call(api().DELETE('/v1/ratings', { params: { query: language ? { language } : {} } })),
+  markupPreview: (text: string, speed = 1) => call(api().POST('/v1/markup/preview', { body: { text, speed } })),
   starTake: (id: string, starred: boolean) => call(api().PUT('/v1/takes/{take_id}/star', { params: { path: { take_id: id } }, body: { starred } })),
   exportTake: (id: string, path: string, overwrite = false) =>
     noContent(api().POST('/v1/takes/{take_id}/export', { params: { path: { take_id: id } }, body: { path, overwrite } })),

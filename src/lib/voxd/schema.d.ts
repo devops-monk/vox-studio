@@ -158,6 +158,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/markup/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Check script markup
+         * @description How a script with markup will be performed: speech runs with their speed and emphasis, pauses, and an estimated length.
+         */
+        post: operations["markup_preview_v1_markup_preview_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/jobs/speech": {
         parameters: {
             query?: never;
@@ -2725,6 +2745,49 @@ export interface components {
             /** Created At */
             created_at?: number | null;
         };
+        /** MarkupIn */
+        MarkupIn: {
+            /** Text */
+            text: string;
+            /**
+             * Speed
+             * @default 1
+             */
+            speed: number;
+        };
+        /** MarkupOut */
+        MarkupOut: {
+            /**
+             * Display
+             * @description The script with markup removed (what's stored as the take's text)
+             */
+            display: string;
+            /** Segments */
+            segments: components["schemas"]["MarkupSegmentOut"][];
+            /**
+             * Estimated S
+             * @description Rough length of the result
+             */
+            estimated_s: number;
+            /** Has Markup */
+            has_markup: boolean;
+        };
+        /** MarkupSegmentOut */
+        MarkupSegmentOut: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "speech" | "pause";
+            /** Text */
+            text?: string | null;
+            /** Speed */
+            speed?: number | null;
+            /** Emphasis */
+            emphasis?: boolean | null;
+            /** Seconds */
+            seconds?: number | null;
+        };
         /** ModelOut */
         ModelOut: {
             /** Id */
@@ -3069,6 +3132,12 @@ export interface components {
              * @description Emotional intensity, 0 (flat) – 1 (dramatic); 0.5 is natural. Used by engines with the `emotion` capability.
              */
             emotion?: number | null;
+            /**
+             * Markup
+             * @description Interpret script markup: `[pause 1s]`, `[slow]…[/slow]`, `[fast]…[/fast]`, `[speed 1.3]…[/speed]`, `*emphasis*`, `{written|spoken}`
+             * @default false
+             */
+            markup: boolean;
         };
         /** SpeechJobIn */
         SpeechJobIn: {
@@ -3099,6 +3168,12 @@ export interface components {
              * @description Emotional intensity, 0 (flat) – 1 (dramatic); 0.5 is natural. Used by engines with the `emotion` capability.
              */
             emotion?: number | null;
+            /**
+             * Markup
+             * @description Interpret script markup: `[pause 1s]`, `[slow]…[/slow]`, `[fast]…[/fast]`, `[speed 1.3]…[/speed]`, `*emphasis*`, `{written|spoken}`
+             * @default false
+             */
+            markup: boolean;
             /**
              * Title
              * @description Shown in the Activity list; defaults to the text's start
@@ -3756,6 +3831,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    markup_preview_v1_markup_preview_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MarkupIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MarkupOut"];
                 };
             };
             /** @description Validation Error */

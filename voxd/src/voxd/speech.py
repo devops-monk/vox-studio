@@ -66,9 +66,39 @@ def save_take(services: Services, *, take_id: str, engine: Engine, voice: str, t
     return take
 
 
+def render_markup(services: Services, engine: Engine, spec: dict[str, Any], out: Path, on_part=None) -> str:
+    """Render a script with markup to ``out``; returns the text to store (tags removed)."""
+    from . import markup
+
+    scratch = services.settings.takes_dir / f".{uuid.uuid4().hex}"
+    scratch.mkdir()
+    try:
+        markup.render(engine, markup.parse(spec["text"]), spec["voice"], spec.get("speed", 1.0), spec.get("emotion"), out, scratch, split_text, on_part)
+    finally:
+        for f in scratch.glob("*"):
+            f.unlink()
+        scratch.rmdir()
+    return markup.display(spec["text"])
+
+
 def render_long(services: Services, ctx: JobContext, spec: dict[str, Any]) -> dict[str, Any]:
     """Job handler for ``speech``: render chunk by chunk, then stitch into one take."""
     engine = resolve_engine(services, spec.get("engine"))
+    if spec.get("markup"):
+        take_id = uuid.uuid4().hex
+        out = services.settings.takes_dir / f"{take_id}.wav"
+
+        def on_part(i: int, n: int) -> None:
+            ctx.check()
+            ctx.progress(i / max(1, n), f"Speaking part {i + 1} of {n}")
+
+        try:
+            text = render_markup(services, engine, spec, out, on_part)
+        except BaseException:
+            out.unlink(missing_ok=True)
+            raise
+        take = save_take(services, take_id=take_id, engine=engine, voice=spec["voice"], text=text, path=out)
+        return {"take_id": take.id, "audio_url": f"/v1/takes/{take.id}/audio", "duration_s": take.duration_s}
     chunks = split_text(spec["text"])
     take_id = uuid.uuid4().hex
     scratch = services.settings.takes_dir / f".{take_id}"

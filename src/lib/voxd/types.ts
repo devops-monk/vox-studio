@@ -7,8 +7,9 @@ export type Engine = Schemas['EngineOut']
 export type Voice = Schemas['VoiceOut']
 export type Take = Schemas['TakeOut']
 export type Job = Schemas['JobOut']
-export type SpeechRequest = Schemas['SpeechIn']
-export type SpeechJobRequest = Schemas['SpeechJobIn']
+/** `markup` defaults to false server-side, so it's optional here. */
+export type SpeechRequest = Omit<Schemas['SpeechIn'], 'markup'> & { markup?: boolean }
+export type SpeechJobRequest = Omit<Schemas['SpeechJobIn'], 'markup'> & { markup?: boolean }
 export type Model = Schemas['ModelOut']
 export type SystemInfo = Schemas['SystemOut']
 export type Settings = Schemas['SettingsOut']

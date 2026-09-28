@@ -38,6 +38,7 @@ class SpeechIn(BaseModel):
     emotion: float | None = Field(
         None, ge=0.0, le=1.0, description="Emotional intensity, 0 (flat) – 1 (dramatic); 0.5 is natural. Used by engines with the `emotion` capability."
     )
+    markup: bool = Field(False, description="Interpret script markup: `[pause 1s]`, `[slow]…[/slow]`, `[fast]…[/fast]`, `[speed 1.3]…[/speed]`, `*emphasis*`, `{written|spoken}`")
 
 
 class TakeOut(BaseModel):
@@ -668,3 +669,23 @@ class LeaderboardOut(BaseModel):
 
 class DeletedCountOut(BaseModel):
     deleted: int
+
+
+class MarkupIn(BaseModel):
+    text: str = Field(max_length=200_000)
+    speed: float = Field(1.0, ge=0.5, le=2.0)
+
+
+class MarkupSegmentOut(BaseModel):
+    kind: Literal["speech", "pause"]
+    text: str | None = None
+    speed: float | None = None
+    emphasis: bool | None = None
+    seconds: float | None = None
+
+
+class MarkupOut(BaseModel):
+    display: str = Field(description="The script with markup removed (what's stored as the take's text)")
+    segments: list[MarkupSegmentOut]
+    estimated_s: float = Field(description="Rough length of the result")
+    has_markup: bool

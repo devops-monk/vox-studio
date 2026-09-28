@@ -20,7 +20,7 @@ from ..voices import export_bundle, read_bundle
 from ..design import apply_sliders, design, parse_description, parse_recipe
 from ..keys import authenticate, create_key
 from ..pronounce import pronouncer
-from .. import compare, editor, storage, tools
+from .. import compare, editor, markup, storage, tools
 from ..transcripts import EXPORTS, LiveSession, save_live, to_text, uploads_dir
 from ..store import Transcript
 from .. import batch as batching, books, dubbing
@@ -28,9 +28,12 @@ from ..store import Book
 from ..store import Dub
 from ..history import RETENTION_CHOICES, RETENTION_KEY, delete_takes, sweep, usage_bytes
 from ..store import DesignedVoice
-from ..speech import resolve_engine, save_take
+from ..speech import render_markup, resolve_engine, save_take
 from ..store import Job, Take
 from .schemas import (
+    MarkupIn,
+    MarkupOut,
+    MarkupSegmentOut,
     DeletedCountOut,
     LeaderboardOut,
     LeaderboardRow,
@@ -242,12 +245,24 @@ async def speech(request: Request, body: SpeechIn) -> TakeOut:
 
     take_id = uuid.uuid4().hex
     out = services.settings.takes_dir / f"{take_id}.wav"
+    text = body.text
     try:
-        await asyncio.to_thread(engine.synthesize, pronouncer.apply(body.text), body.voice, body.speed, out, body.emotion)
+        if body.markup:
+            text = await asyncio.to_thread(render_markup, services, engine, body.model_dump(), out)
+        else:
+            await asyncio.to_thread(engine.synthesize, pronouncer.apply(body.text), body.voice, body.speed, out, body.emotion)
     except EngineError as exc:
         out.unlink(missing_ok=True)
         raise HTTPException(400, detail=("synthesis_failed", str(exc))) from exc
-    return _take_out(save_take(services, take_id=take_id, engine=engine, voice=body.voice, text=body.text, path=out))
+    return _take_out(save_take(services, take_id=take_id, engine=engine, voice=body.voice, text=text, path=out))
+
+
+@router.post("/markup/preview", response_model=MarkupOut, tags=["Speech"], summary="Check script markup")
+def markup_preview(body: MarkupIn) -> MarkupOut:
+    """How a script with markup will be performed: speech runs with their speed and emphasis, pauses, and an estimated length."""
+    segments = markup.parse(body.text)
+    return MarkupOut(display=markup.display(body.text), segments=[MarkupSegmentOut(**s.public()) for s in segments],
+                     estimated_s=round(markup.estimate_seconds(segments, body.speed), 1), has_markup=markup.has_markup(body.text))
 
 
 @router.post("/jobs/speech", response_model=JobOut, status_code=202, responses=ERRORS, tags=["Jobs"], summary="Generate long speech in the background")
@@ -258,8 +273,9 @@ def speech_job(request: Request, body: SpeechJobIn) -> JobOut:
         engine = resolve_engine(services, body.engine)
     except EngineError as exc:
         raise HTTPException(400, detail=("engine_unavailable", str(exc))) from exc
-    title = body.title or (body.text[:60].strip() + ("…" if len(body.text) > 60 else ""))
-    spec = {"text": body.text, "voice": body.voice, "engine": engine.id, "speed": body.speed, "emotion": body.emotion}
+    shown = markup.display(body.text) if body.markup else body.text
+    title = body.title or (shown[:60].strip() + ("…" if len(shown) > 60 else ""))
+    spec = {"text": body.text, "voice": body.voice, "engine": engine.id, "speed": body.speed, "emotion": body.emotion, "markup": body.markup}
     return _job_out(services.jobs.submit("speech", title, spec))
 
 

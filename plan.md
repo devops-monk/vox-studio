@@ -266,7 +266,11 @@ Work goes one milestone at a time. Tick `[x]` only after the item is verified in
   - [x] Ratings store and an Elo leaderboard per language (`/v1/ratings`, `/v1/ratings/leaderboard`); zero-sum Elo covered by a test
   - [x] Compare page: choose language, sentence (samples for 9 languages) and 2–5 voices across engines; renders each once; random pairs and sides, up to 10 rounds; must hear both; keyboard 1/2/←/→/T; results reveal a ranking, “Use as my quick voice”, and cleanup of the test recordings (optionally kept)
   - [x] Verified: browser e2e (3 rounds, results, quick voice set, leaderboard updated, takes cleaned up)
-- [ ] **M21 Script Markup:** inline pause, emphasis, speed and pronunciation tags with live preview
+- [x] **M21 Script Markup:** inline pause, emphasis, speed and pronunciation tags with live preview ✅
+  - [x] voxd `markup` module: `[pause …]`, `[slow]`/`[fast]`/`[speed x]` (nestable, clamped), `*emphasis*` (slower, louder, more emotion, spaced), `{written|spoken}`; stray tags read literally; punctuation stays with its phrase; takes store the clean text
+  - [x] `markup: true` on `/v1/speech` and `/v1/jobs/speech` (with job progress per part), plus `POST /v1/markup/preview`
+  - [x] Studio: toolbar (Pause, Slower, Faster, Emphasis, Say as…), colour-coded markup behind the text, “Performance” strip, time estimate including pauses, Markup switch with a help card
+  - [x] Verified: unit tests (parser, rendering, literal mode, jobs, preview) and a browser e2e (toolbar edits, then a take generated with clean text)
 - [ ] **M22 Drop Anywhere:** drop audio to clone, video to dub, a book to make an audiobook
 - [ ] **M23 Shortcuts & Finder:** `voxstudio://speak?...` for the Shortcuts app, and a "Dub with VoxStudio" action in Finder
 - [ ] **M24 Collections & Tags:** organize voices, takes and projects
