@@ -101,3 +101,48 @@
     --glass-3: #2a2a2e;
   }
 }
+
+/* Settings → Appearance → Glass. "balanced" is the default above. */
+:root[data-glass='clear'] {
+  --glass-1: rgba(255, 255, 255, 0.42);
+  --glass-2: rgba(255, 255, 255, 0.5);
+  --glass-3: rgba(255, 255, 255, 0.74);
+  --blur: 20px;
+}
+:root[data-glass='clear'][data-theme='dark'] {
+  --glass-1: rgba(28, 28, 30, 0.38);
+  --glass-2: rgba(44, 44, 48, 0.42);
+  --glass-3: rgba(40, 40, 44, 0.72);
+}
+:root[data-glass='frosted'] {
+  --glass-1: rgba(255, 255, 255, 0.76);
+  --glass-2: rgba(255, 255, 255, 0.84);
+  --glass-3: rgba(255, 255, 255, 0.92);
+  --blur: 48px;
+}
+:root[data-glass='frosted'][data-theme='dark'] {
+  --glass-1: rgba(28, 28, 30, 0.74);
+  --glass-2: rgba(44, 44, 48, 0.78);
+  --glass-3: rgba(40, 40, 44, 0.92);
+}
+:root[data-glass='solid'] {
+  --glass-0: #ececef;
+  --glass-1: #f6f6f8;
+  --glass-2: #ffffff;
+  --glass-3: #ffffff;
+  --blur: 0px;
+}
+:root[data-glass='solid'][data-theme='dark'] {
+  --glass-0: #1f1f22;
+  --glass-1: #1a1a1c;
+  --glass-2: #2a2a2e;
+  --glass-3: #2a2a2e;
+}
+
+/* Settings → Appearance → Text size (the UI is sized in px, so scale the whole page). */
+:root[data-text-size='small'] #root {
+  zoom: 0.92;
+}
+:root[data-text-size='large'] #root {
+  zoom: 1.1;
+}

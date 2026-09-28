@@ -86,7 +86,6 @@ export function DictationSettings() {
 
   return (
     <section className="space-y-2">
-      <h3 className="px-1 text-[12px] font-semibold tracking-wide text-text-3">Dictation</h3>
       <GlassPanel className="divide-y-[0.5px] divide-[var(--hairline)]">
         <Row label="Shortcut" hint="Press it in any app to start dictating; press again to finish.">
           <ShortcutRecorder value={prefs.shortcut} onChange={changeShortcut} />

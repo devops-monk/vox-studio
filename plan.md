@@ -224,8 +224,16 @@ Work goes one milestone at a time. Tick `[x]` only after the item is verified in
 - [x] **Integrations page:** OpenAI SDKs, Claude Code, Claude Desktop, Cursor and VS Code, custom agents, n8n, Terminal and Shortcuts, with the port and a new key filled in
 - [x] Docs: integrations guide; keys, OpenAI and MCP references; authentication updated
 
-### M15 — Settings
-- [ ] Appearance (theme, accent, glass intensity), General, Models, Performance, Storage, Privacy, Shortcuts, Logs, About/credits
+### M15 — Settings ✅
+- [x] Settings rebuilt as a sidebar of sections, like System Settings
+- [x] General: start page, quick voice (engine and voice), replay the welcome tour
+- [x] Appearance: theme, 8 accent colours, text size (scales the whole UI), glass material (Clear, Balanced, Frosted, Solid) with live previews
+- [x] Voices & Models: preferred transcription model, and a download mirror setting (persisted; the env var still wins), still SHA-256 verified
+- [x] Performance: compute device, **Free memory** (`POST /v1/engines/unload`), details of this computer
+- [x] Storage: usage bar by part (`GET /v1/storage`) with Show in Finder, retention, and **Clean up leftovers** (`POST /v1/storage/cleanup`, orphans only, 1-hour grace period)
+- [x] Shortcuts: global dictation shortcut plus in-app shortcuts, now wired up (⌘1–7, ⌘Y, ⌘, and ⌘⌥I)
+- [x] Privacy (local-only facts, every host ever contacted, keys, consent), Logs (engine log, copy, restart), About (versions, links, credits)
+- [x] Docs: settings guide and settings reference
 
 ### M16 — Desktop polish & packaging
 - [ ] Auto-updater, single instance, deep links (`voxstudio://`), native menus

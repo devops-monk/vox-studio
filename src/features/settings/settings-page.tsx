@@ -1,102 +1,73 @@
-import { GlassPanel, SegmentedControl } from '@/components/glass'
-import { usePrefs, type ThemePref } from '@/lib/store/prefs'
-import { useSettings, useSystem, useUpdateSettings } from '@/lib/voxd/queries'
+import { useState } from 'react'
+import { Code2, Cpu, HardDrive, Info, Keyboard, Mic, Palette, ScrollText, Settings2, Shield, Boxes, type LucideIcon } from 'lucide-react'
+import { cn } from '@/lib/cn'
 import { DictationSettings } from './dictation-settings'
+import { About, Appearance, General, Logs, Performance, Privacy, Shortcuts, Storage, VoicesModels } from './sections'
+import { useNavigate } from '@tanstack/react-router'
 
-function Row({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
-  return (
-    <div className="flex items-center justify-between gap-6 px-4 py-3">
-      <div>
-        <div className="font-medium">{label}</div>
-        {hint && <div className="text-[12px] text-text-3">{hint}</div>}
-      </div>
-      {children}
-    </div>
-  )
-}
+type SectionId = 'general' | 'appearance' | 'models' | 'performance' | 'storage' | 'dictation' | 'shortcuts' | 'privacy' | 'developer' | 'logs' | 'about'
 
-const DEVICE_LABEL: Record<string, string> = { auto: 'Auto', cpu: 'CPU', mps: 'Apple GPU', cuda: 'NVIDIA GPU' }
+const SECTIONS: { id: SectionId; label: string; icon: LucideIcon; tint: string }[] = [
+  { id: 'general', label: 'General', icon: Settings2, tint: '#8e8e93' },
+  { id: 'appearance', label: 'Appearance', icon: Palette, tint: '#0a84ff' },
+  { id: 'models', label: 'Voices & Models', icon: Boxes, tint: '#bf5af2' },
+  { id: 'performance', label: 'Performance', icon: Cpu, tint: '#ff9f0a' },
+  { id: 'storage', label: 'Storage', icon: HardDrive, tint: '#30d158' },
+  { id: 'dictation', label: 'Dictation', icon: Mic, tint: '#ff375f' },
+  { id: 'shortcuts', label: 'Shortcuts', icon: Keyboard, tint: '#5e5ce6' },
+  { id: 'privacy', label: 'Privacy', icon: Shield, tint: '#0a84ff' },
+  { id: 'developer', label: 'Developer', icon: Code2, tint: '#64d2ff' },
+  { id: 'logs', label: 'Logs', icon: ScrollText, tint: '#8e8e93' },
+  { id: 'about', label: 'About', icon: Info, tint: '#8e8e93' },
+]
 
-function Performance() {
-  const system = useSystem().data
-  const settings = useSettings().data
-  const update = useUpdateSettings()
-  if (!system || !settings) return null
-  const options = ['auto', ...system.accelerators].map((d) => ({ value: d, label: DEVICE_LABEL[d] ?? d }))
-  const inUse = settings.compute_device_in_use
-  return (
-    <section className="space-y-2">
-      <h3 className="px-1 text-[12px] font-semibold tracking-wide text-text-3">Performance</h3>
-      <GlassPanel className="divide-y-[0.5px] divide-[var(--hairline)]">
-        <Row
-          label="Compute device"
-          hint={`Where voice cloning runs. Auto picks the fastest available.${inUse ? ` Currently using: ${DEVICE_LABEL[inUse] ?? inUse}.` : ''}`}
-        >
-          <SegmentedControl<string>
-            aria-label="Compute device"
-            value={settings.compute_device}
-            onChange={(v) => update.mutate({ compute_device: v })}
-            options={options}
-          />
-        </Row>
-      </GlassPanel>
-    </section>
-  )
-}
+let remembered: SectionId = 'general'
 
-function History() {
-  const settings = useSettings().data
-  const update = useUpdateSettings()
-  if (!settings) return null
-  return (
-    <section className="space-y-2">
-      <h3 className="px-1 text-[12px] font-semibold tracking-wide text-text-3">History</h3>
-      <GlassPanel className="divide-y-[0.5px] divide-[var(--hairline)]">
-        <Row label="Keep takes" hint="Older takes are deleted automatically. Starred takes are always kept.">
-          <SegmentedControl<string>
-            aria-label="Keep takes"
-            value={String(settings.history_retention_days)}
-            onChange={(v) => update.mutate({ history_retention_days: Number(v) })}
-            options={[
-              { value: '0', label: 'Forever' },
-              { value: '90', label: '90 days' },
-              { value: '30', label: '30 days' },
-              { value: '7', label: '7 days' },
-            ]}
-          />
-        </Row>
-      </GlassPanel>
-    </section>
-  )
-}
-
-/** Settings shell. Appearance lands in M0; remaining sections arrive in M15. */
 export function SettingsPage() {
-  const { theme, setTheme } = usePrefs()
+  const [section, setSectionState] = useState<SectionId>(remembered)
+  const navigate = useNavigate()
+  const setSection = (id: SectionId) => {
+    if (id === 'developer') return void navigate({ to: '/developer' })
+    remembered = id
+    setSectionState(id)
+  }
+  const active = SECTIONS.find((s) => s.id === section)!
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6 px-8 py-8">
-      <section className="space-y-2">
-        <h3 className="px-1 text-[12px] font-semibold tracking-wide text-text-3">Appearance</h3>
-        <GlassPanel className="divide-y-[0.5px] divide-[var(--hairline)]">
-          <Row label="Theme" hint="Follow macOS, or pick one.">
-            <SegmentedControl<ThemePref>
-              aria-label="Theme"
-              value={theme}
-              onChange={setTheme}
-              options={[
-                { value: 'system', label: 'Auto' },
-                { value: 'light', label: 'Light' },
-                { value: 'dark', label: 'Dark' },
-              ]}
-            />
-          </Row>
-        </GlassPanel>
-      </section>
-      <Performance />
-      <History />
-      <DictationSettings />
-      <p className="px-1 text-[12px] text-text-3">Storage, privacy, shortcuts and the rest of settings are coming in M15.</p>
+    <div className="mx-auto flex max-w-4xl gap-6 px-8 py-8">
+      <nav aria-label="Settings sections" className="w-48 shrink-0 space-y-0.5">
+        <h2 className="px-2 pb-3 font-[var(--font-display)] text-[22px] font-bold tracking-[-0.02em]">Settings</h2>
+        {SECTIONS.map((s) => {
+          const Icon = s.icon
+          return (
+            <button
+              key={s.id}
+              type="button"
+              aria-current={s.id === section}
+              onClick={() => setSection(s.id)}
+              className={cn('flex w-full items-center gap-2.5 rounded-[8px] px-2 py-1.5 text-left text-[13px] transition-colors', s.id === section ? 'bg-fill-active font-medium' : 'hover:bg-fill-hover')}
+            >
+              <span className="grid size-[22px] shrink-0 place-items-center rounded-[6px] text-white" style={{ background: s.tint }}>
+                <Icon size={13} />
+              </span>
+              {s.label}
+            </button>
+          )
+        })}
+      </nav>
+      <div key={section} className="min-w-0 flex-1 space-y-6 animate-[pop-in_220ms_var(--ease-spring)_both]">
+        <h3 className="pt-1 font-[var(--font-display)] text-[20px] font-semibold tracking-[-0.015em]">{active.label}</h3>
+        {section === 'general' && <General />}
+        {section === 'appearance' && <Appearance />}
+        {section === 'models' && <VoicesModels />}
+        {section === 'performance' && <Performance />}
+        {section === 'storage' && <Storage />}
+        {section === 'dictation' && <DictationSettings />}
+        {section === 'shortcuts' && <Shortcuts onDictation={() => setSection('dictation')} />}
+        {section === 'privacy' && <Privacy />}
+        {section === 'logs' && <Logs />}
+        {section === 'about' && <About />}
+      </div>
     </div>
   )
 }

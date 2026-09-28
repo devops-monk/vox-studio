@@ -117,12 +117,14 @@ class SettingsOut(BaseModel):
     history_retention_days: int = Field(0, description="Delete unstarred takes older than this many days; 0 keeps everything")
     asr_model: str | None = Field(None, description="Preferred Whisper model for file transcription (default: most accurate installed)")
     compute_device_in_use: str | None = Field(None, description="What the running engine actually uses, if one is loaded")
+    model_mirror: str = Field("", description="Base URL that serves `<model id>/<file>`; empty downloads from the original hosts")
 
 
 class SettingsPatch(BaseModel):
     compute_device: str | None = Field(None, pattern="^(auto|cpu|mps|cuda)$")
     history_retention_days: int | None = Field(None, description="One of 0, 7, 30, 90")
     asr_model: str | None = Field(None, description="A Whisper model id, or \"\" to clear")
+    model_mirror: str | None = Field(None, max_length=500, description="An http(s) base URL, or \"\" to download from the original hosts")
 
 
 class CustomVoiceOut(BaseModel):
@@ -586,3 +588,25 @@ class ConnectionOut(BaseModel):
     docs_url: str
     bridge_path: str = Field(description="stdio MCP bridge script, for clients that launch a command")
     auth_required: bool
+
+
+class StoragePartOut(BaseModel):
+    id: str
+    label: str
+    path: str
+    bytes: int
+
+
+class StorageOut(BaseModel):
+    data_dir: str
+    total: int
+    parts: list[StoragePartOut]
+
+
+class CleanupOut(BaseModel):
+    freed_bytes: int
+    removed: int = Field(description="Files and folders removed")
+
+
+class UnloadOut(BaseModel):
+    unloaded: list[str] = Field(description="Engines that had a model in memory")

@@ -58,7 +58,7 @@ export const voxd = {
   deleteModel: (id: string) => noContent(api().DELETE('/v1/models/{model_id}', { params: { path: { model_id: id } } })),
 
   settings: () => call(api().GET('/v1/settings')),
-  updateSettings: (body: { compute_device?: string; history_retention_days?: number; asr_model?: string }) => call(api().PATCH('/v1/settings', { body })),
+  updateSettings: (body: { compute_device?: string; history_retention_days?: number; asr_model?: string; model_mirror?: string }) => call(api().PATCH('/v1/settings', { body })),
 
   customVoices: () => call(api().GET('/v1/voices/custom')),
   /** Upload a WAV recording as a new voice (multipart). */
@@ -192,6 +192,10 @@ export const voxd = {
   deletePronunciation: (id: string) => noContent(api().DELETE('/v1/pronunciations/{pid}', { params: { path: { pid: id } } })),
   previewPronunciation: (text: string) => call(api().POST('/v1/pronunciations/preview', { body: { text } })),
 
+  status: () => call(api().GET('/v1/status')),
+  storage: () => call(api().GET('/v1/storage')),
+  cleanupStorage: () => call(api().POST('/v1/storage/cleanup')),
+  unloadEngines: () => call(api().POST('/v1/engines/unload')),
   connection: () => call(api().GET('/v1/connection')),
   apiKeys: () => call(api().GET('/v1/keys')),
   createApiKey: (name: string) => call(api().POST('/v1/keys', { body: { name } })),

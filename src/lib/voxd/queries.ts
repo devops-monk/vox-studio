@@ -288,3 +288,4 @@ export const usePronunciations = () => useQuery({ queryKey: ['pronunciations'], 
 export const useConnection = () => useQuery({ queryKey: ['connection'], queryFn: voxd.connection, enabled: useReady(), staleTime: Infinity })
 export const useApiKeys = () => useQuery({ queryKey: ['api-keys'], queryFn: voxd.apiKeys, enabled: useReady() })
 export const useOpenApi = () => useQuery({ queryKey: ['openapi'], queryFn: voxd.openapi, enabled: useReady(), staleTime: Infinity })
+export const useStorage = () => useQuery({ queryKey: ['storage'], queryFn: voxd.storage, enabled: useReady(), staleTime: 30_000 })

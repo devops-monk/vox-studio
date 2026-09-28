@@ -327,6 +327,67 @@ export interface paths {
         patch: operations["patch_settings_v1_settings_patch"];
         trace?: never;
     };
+    "/v1/storage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Disk usage
+         * @description Size of each part of the VoxStudio data folder.
+         */
+        get: operations["storage_usage_v1_storage_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/storage/cleanup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Remove leftover files
+         * @description Deletes scratch files from interrupted work and files whose take, transcript, dub, book or voice
+         *     no longer exists. Anything changed in the last hour is left alone.
+         */
+        post: operations["storage_cleanup_v1_storage_cleanup_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/engines/unload": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Free memory
+         * @description Stops engine workers so their models leave memory. They start again on next use.
+         */
+        post: operations["unload_engines_v1_engines_unload_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/voices/custom": {
         parameters: {
             query?: never;
@@ -1970,6 +2031,16 @@ export interface components {
             /** Text */
             text?: string | null;
         };
+        /** CleanupOut */
+        CleanupOut: {
+            /** Freed Bytes */
+            freed_bytes: number;
+            /**
+             * Removed
+             * @description Files and folders removed
+             */
+            removed: number;
+        };
         /** ClearedOut */
         ClearedOut: {
             /** Deleted */
@@ -2734,6 +2805,12 @@ export interface components {
              * @description What the running engine actually uses, if one is loaded
              */
             compute_device_in_use?: string | null;
+            /**
+             * Model Mirror
+             * @description Base URL that serves `<model id>/<file>`; empty downloads from the original hosts
+             * @default
+             */
+            model_mirror: string;
         };
         /** SettingsPatch */
         SettingsPatch: {
@@ -2749,6 +2826,11 @@ export interface components {
              * @description A Whisper model id, or "" to clear
              */
             asr_model?: string | null;
+            /**
+             * Model Mirror
+             * @description An http(s) base URL, or "" to download from the original hosts
+             */
+            model_mirror?: string | null;
         };
         /** SpeechIn */
         SpeechIn: {
@@ -2875,6 +2957,26 @@ export interface components {
             detail?: string | null;
             /** Uptime S */
             uptime_s: number;
+        };
+        /** StorageOut */
+        StorageOut: {
+            /** Data Dir */
+            data_dir: string;
+            /** Total */
+            total: number;
+            /** Parts */
+            parts: components["schemas"]["StoragePartOut"][];
+        };
+        /** StoragePartOut */
+        StoragePartOut: {
+            /** Id */
+            id: string;
+            /** Label */
+            label: string;
+            /** Path */
+            path: string;
+            /** Bytes */
+            bytes: number;
         };
         /** SystemOut */
         SystemOut: {
@@ -3014,6 +3116,14 @@ export interface components {
             has_audio: boolean;
             /** Created At */
             created_at: number;
+        };
+        /** UnloadOut */
+        UnloadOut: {
+            /**
+             * Unloaded
+             * @description Engines that had a model in memory
+             */
+            unloaded: string[];
         };
         /** ValidationError */
         ValidationError: {
@@ -3912,6 +4022,66 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    storage_usage_v1_storage_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StorageOut"];
+                };
+            };
+        };
+    };
+    storage_cleanup_v1_storage_cleanup_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CleanupOut"];
+                };
+            };
+        };
+    };
+    unload_engines_v1_engines_unload_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UnloadOut"];
                 };
             };
         };

@@ -2,9 +2,28 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
 export type ThemePref = 'system' | 'light' | 'dark'
+export type GlassPref = 'clear' | 'balanced' | 'frosted' | 'solid'
+export type TextSizePref = 'small' | 'default' | 'large'
+
+export const ACCENTS = [
+  { id: 'blue', label: 'Blue', color: '#0a84ff' },
+  { id: 'purple', label: 'Purple', color: '#bf5af2' },
+  { id: 'pink', label: 'Pink', color: '#ff375f' },
+  { id: 'red', label: 'Red', color: '#ff453a' },
+  { id: 'orange', label: 'Orange', color: '#ff9f0a' },
+  { id: 'green', label: 'Green', color: '#30d158' },
+  { id: 'teal', label: 'Teal', color: '#40c8e0' },
+  { id: 'graphite', label: 'Graphite', color: '#8e8e93' },
+] as const
+export type AccentPref = (typeof ACCENTS)[number]['id']
 
 interface PrefsState {
   theme: ThemePref
+  accent: AccentPref
+  glass: GlassPref
+  textSize: TextSizePref
+  /** Page shown when the app opens. */
+  startPage: string
   inspectorOpen: boolean
   /** Engine used by quick speech surfaces (Try a voice). */
   engine: string
@@ -14,6 +33,7 @@ interface PrefsState {
   dictation: { shortcut: string; paste: boolean; autoFinish: boolean; language: string }
   setDictation: (patch: Partial<PrefsState['dictation']>) => void
   setTheme: (theme: ThemePref) => void
+  setAppearance: (patch: Partial<Pick<PrefsState, 'accent' | 'glass' | 'textSize' | 'startPage'>>) => void
   setEngine: (engine: string) => void
   setVoice: (engine: string, voice: string) => void
   finishOnboarding: () => void
@@ -24,6 +44,10 @@ export const usePrefs = create<PrefsState>()(
   persist(
     (set) => ({
       theme: 'system',
+      accent: 'blue',
+      glass: 'balanced',
+      textSize: 'default',
+      startPage: '/',
       inspectorOpen: false,
       engine: 'system',
       voiceByEngine: {},
@@ -31,6 +55,7 @@ export const usePrefs = create<PrefsState>()(
       dictation: { shortcut: 'CommandOrControl+Shift+Space', paste: true, autoFinish: true, language: '' },
       setDictation: (patch) => set((s) => ({ dictation: { ...s.dictation, ...patch } })),
       setTheme: (theme) => set({ theme }),
+      setAppearance: (patch) => set(patch),
       setEngine: (engine) => set({ engine }),
       setVoice: (engine, voice) => set((s) => ({ voiceByEngine: { ...s.voiceByEngine, [engine]: voice } })),
       finishOnboarding: () => set({ onboardingDone: true }),

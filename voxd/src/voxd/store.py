@@ -796,6 +796,15 @@ class Store:
         rows = self._db.execute(f"SELECT * FROM exports WHERE {marks} ORDER BY at DESC LIMIT ?", (*[x for pair in items for x in pair], limit))
         return [dict(r) for r in rows]
 
+    # --- storage housekeeping -------------------------------------------------
+
+    def column_values(self, table: str, column: str) -> set[str]:
+        """Every value of one id-like column (for finding orphaned files)."""
+        allowed = {("takes", "id"), ("dubs", "id"), ("books", "id"), ("transcripts", "audio"), ("custom_voices", "id")}
+        if (table, column) not in allowed:
+            raise ValueError(f"{table}.{column} is not an allowed lookup")
+        return {r[0] for r in self._db.execute(f"SELECT {column} FROM {table}") if r[0]}
+
     # --- API keys ---------------------------------------------------------------
 
     def list_api_keys(self) -> list[dict]:

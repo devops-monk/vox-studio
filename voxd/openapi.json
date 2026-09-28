@@ -1040,6 +1040,72 @@
         }
       }
     },
+    "/v1/storage": {
+      "get": {
+        "tags": [
+          "Settings"
+        ],
+        "summary": "Disk usage",
+        "description": "Size of each part of the VoxStudio data folder.",
+        "operationId": "storage_usage_v1_storage_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StorageOut"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/storage/cleanup": {
+      "post": {
+        "tags": [
+          "Settings"
+        ],
+        "summary": "Remove leftover files",
+        "description": "Deletes scratch files from interrupted work and files whose take, transcript, dub, book or voice\nno longer exists. Anything changed in the last hour is left alone.",
+        "operationId": "storage_cleanup_v1_storage_cleanup_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CleanupOut"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/engines/unload": {
+      "post": {
+        "tags": [
+          "Engines"
+        ],
+        "summary": "Free memory",
+        "description": "Stops engine workers so their models leave memory. They start again on next use.",
+        "operationId": "unload_engines_v1_engines_unload_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnloadOut"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/voices/custom": {
       "get": {
         "tags": [
@@ -7470,6 +7536,25 @@
         ],
         "title": "ChapterPatch"
       },
+      "CleanupOut": {
+        "properties": {
+          "freed_bytes": {
+            "type": "integer",
+            "title": "Freed Bytes"
+          },
+          "removed": {
+            "type": "integer",
+            "title": "Removed",
+            "description": "Files and folders removed"
+          }
+        },
+        "type": "object",
+        "required": [
+          "freed_bytes",
+          "removed"
+        ],
+        "title": "CleanupOut"
+      },
       "ClearedOut": {
         "properties": {
           "deleted": {
@@ -9276,6 +9361,12 @@
             ],
             "title": "Compute Device In Use",
             "description": "What the running engine actually uses, if one is loaded"
+          },
+          "model_mirror": {
+            "type": "string",
+            "title": "Model Mirror",
+            "description": "Base URL that serves `<model id>/<file>`; empty downloads from the original hosts",
+            "default": ""
           }
         },
         "type": "object",
@@ -9321,6 +9412,19 @@
             ],
             "title": "Asr Model",
             "description": "A Whisper model id, or \"\" to clear"
+          },
+          "model_mirror": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Mirror",
+            "description": "An http(s) base URL, or \"\" to download from the original hosts"
           }
         },
         "type": "object",
@@ -9572,6 +9676,60 @@
           "uptime_s"
         ],
         "title": "StatusOut"
+      },
+      "StorageOut": {
+        "properties": {
+          "data_dir": {
+            "type": "string",
+            "title": "Data Dir"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "parts": {
+            "items": {
+              "$ref": "#/components/schemas/StoragePartOut"
+            },
+            "type": "array",
+            "title": "Parts"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data_dir",
+          "total",
+          "parts"
+        ],
+        "title": "StorageOut"
+      },
+      "StoragePartOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "path": {
+            "type": "string",
+            "title": "Path"
+          },
+          "bytes": {
+            "type": "integer",
+            "title": "Bytes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "label",
+          "path",
+          "bytes"
+        ],
+        "title": "StoragePartOut"
       },
       "SystemOut": {
         "properties": {
@@ -9878,6 +10036,23 @@
           "created_at"
         ],
         "title": "TranscriptSummaryOut"
+      },
+      "UnloadOut": {
+        "properties": {
+          "unloaded": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Unloaded",
+            "description": "Engines that had a model in memory"
+          }
+        },
+        "type": "object",
+        "required": [
+          "unloaded"
+        ],
+        "title": "UnloadOut"
       },
       "ValidationError": {
         "properties": {

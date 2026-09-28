@@ -20,7 +20,7 @@ from ..voices import export_bundle, read_bundle
 from ..design import apply_sliders, design, parse_description, parse_recipe
 from ..keys import authenticate, create_key
 from ..pronounce import pronouncer
-from .. import tools
+from .. import storage, tools
 from ..transcripts import EXPORTS, LiveSession, save_live, to_text, uploads_dir
 from ..store import Transcript
 from .. import batch as batching, books, dubbing
@@ -31,6 +31,9 @@ from ..store import DesignedVoice
 from ..speech import resolve_engine, save_take
 from ..store import Job, Take
 from .schemas import (
+    CleanupOut,
+    StorageOut,
+    UnloadOut,
     ConnectionOut,
     ApiKeyCreated,
     ApiKeyIn,
@@ -344,6 +347,7 @@ def _settings_out(services) -> SettingsOut:
         asr_model=services.store.get_setting("asr_model"),
         compute_device=services.store.get_setting("compute_device", "auto"),
         compute_device_in_use=getattr(chatterbox, "device_in_use", None),
+        model_mirror=services.models.mirror,
     )
 
 
@@ -369,7 +373,45 @@ def patch_settings(request: Request, body: SettingsPatch) -> SettingsOut:
         if body.asr_model and body.asr_model not in {m.id for m in services.models.all_for_engine("whisper")}:
             raise HTTPException(400, detail=("invalid_setting", f"Unknown Whisper model: {body.asr_model}"))
         services.store.set_setting("asr_model", body.asr_model or None)
+    if body.model_mirror is not None:
+        mirror = body.model_mirror.strip().rstrip("/")
+        if mirror and not mirror.startswith(("http://", "https://")):
+            raise HTTPException(400, detail=("invalid_setting", "The mirror must be an http:// or https:// URL"))
+        services.store.set_setting("model_mirror", mirror)
+        services.models.mirror = mirror
     return _settings_out(services)
+
+
+# --- Storage & memory -----------------------------------------------------------
+
+
+@router.get("/storage", response_model=StorageOut, tags=["Settings"], summary="Disk usage")
+async def storage_usage(request: Request) -> StorageOut:
+    """Size of each part of the VoxStudio data folder."""
+    return StorageOut(**await asyncio.to_thread(storage.usage, _services(request)))
+
+
+@router.post("/storage/cleanup", response_model=CleanupOut, tags=["Settings"], summary="Remove leftover files")
+async def storage_cleanup(request: Request) -> CleanupOut:
+    """Deletes scratch files from interrupted work and files whose take, transcript, dub, book or voice
+    no longer exists. Anything changed in the last hour is left alone."""
+    return CleanupOut(**await asyncio.to_thread(storage.cleanup, _services(request)))
+
+
+@router.post("/engines/unload", response_model=UnloadOut, tags=["Engines"], summary="Free memory")
+def unload_engines(request: Request) -> UnloadOut:
+    """Stops engine workers so their models leave memory. They start again on next use."""
+    services = _services(request)
+    unloaded = []
+    for engine_id in ("chatterbox", "kokoro", "whisper"):
+        engine = services.registry.raw(engine_id)
+        worker = getattr(engine, "_worker", None)
+        if engine and ((worker is not None and getattr(worker, "running", True)) or getattr(engine, "_model", None) is not None):
+            unloaded.append(engine_id)
+        if engine:
+            engine.unload()
+    services.media.stop()
+    return UnloadOut(unloaded=unloaded)
 
 
 # --- Custom voices ------------------------------------------------------------

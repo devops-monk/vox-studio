@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { usePrefs } from './store/prefs'
+import { ACCENTS, usePrefs } from './store/prefs'
 
 /** Applies the resolved theme to <html data-theme> and keeps it in sync with the OS. */
 export function useApplyTheme() {
@@ -15,4 +15,16 @@ export function useApplyTheme() {
     media.addEventListener('change', apply)
     return () => media.removeEventListener('change', apply)
   }, [theme])
+}
+
+/** Accent colour, glass material and text size from Settings → Appearance. */
+export function useApplyAppearance() {
+  const { accent, glass, textSize } = usePrefs()
+  useEffect(() => {
+    const root = document.documentElement
+    const color = ACCENTS.find((a) => a.id === accent)?.color ?? ACCENTS[0].color
+    root.style.setProperty('--accent', color)
+    root.dataset.glass = glass
+    root.dataset.textSize = textSize
+  }, [accent, glass, textSize])
 }

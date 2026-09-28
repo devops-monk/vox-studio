@@ -125,6 +125,8 @@ def create_app(
         discovery = settings.data_dir / "voxd.json"
         discovery.write_text(json.dumps({"url": f"http://127.0.0.1:{settings.port}", "port": settings.port, "pid": os.getpid(), "version": __version__}))
         pronouncer.bind(services.store)
+        if not models.mirror:  # the environment variable wins over the saved setting
+            models.mirror = services.store.get_setting("model_mirror", "") or ""
         custom.store = services.store
         services.jobs = JobManager(services.store, services.bus)
         services.jobs.register("speech", partial(render_long, services))
