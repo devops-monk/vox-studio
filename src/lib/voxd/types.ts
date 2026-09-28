@@ -21,6 +21,10 @@ export type DesignRequest = Schemas['DesignIn']
 export type Transcript = Schemas['TranscriptOut']
 export type TranscriptSummary = Schemas['TranscriptSummaryOut']
 export type Segment = Schemas['SegmentOut']
+export type Dub = Schemas['DubOut']
+export type DubSummary = Schemas['DubSummaryOut']
+export type DubLine = Schemas['DubSegmentOut']
+export type DubLanguage = Schemas['DubLanguageOut']
 
 export type JobStatus = 'queued' | 'running' | 'succeeded' | 'failed' | 'cancelled'
 export const isActive = (job: Job) => job.status === 'queued' || job.status === 'running'

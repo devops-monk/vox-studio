@@ -655,6 +655,174 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/dubs/languages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Languages you can dub into */
+        get: operations["dub_languages_v1_dubs_languages_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/dubs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List dubs */
+        get: operations["list_dubs_v1_dubs_get"];
+        put?: never;
+        /**
+         * Start a dub from a video or audio file
+         * @description Uploads the file and starts preparing it (transcribe + translate). Watch `job_id`, then review and render.
+         */
+        post: operations["create_dub_v1_dubs_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/dubs/{dub_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a dub */
+        get: operations["get_dub_v1_dubs__dub_id__get"];
+        put?: never;
+        post?: never;
+        /** Delete a dub */
+        delete: operations["delete_dub_v1_dubs__dub_id__delete"];
+        options?: never;
+        head?: never;
+        /**
+         * Edit a dub
+         * @description Edit lines (translation, speaker), the voice cast, the mix or the title. Any change after a render marks it `stale`.
+         */
+        patch: operations["patch_dub_v1_dubs__dub_id__patch"];
+        trace?: never;
+    };
+    "/v1/dubs/{dub_id}/translate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Translate again
+         * @description Re-translates every line (optionally into a new target language). Your edits to translations are replaced.
+         */
+        post: operations["retranslate_dub_v1_dubs__dub_id__translate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/dubs/{dub_id}/render": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Render the dub */
+        post: operations["render_dub_v1_dubs__dub_id__render_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/dubs/{dub_id}/segments/{segment_id}/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Hear one line */
+        post: operations["preview_segment_v1_dubs__dub_id__segments__segment_id__preview_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/dubs/{dub_id}/media/{name}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Source, dubbed audio/video, or a line preview */
+        get: operations["dub_media_v1_dubs__dub_id__media__name__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/dubs/{dub_id}/subtitles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Subtitles
+         * @description `which=translation` for the dubbed language, `which=text` for the original.
+         */
+        get: operations["dub_subtitles_v1_dubs__dub_id__subtitles_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/dubs/{dub_id}/save": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Save an output to a file */
+        post: operations["save_dub_v1_dubs__dub_id__save_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/jobs": {
         parameters: {
             query?: never;
@@ -763,6 +931,26 @@ export interface components {
              * @default
              */
             consent_by: string;
+        };
+        /** Body_create_dub_v1_dubs_post */
+        Body_create_dub_v1_dubs_post: {
+            /**
+             * File
+             * @description Video or audio (mp4, mov, mkv, webm, mp3, m4a, wav…), up to 2 GB
+             */
+            file: string;
+            /**
+             * Target Language
+             * @description Dub into: en, es, fr, de, it, pt, hi, ja or zh
+             */
+            target_language: string;
+            /**
+             * Source Language
+             * @description Spoken language; omit to detect
+             */
+            source_language?: string | null;
+            /** Title */
+            title?: string | null;
         };
         /** Body_create_transcription_v1_transcriptions_post */
         Body_create_transcription_v1_transcriptions_post: {
@@ -983,6 +1171,176 @@ export interface components {
             /** Created At */
             created_at: number;
         };
+        /** DubLanguageOut */
+        DubLanguageOut: {
+            /** Code */
+            code: string;
+            /** Name */
+            name: string;
+            /**
+             * Has Voice
+             * @description A voice is installed that can speak this language
+             */
+            has_voice: boolean;
+        };
+        /** DubOut */
+        DubOut: {
+            /** Id */
+            id: string;
+            /** Title */
+            title: string;
+            /**
+             * Status
+             * @description preparing | ready | rendering | done | failed
+             */
+            status: string;
+            /** Has Video */
+            has_video: boolean;
+            /** Duration S */
+            duration_s: number;
+            /** Source Lang */
+            source_lang: string;
+            /** Target Lang */
+            target_lang: string;
+            /** Created At */
+            created_at: number;
+            /** Updated At */
+            updated_at: number;
+            /**
+             * Mix
+             * @description `replace` (dub only) or `duck` (original quietly underneath)
+             */
+            mix: string;
+            /** Segments */
+            segments: components["schemas"]["DubSegmentOut"][];
+            /**
+             * Cast
+             * @description Voice for each speaker (null until one is chosen)
+             */
+            cast: {
+                [key: string]: components["schemas"]["DubVoice"] | null;
+            };
+            /** Audio Url */
+            audio_url?: string | null;
+            /** Video Url */
+            video_url?: string | null;
+            /** Source Url */
+            source_url: string;
+            /**
+             * Stale
+             * @description Edited since the last render
+             * @default false
+             */
+            stale: boolean;
+            /** Error */
+            error?: string | null;
+            /**
+             * Job Id
+             * @description The prepare/translate/render job in progress, if any
+             */
+            job_id?: string | null;
+        };
+        /** DubPatch */
+        DubPatch: {
+            /** Title */
+            title?: string | null;
+            /** Mix */
+            mix?: string | null;
+            /** Cast */
+            cast?: {
+                [key: string]: components["schemas"]["DubVoice"];
+            } | null;
+            /** Segments */
+            segments?: components["schemas"]["DubSegmentPatch"][] | null;
+        };
+        /** DubSaveIn */
+        DubSaveIn: {
+            /** Path */
+            path: string;
+            /** What */
+            what: string;
+            /**
+             * Overwrite
+             * @default false
+             */
+            overwrite: boolean;
+        };
+        /** DubSegmentOut */
+        DubSegmentOut: {
+            /** Id */
+            id: string;
+            /** Start */
+            start: number;
+            /** End */
+            end: number;
+            /**
+             * Text
+             * @description What was said (source language)
+             */
+            text: string;
+            /**
+             * Translation
+             * @description What will be spoken
+             */
+            translation: string;
+            /** Speaker */
+            speaker: string;
+            /**
+             * Fit
+             * @description After rendering: `speed` applied, `overflow_s` past the slot, `duration_s`
+             */
+            fit?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /** DubSegmentPatch */
+        DubSegmentPatch: {
+            /** Id */
+            id: string;
+            /** Translation */
+            translation?: string | null;
+            /** Speaker */
+            speaker?: string | null;
+        };
+        /** DubSummaryOut */
+        DubSummaryOut: {
+            /** Id */
+            id: string;
+            /** Title */
+            title: string;
+            /**
+             * Status
+             * @description preparing | ready | rendering | done | failed
+             */
+            status: string;
+            /** Has Video */
+            has_video: boolean;
+            /** Duration S */
+            duration_s: number;
+            /** Source Lang */
+            source_lang: string;
+            /** Target Lang */
+            target_lang: string;
+            /** Created At */
+            created_at: number;
+            /** Updated At */
+            updated_at: number;
+        };
+        /** DubTranslateIn */
+        DubTranslateIn: {
+            /**
+             * Target Language
+             * @description Change the target language and translate again
+             */
+            target_language?: string | null;
+        };
+        /** DubVoice */
+        DubVoice: {
+            /** Engine */
+            engine: string;
+            /** Voice */
+            voice: string;
+        };
         /** EngineOut */
         EngineOut: {
             /** Id */
@@ -1186,6 +1544,13 @@ export interface components {
              */
             job_id?: string | null;
             fit: components["schemas"]["FitOut"];
+        };
+        /** PreviewOut */
+        PreviewOut: {
+            /** Audio Url */
+            audio_url: string;
+            /** Duration S */
+            duration_s: number;
         };
         /** SegmentOut */
         SegmentOut: {
@@ -3463,6 +3828,640 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["ExportPathIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    dub_languages_v1_dubs_languages_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DubLanguageOut"][];
+                };
+            };
+        };
+    };
+    list_dubs_v1_dubs_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DubSummaryOut"][];
+                };
+            };
+        };
+    };
+    create_dub_v1_dubs_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_create_dub_v1_dubs_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DubOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_dub_v1_dubs__dub_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                dub_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DubOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_dub_v1_dubs__dub_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                dub_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    patch_dub_v1_dubs__dub_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                dub_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DubPatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DubOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    retranslate_dub_v1_dubs__dub_id__translate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                dub_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DubTranslateIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    render_dub_v1_dubs__dub_id__render_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                dub_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    preview_segment_v1_dubs__dub_id__segments__segment_id__preview_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                dub_id: string;
+                segment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PreviewOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    dub_media_v1_dubs__dub_id__media__name__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                dub_id: string;
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    dub_subtitles_v1_dubs__dub_id__subtitles_get: {
+        parameters: {
+            query?: {
+                format?: string;
+                which?: string;
+            };
+            header?: never;
+            path: {
+                dub_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                    "text/plain": unknown;
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    save_dub_v1_dubs__dub_id__save_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                dub_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DubSaveIn"];
             };
         };
         responses: {

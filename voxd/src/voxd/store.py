@@ -98,6 +98,26 @@ MIGRATIONS: list[str] = [
     );
     CREATE INDEX transcripts_created ON transcripts(created_at DESC);
     """,
+    """
+    CREATE TABLE dubs (
+        id           TEXT PRIMARY KEY,
+        title        TEXT NOT NULL,
+        status       TEXT NOT NULL,
+        source_file  TEXT NOT NULL,
+        has_video    INTEGER NOT NULL,
+        duration_s   REAL NOT NULL,
+        source_lang  TEXT NOT NULL,
+        target_lang  TEXT NOT NULL,
+        mix          TEXT NOT NULL,
+        segments     TEXT NOT NULL,
+        cast_json    TEXT NOT NULL,
+        output       TEXT NOT NULL,
+        error        TEXT,
+        created_at   REAL NOT NULL,
+        updated_at   REAL NOT NULL
+    );
+    CREATE INDEX dubs_created ON dubs(created_at DESC);
+    """,
 ]
 
 ACTIVE = ("queued", "running")
@@ -188,6 +208,28 @@ class Transcript:
     segments: list[dict]
     audio: str  # file name under uploads/, or "" when no audio was kept
     created_at: float
+
+
+@dataclass
+class Dub:
+    id: str
+    title: str
+    status: str  # preparing | ready | rendering | done | failed
+    source_file: str
+    has_video: bool
+    duration_s: float
+    source_lang: str
+    target_lang: str
+    mix: str  # replace | duck
+    segments: list[dict]  # {id, start, end, text, translation, speaker, fit?}
+    cast: dict[str, dict]  # speaker → {engine, voice}
+    output: dict  # {audio?, video?, rendered_at?}
+    error: str | None
+    created_at: float
+    updated_at: float
+
+
+_DUB_JSON = {"segments": "segments", "cast": "cast_json", "output": "output"}
 
 
 @dataclass
@@ -432,6 +474,41 @@ class Store:
                 self._db.execute("DELETE FROM transcripts WHERE id = ?", (transcript_id,))
         return t
 
+    # --- dubs ---------------------------------------------------------------
+
+    def add_dub(self, d: Dub) -> None:
+        with self._lock:
+            self._db.execute(
+                "INSERT INTO dubs VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                (d.id, d.title, d.status, d.source_file, int(d.has_video), d.duration_s, d.source_lang, d.target_lang, d.mix,
+                 json.dumps(d.segments), json.dumps(d.cast), json.dumps(d.output), d.error, d.created_at, d.updated_at),
+            )
+
+    def get_dub(self, dub_id: str) -> Dub | None:
+        row = self._db.execute("SELECT * FROM dubs WHERE id = ?", (dub_id,)).fetchone()
+        return _dub(row) if row else None
+
+    def list_dubs(self, limit: int = 100) -> list[Dub]:
+        return [_dub(r) for r in self._db.execute("SELECT * FROM dubs ORDER BY created_at DESC LIMIT ?", (limit,))]
+
+    def update_dub(self, dub_id: str, **fields: Any) -> Dub | None:
+        fields["updated_at"] = time.time()
+        cols, vals = [], []
+        for key, value in fields.items():
+            col = _DUB_JSON.get(key, key)
+            cols.append(f"{col} = ?")
+            vals.append(json.dumps(value) if key in _DUB_JSON else int(value) if isinstance(value, bool) else value)
+        with self._lock:
+            self._db.execute(f"UPDATE dubs SET {', '.join(cols)} WHERE id = ?", (*vals, dub_id))
+        return self.get_dub(dub_id)
+
+    def delete_dub(self, dub_id: str) -> Dub | None:
+        d = self.get_dub(dub_id)
+        if d:
+            with self._lock:
+                self._db.execute("DELETE FROM dubs WHERE id = ?", (dub_id,))
+        return d
+
     # --- favorites & tags (any voice) ----------------------------------------
 
     def voice_meta(self) -> dict[tuple[str, str], VoiceMeta]:
@@ -477,3 +554,13 @@ def _transcript(row: sqlite3.Row) -> Transcript:
     d = dict(row)
     d["segments"] = json.loads(d["segments"])
     return Transcript(**d)
+
+
+def _dub(row: sqlite3.Row) -> Dub:
+    d = dict(row)
+    return Dub(
+        id=d["id"], title=d["title"], status=d["status"], source_file=d["source_file"], has_video=bool(d["has_video"]),
+        duration_s=d["duration_s"], source_lang=d["source_lang"], target_lang=d["target_lang"], mix=d["mix"],
+        segments=json.loads(d["segments"]), cast=json.loads(d["cast_json"]), output=json.loads(d["output"]),
+        error=d["error"], created_at=d["created_at"], updated_at=d["updated_at"],
+    )

@@ -169,10 +169,17 @@ Work goes one milestone at a time. Tick `[x]` only after the item is verified in
 - [x] Docs: transcription reference (including the live protocol), Transcribe and Dictation guides
 - Measured on M1 Pro, Whisper Base: a 6.9 s file transcribed in about 3 s including model load; live final text about 0.7 s after speech ends
 
-### M9 — Dubbing
-- [ ] Import video (file or URL), transcribe, detect speakers, translate (Argos)
-- [ ] Cast a voice per speaker, timeline editor, re-time lines to fit
-- [ ] Separate the background with Demucs, mix, and export video, audio or subtitles
+### M9 — Dubbing ✅
+- [x] Media worker (PyAV, in the Whisper runtime): probe, extract audio at any rate, mux (copy video + new AAC audio) — no GPL FFmpeg binary
+- [x] Offline translation with Argos packages via CTranslate2 + SentencePiece: 9 languages via English, SHA-256 pinned, auto-downloaded and unpacked on demand (es→en uses package 1.0; 1.9 switched to BPE)
+- [x] Dub pipeline: prepare job (extract → Whisper → translate → default voice per language), render job (per-line synthesis, fit to slot with up to 1.3× speed-up, overflow reporting, duck/replace mix, clipping guard, MP4 mux), re-translate job
+- [x] API: create/list/get/patch/delete, languages with voice availability, per-line preview, render, media, subtitles (translation or original), save
+- [x] Dub page: new-dub sheet, project list, player with Original/Dubbed switch, cast per speaker (S1–S4) filtered to voices for the language, editable auto-growing lines with preview and fit badges, target-language switch, exports
+- [x] Verified end to end with a real Spanish clip → English MP4 (Whisper confirms the dubbed speech)
+- [x] Docs: dubbing reference and guide
+- [ ] Follow-up: automatic speaker detection (diarization)
+- [ ] Follow-up: keep background music and effects via Demucs (optional runtime pack)
+- [ ] Follow-up: import from a URL
 
 ### M10 — Stories & Audiobooks
 - [ ] Import txt/md/docx/epub, detect chapters and characters

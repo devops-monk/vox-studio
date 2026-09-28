@@ -59,9 +59,11 @@ PACKS: dict[str, RuntimePack] = {
         id="whisper",
         name="Whisper runtime (CTranslate2)",
         python="3.11",
-        requirements=("faster-whisper==1.2.1",),
+        # PyAV (via faster-whisper) also powers media extraction and muxing for dubbing;
+        # SentencePiece + CTranslate2 run the translation packages.
+        requirements=("faster-whisper==1.2.1", "sentencepiece>=0.2"),
         excludes=(),
-        check_import="faster_whisper",
+        check_import="faster_whisper, sentencepiece",
         approx_bytes=260_000_000,
     ),
 }

@@ -49,8 +49,10 @@ class ModelSpec:
     voice_count: int
     featured: bool = False
     runtime: str | None = None  # runtime pack id this model's engine needs
-    kind: str = "tts"  # tts | clone | asr
+    kind: str = "tts"  # tts | clone | asr | translate
     rank: int = 0  # among models for the same engine, higher = more capable
+    hidden: bool = False  # installed on demand by features (e.g. translation packs), not listed in Models
+    unpack: bool = False  # extract downloaded zip archives in place
 
     @property
     def size(self) -> int:
@@ -216,10 +218,60 @@ CATALOG: tuple[ModelSpec, ...] = (
 )
 
 
+# Argos Translate packages (MIT/CC0; trained on OPUS data). Installed on demand by dubbing.
+_ARGOS: tuple[tuple[str, str, str, int, str], ...] = (
+    ("zh", "en", "https://argos-net.com/v1/translate-zh_en-1_9.argosmodel", 74481402, "62e7af5a3a48b530e47b7b3e5c78c2de79073ecd815750d2bf3ab35b4a67da2d"),
+    ("en", "zh", "https://argos-net.com/v1/translate-en_zh-1_9.argosmodel", 70743021, "433e7c4f034d87fbe2353161e05f18646d7999452f801a4e1f0378522b9850ab"),
+    ("en", "fr", "https://argos-net.com/v1/translate-en_fr-1_9.argosmodel", 65472327, "3a65ed83364f4e7b06e30f9dd823db1934899ed3ce839e63f46dc7b09dc797b4"),
+    ("en", "de", "https://argos-net.com/v1/translate-en_de-1_3.argosmodel", 150508297, "6cd847f0c06c9c66013e6b0932e07fd54a6d90894659c02bf6c5247b72fb25b1"),
+    ("en", "hi", "https://argos-net.com/v1/translate-en_hi-1_1.argosmodel", 106752178, "60470a003a9c7339db8c060ed8eafc7cf999ba90dfa5dceebd8d0a4f75f1d3f0"),
+    ("en", "it", "https://argos-net.com/v1/translate-en_it-1_0.argosmodel", 87660780, "dde2180001a47904ecbbd688a41e35db8a040e4fd5b52e4f29b4bb499516ab32"),
+    ("en", "ja", "https://argos-net.com/v1/translate-en_ja-1_1.argosmodel", 120470284, "16300cc4eaa85320520cabcf433b63d01be40ef6966251de72043a083408f716"),
+    ("en", "pt", "https://argos-net.com/v1/translate-en_pt-1_9.argosmodel", 66179184, "0c5350a2fa5b923de1346edc0d42e08e38bab2e33cede3a0b9a48eb4281ad8a9"),
+    ("en", "es", "https://argos-net.com/v1/translate-en_es-1_0.argosmodel", 87503191, "d698d0ef87ad70d5d184b7fa6965905bf4368f09a2bb9ffb165a79bac96af0c4"),
+    ("fr", "en", "https://argos-net.com/v1/translate-fr_en-1_9.argosmodel", 66585033, "3b3052fee6bb1e8e8e632a26a723eb2a2c7710dfe73ba61ffd9b83e85d4f14c1"),
+    ("de", "en", "https://argos-net.com/v1/translate-de_en-1_3.argosmodel", 150512831, "becc2b0011f8249fcb89be9ecb75ba0d876b1fab93c28ee6ff0420936897d637"),
+    ("hi", "en", "https://argos-net.com/v1/translate-hi_en-1_1.argosmodel", 102381771, "f99eadf297073c0f5a320df5d634ebb73e9ab0b819404edf7bd0a0daf6b1ce43"),
+    ("it", "en", "https://argos-net.com/v1/translate-it_en-1_0.argosmodel", 87190224, "d2dd23b8b702f612b8127f07c7a0391f5f2a8b93344e6ddc9dd93c81824e85cb"),
+    ("ja", "en", "https://argos-net.com/v1/translate-ja_en-1_1.argosmodel", 117155716, "623e3477959a815eb0a5ef53e09079ae8f1f9d3bbcd230473baf28c03fb83335"),
+    ("pt", "en", "https://argos-net.com/v1/translate-pt_en-1_9.argosmodel", 69447231, "ae76df6f650895c16f2b582065014fab496755ca846ecb19fae81d51f332a38e"),
+    # 1.0 rather than 1.9: the 1.9 package switched to subword-nmt BPE, which we don't ship.
+    ("es", "en", "https://argos-net.com/v1/translate-es_en-1_0.argosmodel", 87381097, "1b963aa0e0cb6e5ce874f0aa1a1949a19bc4d762e833532239a8834340f6b378"),
+)
+TRANSLATION_LANGUAGES = {"en": "English", "es": "Spanish", "fr": "French", "de": "German", "it": "Italian", "pt": "Portuguese", "hi": "Hindi", "ja": "Japanese", "zh": "Chinese"}
+
+
+def translation_model_id(src: str, dst: str) -> str:
+    return f"translate-{src}-{dst}"
+
+
+TRANSLATION_MODELS: tuple[ModelSpec, ...] = tuple(
+    ModelSpec(
+        id=translation_model_id(src, dst),
+        engine="translate",
+        name=f"{TRANSLATION_LANGUAGES[src]} → {TRANSLATION_LANGUAGES[dst]}",
+        tagline="Offline translation",
+        description="Argos Translate model, run with CTranslate2.",
+        license="MIT / CC0",
+        license_url="https://github.com/argosopentech/argos-translate",
+        homepage="https://github.com/argosopentech/argos-translate",
+        files=(ModelFile(url.rsplit("/", 1)[1], url, size, sha),),
+        languages=(src, dst),
+        min_ram_gb=1,
+        voice_count=0,
+        runtime="whisper",
+        kind="translate",
+        hidden=True,
+        unpack=True,
+    )
+    for src, dst, url, size, sha in _ARGOS
+)
+
+
 @dataclass
 class ModelStore:
     root: Path
-    catalog: tuple[ModelSpec, ...] = CATALOG
+    catalog: tuple[ModelSpec, ...] = CATALOG + TRANSLATION_MODELS
     mirror: str = ""
     _by_id: dict[str, ModelSpec] = field(init=False)
 
@@ -266,6 +318,17 @@ class ModelStore:
             url = f"{self.mirror.rstrip('/')}/{spec.id}/{f.name}" if self.mirror else f.url
             self._fetch(ctx, f, url, target / f"{f.name}.part", final, done_before, total, span)
             done_before += f.size
+        if spec.unpack:
+            import zipfile
+
+            for f in spec.files:
+                with zipfile.ZipFile(target / f.name) as z:
+                    root = target.resolve()
+                    for member in z.namelist():  # refuse paths that escape the model folder
+                        if not (target / member).resolve().is_relative_to(root):
+                            raise EngineError(f"{f.name} contains an unsafe path")
+                    z.extractall(target)
+                (target / f.name).unlink()
         (target / INSTALLED_MARKER).write_text(json.dumps({"id": spec.id, "files": [f.name for f in spec.files]}))
 
     def _fetch(

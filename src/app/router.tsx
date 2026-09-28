@@ -11,6 +11,7 @@ import { VoicesPage } from '@/features/voices/voices-page'
 import { DesignPage } from '@/features/design/design-page'
 import { HistoryPage } from '@/features/history/history-page'
 import { TranscribePage } from '@/features/transcribe/transcribe-page'
+import { DubPage } from '@/features/dub/dub-page'
 
 const rootRoute = createRootRoute({ component: AppShell })
 
@@ -25,6 +26,7 @@ const pages: Record<string, () => React.ReactNode> = {
   '/design': DesignPage,
   '/history': HistoryPage,
   '/transcribe': TranscribePage,
+  '/dub': DubPage,
 }
 
 const routes = ALL_NAV_ITEMS.map((item) =>

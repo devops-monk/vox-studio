@@ -111,6 +111,24 @@ export const voxd = {
     return qs ? `${base}${base.includes('?') ? '&' : '?'}${qs}` : base
   },
 
+  dubLanguages: () => call(api().GET('/v1/dubs/languages')),
+  dubs: () => call(api().GET('/v1/dubs')),
+  dub: (id: string) => call(api().GET('/v1/dubs/{dub_id}', { params: { path: { dub_id: id } } })),
+  createDub: (file: File, target: string, source?: string) =>
+    upload<import('./types').Dub>('/v1/dubs', { file, target_language: target, ...(source ? { source_language: source } : {}) }, 'file'),
+  patchDub: (id: string, body: import('./schema').components['schemas']['DubPatch']) =>
+    call(api().PATCH('/v1/dubs/{dub_id}', { params: { path: { dub_id: id } }, body })),
+  retranslateDub: (id: string, target?: string) =>
+    call(api().POST('/v1/dubs/{dub_id}/translate', { params: { path: { dub_id: id } }, body: { target_language: target ?? null } })),
+  renderDub: (id: string) => call(api().POST('/v1/dubs/{dub_id}/render', { params: { path: { dub_id: id } } })),
+  previewDubLine: (id: string, line: string) =>
+    call(api().POST('/v1/dubs/{dub_id}/segments/{segment_id}/preview', { params: { path: { dub_id: id, segment_id: line } } })),
+  deleteDub: (id: string) => noContent(api().DELETE('/v1/dubs/{dub_id}', { params: { path: { dub_id: id } } })),
+  saveDub: (id: string, what: 'video' | 'audio' | 'srt' | 'vtt', path: string) =>
+    noContent(api().POST('/v1/dubs/{dub_id}/save', { params: { path: { dub_id: id } }, body: { path, what, overwrite: true } })),
+  dubSubtitlesUrl: (id: string, format: 'srt' | 'vtt') => withToken(`/v1/dubs/${id}/subtitles`) + `${useVoxd.getState().state.token ? '&' : '?'}format=${format}`,
+  mediaUrl: (path: string) => withToken(path),
+
   starTake: (id: string, starred: boolean) => call(api().PUT('/v1/takes/{take_id}/star', { params: { path: { take_id: id } }, body: { starred } })),
   exportTake: (id: string, path: string, overwrite = false) =>
     noContent(api().POST('/v1/takes/{take_id}/export', { params: { path: { take_id: id } }, body: { path, overwrite } })),

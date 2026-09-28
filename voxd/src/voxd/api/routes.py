@@ -21,6 +21,8 @@ from ..voices import export_bundle, read_bundle
 from ..design import apply_sliders, design, parse_description, parse_recipe
 from ..transcripts import EXPORTS, LiveSession, save_live, to_text, uploads_dir
 from ..store import Transcript
+from .. import dubbing
+from ..store import Dub
 from ..history import RETENTION_CHOICES, RETENTION_KEY, delete_takes, sweep, usage_bytes
 from ..store import DesignedVoice
 from ..speech import resolve_engine, save_take
@@ -36,6 +38,13 @@ from .schemas import (
     DesignStatusOut,
     DesignTargetOut,
     DeletedOut,
+    DubLanguageOut,
+    DubOut,
+    DubPatch,
+    DubSaveIn,
+    DubSummaryOut,
+    DubTranslateIn,
+    PreviewOut,
     TranscriptOut,
     TranscriptPatch,
     TranscriptSummaryOut,
@@ -126,7 +135,7 @@ def list_models(request: Request) -> list[ModelOut]:
     """Every downloadable model, whether it's installed, and how well it fits this computer."""
     services = _services(request)
     info = system_info(services.settings.data_dir)
-    return [_model_out(services, spec, info) for spec in services.models.catalog]
+    return [_model_out(services, spec, info) for spec in services.models.catalog if not spec.hidden]
 
 
 @router.post("/models/{model_id}/download", response_model=JobOut, status_code=202, responses=ERRORS, tags=["Models"], summary="Download a model")
@@ -735,6 +744,260 @@ async def live_transcription(websocket: WebSocket, token: str = "", language: st
                     return
     except (WebSocketDisconnect, RuntimeError):
         return
+
+
+# --- Dubbing -------------------------------------------------------------------
+
+DUB_JOBS = ("dub.prepare", "dub.translate", "dub.render")
+
+
+def _dub_job(services, dub_id: str):
+    for kind in DUB_JOBS:
+        if job := services.jobs.active(kind, lambda i: i.get("dub_id") == dub_id):
+            return job
+    return None
+
+
+def _dub_summary(d: Dub) -> DubSummaryOut:
+    return DubSummaryOut(
+        id=d.id, title=d.title, status=d.status, has_video=d.has_video, duration_s=d.duration_s, source_lang=d.source_lang,
+        target_lang=d.target_lang, created_at=d.created_at, updated_at=d.updated_at,
+    )
+
+
+def _dub_out(services, d: Dub) -> DubOut:
+    job = _dub_job(services, d.id)
+    base = f"/v1/dubs/{d.id}/media"
+    return DubOut(
+        **_dub_summary(d).model_dump(), mix=d.mix, segments=d.segments, cast=d.cast,
+        audio_url=f"{base}/audio" if d.output.get("audio") else None,
+        video_url=f"{base}/video" if d.output.get("video") else None,
+        source_url=f"{base}/source", stale=bool(d.output.get("stale")), error=d.error, job_id=job.id if job else None,
+    )
+
+
+def _get_dub(services, dub_id: str) -> Dub:
+    d = services.store.get_dub(dub_id)
+    if d is None:
+        raise HTTPException(404, detail=("not_found", "No such dub"))
+    return d
+
+
+def _require_idle(services, d: Dub) -> None:
+    if _dub_job(services, d.id):
+        raise HTTPException(409, detail=("busy", "Wait for the current step to finish, or cancel it"))
+
+
+@router.get("/dubs/languages", response_model=list[DubLanguageOut], tags=["Dubbing"], summary="Languages you can dub into")
+def dub_languages(request: Request) -> list[DubLanguageOut]:
+    services = _services(request)
+    return [DubLanguageOut(code=c, name=n, has_voice=dubbing.default_voice(services, c) is not None) for c, n in dubbing.LANGUAGES.items()]
+
+
+@router.post("/dubs", response_model=DubOut, status_code=201, responses=ERRORS, tags=["Dubbing"], summary="Start a dub from a video or audio file")
+async def create_dub(
+    request: Request,
+    file: UploadFile = File(description="Video or audio (mp4, mov, mkv, webm, mp3, m4a, wav…), up to 2 GB"),
+    target_language: str = Form(description="Dub into: en, es, fr, de, it, pt, hi, ja or zh"),
+    source_language: str | None = Form(None, description="Spoken language; omit to detect"),
+    title: str | None = Form(None, max_length=120),
+) -> DubOut:
+    """Uploads the file and starts preparing it (transcribe + translate). Watch `job_id`, then review and render."""
+    services = _services(request)
+    if target_language not in dubbing.LANGUAGES:
+        raise HTTPException(400, detail=("unsupported_language", f"Can't dub into {target_language!r} yet"))
+    if not services.media.available():
+        raise HTTPException(400, detail=("engine_unavailable", "Dubbing needs Whisper — download a Whisper model from Models"))
+    try:
+        services.registry.get("whisper")
+    except EngineError as exc:
+        raise HTTPException(400, detail=("engine_unavailable", str(exc))) from exc
+    dub_id = uuid.uuid4().hex
+    folder = dubbing.dub_dir(services, dub_id)
+    suffix = Path(file.filename or "media").suffix.lower()[:8] or ".bin"
+    dest = folder / f"source{suffix}"
+    size = 0
+    with dest.open("wb") as out:
+        while chunk := await file.read(1 << 20):
+            size += len(chunk)
+            if size > MAX_UPLOAD:
+                out.close()
+                shutil.rmtree(folder, ignore_errors=True)
+                raise HTTPException(400, detail=("file_too_large", "Files up to 2 GB are supported"))
+            out.write(chunk)
+    now = time.time()
+    d = Dub(
+        id=dub_id, title=title or Path(file.filename or "Dub").stem[:120] or "Dub", status="preparing", source_file=dest.name,
+        has_video=False, duration_s=0.0, source_lang=source_language or "", target_lang=target_language, mix="duck",
+        segments=[], cast={}, output={}, error=None, created_at=now, updated_at=now,
+    )
+    services.store.add_dub(d)
+    services.jobs.submit("dub.prepare", f"Preparing {d.title}", {"dub_id": dub_id, "source_lang": source_language})
+    return _dub_out(services, d)
+
+
+@router.get("/dubs", response_model=list[DubSummaryOut], tags=["Dubbing"], summary="List dubs")
+def list_dubs(request: Request) -> list[DubSummaryOut]:
+    return [_dub_summary(d) for d in _services(request).store.list_dubs()]
+
+
+@router.get("/dubs/{dub_id}", response_model=DubOut, responses=ERRORS, tags=["Dubbing"], summary="Get a dub")
+def get_dub(request: Request, dub_id: str) -> DubOut:
+    services = _services(request)
+    return _dub_out(services, _get_dub(services, dub_id))
+
+
+@router.patch("/dubs/{dub_id}", response_model=DubOut, responses=ERRORS, tags=["Dubbing"], summary="Edit a dub")
+def patch_dub(request: Request, dub_id: str, body: DubPatch) -> DubOut:
+    """Edit lines (translation, speaker), the voice cast, the mix or the title. Any change after a render marks it `stale`."""
+    services = _services(request)
+    d = _get_dub(services, dub_id)
+    _require_idle(services, d)
+    fields: dict = {}
+    if body.title is not None:
+        fields["title"] = body.title.strip()
+    if body.mix is not None:
+        fields["mix"] = body.mix
+    if body.cast is not None:
+        cast = {**d.cast, **{k: v.model_dump() for k, v in body.cast.items()}}
+        for speaker, v in body.cast.items():
+            try:
+                engine = services.registry.get(v.engine)
+            except EngineError as exc:
+                raise HTTPException(400, detail=("engine_unavailable", str(exc))) from exc
+            if not any(x.id == v.voice for x in engine.voices()):
+                raise HTTPException(400, detail=("unknown_voice", f"{v.voice} isn't a {v.engine} voice"))
+        fields["cast"] = cast
+    if body.segments is not None:
+        by_id = {s.id: s for s in body.segments}
+        segments = []
+        for seg in d.segments:
+            patch = by_id.get(seg["id"])
+            if patch:
+                seg = {**seg, **{k: v for k, v in patch.model_dump().items() if v is not None and k != "id"}}
+                seg.pop("fit", None)
+            segments.append(seg)
+        fields["segments"] = segments
+        # New speakers get a voice straight away.
+        cast = fields.get("cast", d.cast)
+        for seg in segments:
+            if seg["speaker"] not in cast:
+                cast = {**cast, seg["speaker"]: dubbing.default_voice(services, d.target_lang)}
+        fields["cast"] = cast
+    if fields and d.output.get("audio") and set(fields) != {"title"}:
+        fields["output"] = {**d.output, "stale": True}
+    updated = services.store.update_dub(dub_id, **fields) if fields else d
+    services.bus.publish("dubs.changed", {"id": dub_id})
+    return _dub_out(services, updated)
+
+
+@router.post("/dubs/{dub_id}/translate", response_model=JobOut, status_code=202, responses=ERRORS, tags=["Dubbing"], summary="Translate again")
+def retranslate_dub(request: Request, dub_id: str, body: DubTranslateIn) -> JobOut:
+    """Re-translates every line (optionally into a new target language). Your edits to translations are replaced."""
+    services = _services(request)
+    d = _get_dub(services, dub_id)
+    _require_idle(services, d)
+    target = body.target_language or d.target_lang
+    if target not in dubbing.LANGUAGES:
+        raise HTTPException(400, detail=("unsupported_language", f"Can't dub into {target!r} yet"))
+    if not d.segments:
+        raise HTTPException(409, detail=("not_ready", "This dub hasn't been transcribed yet"))
+    return _job_out(services.jobs.submit("dub.translate", f"Translating {d.title}", {"dub_id": dub_id, "target": target}))
+
+
+@router.post("/dubs/{dub_id}/render", response_model=JobOut, status_code=202, responses=ERRORS, tags=["Dubbing"], summary="Render the dub")
+def render_dub(request: Request, dub_id: str) -> JobOut:
+    services = _services(request)
+    d = _get_dub(services, dub_id)
+    _require_idle(services, d)
+    if d.status not in ("ready", "done", "failed") or not d.segments:
+        raise HTTPException(409, detail=("not_ready", "This dub isn't ready to render"))
+    missing = sorted({s["speaker"] for s in d.segments} - {k for k, v in d.cast.items() if v and v.get("voice")})
+    if missing:
+        raise HTTPException(400, detail=("missing_voice", f"Choose a voice for {', '.join(missing)}"))
+    services.store.update_dub(dub_id, status="rendering", error=None)
+    services.bus.publish("dubs.changed", {"id": dub_id})
+    return _job_out(services.jobs.submit("dub.render", f"Rendering {d.title}", {"dub_id": dub_id}))
+
+
+@router.post("/dubs/{dub_id}/segments/{segment_id}/preview", response_model=PreviewOut, responses=ERRORS, tags=["Dubbing"], summary="Hear one line")
+async def preview_segment(request: Request, dub_id: str, segment_id: str) -> PreviewOut:
+    services = _services(request)
+    d = _get_dub(services, dub_id)
+    seg = next((s for s in d.segments if s["id"] == segment_id), None)
+    if seg is None:
+        raise HTTPException(404, detail=("not_found", "No such line"))
+    previews = dubbing.dub_dir(services, dub_id) / "previews"
+    previews.mkdir(exist_ok=True)
+    out = previews / f"{segment_id}.wav"
+    try:
+        audio, rate = await asyncio.to_thread(dubbing.speak, services, d.cast, seg, 1.0, out)
+    except EngineError as exc:
+        raise HTTPException(400, detail=("synthesis_failed", str(exc))) from exc
+    return PreviewOut(audio_url=f"/v1/dubs/{dub_id}/media/preview-{segment_id}", duration_s=round(len(audio) / rate, 2))
+
+
+@router.get("/dubs/{dub_id}/media/{name}", response_class=FileResponse, responses=ERRORS, tags=["Dubbing"], summary="Source, dubbed audio/video, or a line preview")
+def dub_media(request: Request, dub_id: str, name: str) -> FileResponse:
+    services = _services(request)
+    d = _get_dub(services, dub_id)
+    folder = dubbing.dub_dir(services, dub_id)
+    if name == "source":
+        path = folder / d.source_file
+    elif name == "audio" and d.output.get("audio"):
+        path = folder / d.output["audio"]
+    elif name == "video" and d.output.get("video"):
+        path = folder / d.output["video"]
+    elif name.startswith("preview-") and name[8:].isalnum():
+        path = folder / "previews" / f"{name[8:]}.wav"
+    else:
+        raise HTTPException(404, detail=("not_found", "Not available"))
+    if not path.exists():
+        raise HTTPException(404, detail=("not_found", "Not available"))
+    return FileResponse(path)
+
+
+@router.get("/dubs/{dub_id}/subtitles", responses={200: {"content": {"text/plain": {}}}, **ERRORS}, tags=["Dubbing"], summary="Subtitles")
+def dub_subtitles(
+    request: Request, dub_id: str, format: str = Query("srt", pattern="^(srt|vtt)$"), which: str = Query("translation", pattern="^(translation|text)$")
+) -> Response:
+    """`which=translation` for the dubbed language, `which=text` for the original."""
+    d = _get_dub(_services(request), dub_id)
+    safe = "".join(c if c.isalnum() or c in " -_" else "_" for c in d.title).strip() or "dub"
+    lang = d.target_lang if which == "translation" else d.source_lang
+    return Response(
+        dubbing.subtitles(d, format, which), media_type=f"{'text/vtt' if format == 'vtt' else 'application/x-subrip'}; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="{safe}.{lang}.{format}"'},
+    )
+
+
+@router.post("/dubs/{dub_id}/save", status_code=204, responses=ERRORS, tags=["Dubbing"], summary="Save an output to a file")
+def save_dub(request: Request, dub_id: str, body: DubSaveIn) -> Response:
+    services = _services(request)
+    d = _get_dub(services, dub_id)
+    folder = dubbing.dub_dir(services, dub_id)
+    suffix = {"video": ".mp4", "audio": ".wav", "srt": ".srt", "vtt": ".vtt"}[body.what]
+    dest = _destination(body.path, suffix, body.overwrite)
+    if body.what in ("srt", "vtt"):
+        dest.write_text(dubbing.subtitles(d, body.what), encoding="utf-8")
+    else:
+        src = d.output.get(body.what)
+        if not src:
+            raise HTTPException(409, detail=("not_rendered", "Render the dub first"))
+        shutil.copyfile(folder / src, dest)
+    return Response(status_code=204)
+
+
+@router.delete("/dubs/{dub_id}", status_code=204, responses=ERRORS, tags=["Dubbing"], summary="Delete a dub")
+def delete_dub(request: Request, dub_id: str) -> Response:
+    services = _services(request)
+    d = _get_dub(services, dub_id)
+    if job := _dub_job(services, d.id):
+        services.jobs.cancel(job.id)
+    services.store.delete_dub(dub_id)
+    shutil.rmtree(dubbing.dub_dir(services, dub_id), ignore_errors=True)
+    services.bus.publish("dubs.changed", {"id": dub_id})
+    return Response(status_code=204)
 
 
 # --- Jobs -------------------------------------------------------------------

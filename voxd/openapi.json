@@ -2554,6 +2554,821 @@
         }
       }
     },
+    "/v1/dubs/languages": {
+      "get": {
+        "tags": [
+          "Dubbing"
+        ],
+        "summary": "Languages you can dub into",
+        "operationId": "dub_languages_v1_dubs_languages_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/DubLanguageOut"
+                  },
+                  "type": "array",
+                  "title": "Response Dub Languages V1 Dubs Languages Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/dubs": {
+      "get": {
+        "tags": [
+          "Dubbing"
+        ],
+        "summary": "List dubs",
+        "operationId": "list_dubs_v1_dubs_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/DubSummaryOut"
+                  },
+                  "type": "array",
+                  "title": "Response List Dubs V1 Dubs Get"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Dubbing"
+        ],
+        "summary": "Start a dub from a video or audio file",
+        "description": "Uploads the file and starts preparing it (transcribe + translate). Watch `job_id`, then review and render.",
+        "operationId": "create_dub_v1_dubs_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_create_dub_v1_dubs_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DubOut"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/dubs/{dub_id}": {
+      "get": {
+        "tags": [
+          "Dubbing"
+        ],
+        "summary": "Get a dub",
+        "operationId": "get_dub_v1_dubs__dub_id__get",
+        "parameters": [
+          {
+            "name": "dub_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Dub Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DubOut"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Dubbing"
+        ],
+        "summary": "Edit a dub",
+        "description": "Edit lines (translation, speaker), the voice cast, the mix or the title. Any change after a render marks it `stale`.",
+        "operationId": "patch_dub_v1_dubs__dub_id__patch",
+        "parameters": [
+          {
+            "name": "dub_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Dub Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DubPatch"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DubOut"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Dubbing"
+        ],
+        "summary": "Delete a dub",
+        "operationId": "delete_dub_v1_dubs__dub_id__delete",
+        "parameters": [
+          {
+            "name": "dub_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Dub Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/dubs/{dub_id}/translate": {
+      "post": {
+        "tags": [
+          "Dubbing"
+        ],
+        "summary": "Translate again",
+        "description": "Re-translates every line (optionally into a new target language). Your edits to translations are replaced.",
+        "operationId": "retranslate_dub_v1_dubs__dub_id__translate_post",
+        "parameters": [
+          {
+            "name": "dub_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Dub Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DubTranslateIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobOut"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/dubs/{dub_id}/render": {
+      "post": {
+        "tags": [
+          "Dubbing"
+        ],
+        "summary": "Render the dub",
+        "operationId": "render_dub_v1_dubs__dub_id__render_post",
+        "parameters": [
+          {
+            "name": "dub_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Dub Id"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobOut"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/dubs/{dub_id}/segments/{segment_id}/preview": {
+      "post": {
+        "tags": [
+          "Dubbing"
+        ],
+        "summary": "Hear one line",
+        "operationId": "preview_segment_v1_dubs__dub_id__segments__segment_id__preview_post",
+        "parameters": [
+          {
+            "name": "dub_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Dub Id"
+            }
+          },
+          {
+            "name": "segment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Segment Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreviewOut"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/dubs/{dub_id}/media/{name}": {
+      "get": {
+        "tags": [
+          "Dubbing"
+        ],
+        "summary": "Source, dubbed audio/video, or a line preview",
+        "operationId": "dub_media_v1_dubs__dub_id__media__name__get",
+        "parameters": [
+          {
+            "name": "dub_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Dub Id"
+            }
+          },
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Name"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/dubs/{dub_id}/subtitles": {
+      "get": {
+        "tags": [
+          "Dubbing"
+        ],
+        "summary": "Subtitles",
+        "description": "`which=translation` for the dubbed language, `which=text` for the original.",
+        "operationId": "dub_subtitles_v1_dubs__dub_id__subtitles_get",
+        "parameters": [
+          {
+            "name": "dub_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Dub Id"
+            }
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^(srt|vtt)$",
+              "default": "srt",
+              "title": "Format"
+            }
+          },
+          {
+            "name": "which",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^(translation|text)$",
+              "default": "translation",
+              "title": "Which"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              },
+              "text/plain": {}
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/dubs/{dub_id}/save": {
+      "post": {
+        "tags": [
+          "Dubbing"
+        ],
+        "summary": "Save an output to a file",
+        "operationId": "save_dub_v1_dubs__dub_id__save_post",
+        "parameters": [
+          {
+            "name": "dub_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Dub Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DubSaveIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/jobs": {
       "get": {
         "tags": [
@@ -2897,6 +3712,51 @@
           "consent"
         ],
         "title": "Body_create_custom_voice_v1_voices_custom_post"
+      },
+      "Body_create_dub_v1_dubs_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "description": "Video or audio (mp4, mov, mkv, webm, mp3, m4a, wav\u2026), up to 2 GB"
+          },
+          "target_language": {
+            "type": "string",
+            "title": "Target Language",
+            "description": "Dub into: en, es, fr, de, it, pt, hi, ja or zh"
+          },
+          "source_language": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Language",
+            "description": "Spoken language; omit to detect"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 120
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file",
+          "target_language"
+        ],
+        "title": "Body_create_dub_v1_dubs_post"
       },
       "Body_create_transcription_v1_transcriptions_post": {
         "properties": {
@@ -3424,6 +4284,433 @@
         ],
         "title": "DesignedVoiceOut"
       },
+      "DubLanguageOut": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "has_voice": {
+            "type": "boolean",
+            "title": "Has Voice",
+            "description": "A voice is installed that can speak this language"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "name",
+          "has_voice"
+        ],
+        "title": "DubLanguageOut"
+      },
+      "DubOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "preparing | ready | rendering | done | failed"
+          },
+          "has_video": {
+            "type": "boolean",
+            "title": "Has Video"
+          },
+          "duration_s": {
+            "type": "number",
+            "title": "Duration S"
+          },
+          "source_lang": {
+            "type": "string",
+            "title": "Source Lang"
+          },
+          "target_lang": {
+            "type": "string",
+            "title": "Target Lang"
+          },
+          "created_at": {
+            "type": "number",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "number",
+            "title": "Updated At"
+          },
+          "mix": {
+            "type": "string",
+            "title": "Mix",
+            "description": "`replace` (dub only) or `duck` (original quietly underneath)"
+          },
+          "segments": {
+            "items": {
+              "$ref": "#/components/schemas/DubSegmentOut"
+            },
+            "type": "array",
+            "title": "Segments"
+          },
+          "cast": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/DubVoice"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "type": "object",
+            "title": "Cast",
+            "description": "Voice for each speaker (null until one is chosen)"
+          },
+          "audio_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Audio Url"
+          },
+          "video_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Video Url"
+          },
+          "source_url": {
+            "type": "string",
+            "title": "Source Url"
+          },
+          "stale": {
+            "type": "boolean",
+            "title": "Stale",
+            "description": "Edited since the last render",
+            "default": false
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "job_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Job Id",
+            "description": "The prepare/translate/render job in progress, if any"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "status",
+          "has_video",
+          "duration_s",
+          "source_lang",
+          "target_lang",
+          "created_at",
+          "updated_at",
+          "mix",
+          "segments",
+          "cast",
+          "source_url"
+        ],
+        "title": "DubOut"
+      },
+      "DubPatch": {
+        "properties": {
+          "title": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 120,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "mix": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(replace|duck)$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mix"
+          },
+          "cast": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/DubVoice"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cast"
+          },
+          "segments": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/DubSegmentPatch"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Segments"
+          }
+        },
+        "type": "object",
+        "title": "DubPatch"
+      },
+      "DubSaveIn": {
+        "properties": {
+          "path": {
+            "type": "string",
+            "title": "Path"
+          },
+          "what": {
+            "type": "string",
+            "pattern": "^(video|audio|srt|vtt)$",
+            "title": "What"
+          },
+          "overwrite": {
+            "type": "boolean",
+            "title": "Overwrite",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "path",
+          "what"
+        ],
+        "title": "DubSaveIn"
+      },
+      "DubSegmentOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "start": {
+            "type": "number",
+            "title": "Start"
+          },
+          "end": {
+            "type": "number",
+            "title": "End"
+          },
+          "text": {
+            "type": "string",
+            "title": "Text",
+            "description": "What was said (source language)"
+          },
+          "translation": {
+            "type": "string",
+            "title": "Translation",
+            "description": "What will be spoken"
+          },
+          "speaker": {
+            "type": "string",
+            "title": "Speaker"
+          },
+          "fit": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fit",
+            "description": "After rendering: `speed` applied, `overflow_s` past the slot, `duration_s`"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "start",
+          "end",
+          "text",
+          "translation",
+          "speaker"
+        ],
+        "title": "DubSegmentOut"
+      },
+      "DubSegmentPatch": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "translation": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Translation"
+          },
+          "speaker": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^S[0-9]{1,2}$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Speaker"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id"
+        ],
+        "title": "DubSegmentPatch"
+      },
+      "DubSummaryOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "preparing | ready | rendering | done | failed"
+          },
+          "has_video": {
+            "type": "boolean",
+            "title": "Has Video"
+          },
+          "duration_s": {
+            "type": "number",
+            "title": "Duration S"
+          },
+          "source_lang": {
+            "type": "string",
+            "title": "Source Lang"
+          },
+          "target_lang": {
+            "type": "string",
+            "title": "Target Lang"
+          },
+          "created_at": {
+            "type": "number",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "number",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "status",
+          "has_video",
+          "duration_s",
+          "source_lang",
+          "target_lang",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "DubSummaryOut"
+      },
+      "DubTranslateIn": {
+        "properties": {
+          "target_language": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Language",
+            "description": "Change the target language and translate again"
+          }
+        },
+        "type": "object",
+        "title": "DubTranslateIn"
+      },
+      "DubVoice": {
+        "properties": {
+          "engine": {
+            "type": "string",
+            "title": "Engine"
+          },
+          "voice": {
+            "type": "string",
+            "title": "Voice"
+          }
+        },
+        "type": "object",
+        "required": [
+          "engine",
+          "voice"
+        ],
+        "title": "DubVoice"
+      },
       "EngineOut": {
         "properties": {
           "id": {
@@ -3842,6 +5129,24 @@
           "fit"
         ],
         "title": "ModelOut"
+      },
+      "PreviewOut": {
+        "properties": {
+          "audio_url": {
+            "type": "string",
+            "title": "Audio Url"
+          },
+          "duration_s": {
+            "type": "number",
+            "title": "Duration S"
+          }
+        },
+        "type": "object",
+        "required": [
+          "audio_url",
+          "duration_s"
+        ],
+        "title": "PreviewOut"
       },
       "SegmentOut": {
         "properties": {

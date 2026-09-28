@@ -23,10 +23,12 @@ from .engines.whisper import WhisperEngine
 from .events import EventBus
 from .jobs import JobContext, JobManager
 from .lifecycle import Lifecycle, Phase
-from .models import CATALOG, ModelSpec, ModelStore
+from .models import CATALOG, TRANSLATION_MODELS, ModelSpec, ModelStore
 from .runtimes import PACKS, RuntimeManager
 from .design import TraitStore
 from .history import sweeper
+from .media import Media
+from .dubbing import prepare as dub_prepare, render as dub_render, retranslate as dub_retranslate
 from .speech import render_long
 from .transcripts import transcribe_file
 from .voices import CustomVoices
@@ -63,6 +65,7 @@ class Services:
     runtimes: RuntimeManager
     custom: CustomVoices
     traits: TraitStore
+    media: Media = None  # type: ignore[assignment]
     store: Store = None  # type: ignore[assignment]  # opened in lifespan
     jobs: JobManager = None  # type: ignore[assignment]
 
@@ -87,7 +90,7 @@ def analyze_voices(services: Services, ctx: JobContext, _spec: dict) -> dict:
 
 
 def create_app(
-    settings: Settings, registry: Registry | None = None, catalog: tuple[ModelSpec, ...] = CATALOG
+    settings: Settings, registry: Registry | None = None, catalog: tuple[ModelSpec, ...] = CATALOG + TRANSLATION_MODELS
 ) -> FastAPI:
     settings.ensure_dirs()
     models = ModelStore(settings.models_dir, catalog, settings.model_mirror)
@@ -102,7 +105,9 @@ def create_app(
             WhisperEngine(models, runtimes, preferred=lambda: services.store.get_setting("asr_model")),
         ]
     )
-    services = Services(settings, Lifecycle(), registry, EventBus(), models, runtimes, custom, TraitStore(settings.data_dir / "voice-traits.json"))
+    services = Services(
+        settings, Lifecycle(), registry, EventBus(), models, runtimes, custom, TraitStore(settings.data_dir / "voice-traits.json"), Media(runtimes)
+    )
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
@@ -114,6 +119,9 @@ def create_app(
         services.jobs.register("model.download", partial(download_model, services), lane="network")
         services.jobs.register("design.analyze", partial(analyze_voices, services))
         services.jobs.register("transcribe", partial(transcribe_file, services), lane="asr")
+        services.jobs.register("dub.prepare", partial(dub_prepare, services), lane="asr")
+        services.jobs.register("dub.render", partial(dub_render, services))
+        services.jobs.register("dub.translate", partial(dub_retranslate, services), lane="asr")
         services.jobs.start()
         cleanup = asyncio.create_task(sweeper(services), name="retention")
         services.lifecycle.set(Phase.LOADING_ENGINES, "Checking engines")
@@ -125,6 +133,7 @@ def create_app(
             services.lifecycle.set(Phase.ERROR, str(exc))
         yield
         cleanup.cancel()
+        services.media.stop()
         for engine_id in ("chatterbox", "kokoro", "whisper"):
             if engine := services.registry.raw(engine_id):
                 engine.unload()

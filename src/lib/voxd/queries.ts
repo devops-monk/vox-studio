@@ -238,3 +238,15 @@ export function usePatchTranscript() {
     },
   })
 }
+
+export const useDubLanguages = () => useQuery({ queryKey: ['dub-languages'], queryFn: voxd.dubLanguages, enabled: useReady() })
+export const useDubs = () => useQuery({ queryKey: ['dubs'], queryFn: voxd.dubs, enabled: useReady() })
+export function useDub(id: string | null) {
+  const live = useLive((s) => s.connected)
+  return useQuery({
+    queryKey: ['dub', id],
+    queryFn: () => voxd.dub(id!),
+    enabled: useReady() && !!id,
+    refetchInterval: (q) => (!live && q.state.data?.job_id ? POLL_MS : false),
+  })
+}

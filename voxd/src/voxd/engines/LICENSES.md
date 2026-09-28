@@ -14,5 +14,7 @@ Add a row here before merging a new engine.
 | `chatterbox` | `chatterbox-tts` + PyTorch + `resemble-perth` watermarker (installed into an isolated runtime on request) | MIT / BSD-3 / MIT | https://github.com/resemble-ai/chatterbox |
 | `whisper` | Whisper weights, CTranslate2 conversions (Systran/faster-whisper-base, -small; dropbox-dash/faster-whisper-large-v3-turbo; pinned commits) | MIT | https://huggingface.co/Systran |
 | `whisper` | `faster-whisper` + CTranslate2 + PyAV (FFmpeg, LGPL build) in an isolated runtime | MIT / MIT / BSD (LGPL FFmpeg libs) | https://github.com/SYSTRAN/faster-whisper |
+| (dubbing) | Argos Translate packages, 9 languages via English (downloaded on request, SHA-256 pinned) | MIT / CC0 (Argos); trained on OPUS corpora | https://github.com/argosopentech/argos-translate |
+| (dubbing) | SentencePiece (in the Whisper runtime) | Apache-2.0 | https://github.com/google/sentencepiece |
 
 > **Note on GPL components:** `phonemizer` and the espeak-ng library are installed into voxd's runtime by `uv` on the user's machine; they are not part of VoxStudio's source or app bundle. If a future release starts **bundling** the Python runtime (M16 packaging), review this — either ship those components' source per GPL-3.0 or switch to a permissively-licensed phonemizer.

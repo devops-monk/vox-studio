@@ -270,3 +270,76 @@ class TranscriptOut(TranscriptSummaryOut):
 class TranscriptPatch(BaseModel):
     title: str | None = Field(None, min_length=1, max_length=120)
     segments: list[SegmentOut] | None = Field(None, description="Corrected segments (text edits)")
+
+
+class DubVoice(BaseModel):
+    engine: str
+    voice: str
+
+
+class DubSegmentOut(BaseModel):
+    id: str
+    start: float
+    end: float
+    text: str = Field(description="What was said (source language)")
+    translation: str = Field(description="What will be spoken")
+    speaker: str
+    fit: dict | None = Field(None, description="After rendering: `speed` applied, `overflow_s` past the slot, `duration_s`")
+
+
+class DubSummaryOut(BaseModel):
+    id: str
+    title: str
+    status: str = Field(description="preparing | ready | rendering | done | failed")
+    has_video: bool
+    duration_s: float
+    source_lang: str
+    target_lang: str
+    created_at: float
+    updated_at: float
+
+
+class DubOut(DubSummaryOut):
+    mix: str = Field(description="`replace` (dub only) or `duck` (original quietly underneath)")
+    segments: list[DubSegmentOut]
+    cast: dict[str, DubVoice | None] = Field(description="Voice for each speaker (null until one is chosen)")
+    audio_url: str | None = None
+    video_url: str | None = None
+    source_url: str
+    stale: bool = Field(False, description="Edited since the last render")
+    error: str | None = None
+    job_id: str | None = Field(None, description="The prepare/translate/render job in progress, if any")
+
+
+class DubSegmentPatch(BaseModel):
+    id: str
+    translation: str | None = Field(None, max_length=2000)
+    speaker: str | None = Field(None, pattern="^S[0-9]{1,2}$")
+
+
+class DubPatch(BaseModel):
+    title: str | None = Field(None, min_length=1, max_length=120)
+    mix: str | None = Field(None, pattern="^(replace|duck)$")
+    cast: dict[str, DubVoice] | None = None
+    segments: list[DubSegmentPatch] | None = None
+
+
+class DubTranslateIn(BaseModel):
+    target_language: str | None = Field(None, description="Change the target language and translate again")
+
+
+class DubLanguageOut(BaseModel):
+    code: str
+    name: str
+    has_voice: bool = Field(description="A voice is installed that can speak this language")
+
+
+class DubSaveIn(BaseModel):
+    path: str
+    what: str = Field(pattern="^(video|audio|srt|vtt)$")
+    overwrite: bool = False
+
+
+class PreviewOut(BaseModel):
+    audio_url: str
+    duration_s: float
