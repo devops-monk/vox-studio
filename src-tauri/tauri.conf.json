@@ -59,7 +59,48 @@
     "shortDescription": "Private AI voice studio",
     "longDescription": "Clone, design and direct voices, dub videos, narrate books and transcribe speech — entirely on your computer.",
     "copyright": "© 2026 VoxStudio contributors",
-    "publisher": "VoxStudio"
+    "publisher": "VoxStudio",
+    "fileAssociations": [
+      {
+        "ext": [
+          "mp4",
+          "mov",
+          "m4v",
+          "mkv",
+          "webm"
+        ],
+        "name": "Video",
+        "description": "Dub or transcribe with VoxStudio",
+        "role": "Viewer",
+        "rank": "Alternate"
+      },
+      {
+        "ext": [
+          "wav",
+          "mp3",
+          "m4a",
+          "aac",
+          "flac",
+          "ogg",
+          "opus",
+          "aiff"
+        ],
+        "name": "Audio",
+        "description": "Clone, transcribe or clean up with VoxStudio",
+        "role": "Viewer",
+        "rank": "Alternate"
+      },
+      {
+        "ext": [
+          "epub",
+          "docx"
+        ],
+        "name": "Book",
+        "description": "Make an audiobook with VoxStudio",
+        "role": "Viewer",
+        "rank": "Alternate"
+      }
+    ]
   },
   "plugins": {
     "updater": {

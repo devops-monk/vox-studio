@@ -1816,6 +1816,25 @@ def clear_ratings(request: Request, language: str | None = Query(None)) -> Delet
     return DeletedCountOut(deleted=n)
 
 
+# --- Local files (Finder, Open With) -------------------------------------------
+
+OPENABLE = {".wav", ".mp3", ".m4a", ".aac", ".flac", ".ogg", ".opus", ".aif", ".aiff", ".caf", ".mp4", ".mov", ".m4v",
+            ".mkv", ".webm", ".avi", ".epub", ".docx", ".txt", ".md", ".markdown"}
+
+
+@router.get("/files/read", response_class=FileResponse, responses=ERRORS, tags=["System"], summary="Read a local file the user opened")
+def read_local_file(request: Request, path: str = Query(description="Absolute path of an audio, video, book or text file")) -> FileResponse:
+    """Lets the app load files opened from Finder (Open With, Quick Actions, `voxstudio://files`).
+    Only the VoxStudio app itself may call this — not API keys — and only for media, book and text files."""
+    _require_app(request)
+    file = Path(path).expanduser()
+    if not file.is_absolute() or file.suffix.lower() not in OPENABLE:
+        raise HTTPException(400, detail=("unsupported_file", "Only audio, video, book and text files can be opened"))
+    if not file.is_file():
+        raise HTTPException(404, detail=("not_found", f"No such file: {file.name}"))
+    return FileResponse(file, filename=file.name)
+
+
 # --- API keys -----------------------------------------------------------------
 
 

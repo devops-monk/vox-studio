@@ -10,6 +10,7 @@ import { useStudio } from '@/lib/store/studio'
 import { voxd } from '@/lib/voxd/client'
 import { useDubLanguages } from '@/lib/voxd/queries'
 import { cn } from '@/lib/cn'
+import { create } from 'zustand'
 
 type Kind = 'audio' | 'video' | 'book' | 'text' | 'other'
 const AUDIO = /\.(wav|mp3|m4a|aac|flac|ogg|opus|aiff?|caf)$/i
@@ -64,6 +65,14 @@ function actionsFor(kind: Kind, count: number): Action[] {
   }
 }
 
+/** Files waiting for a decision — from a drop, or opened from Finder. `auto` runs an action directly. */
+export const useDropSheet = create<{ files: File[] | null; auto: string | null; open: (files: File[], auto?: string | null) => void; close: () => void }>((set) => ({
+  files: null,
+  auto: null,
+  open: (files, auto = null) => set({ files, auto }),
+  close: () => set({ files: null, auto: null }),
+}))
+
 /** Tell the user when a background transcription is ready, with a shortcut to it. */
 async function whenTranscribed(jobId: string, name: string, open: (id: string) => void) {
   for (;;) {
@@ -85,7 +94,8 @@ async function whenTranscribed(jobId: string, name: string, open: (id: string) =
 export function DropAnywhere() {
   const navigate = useNavigate()
   const [dragging, setDragging] = useState(false)
-  const [files, setFiles] = useState<File[] | null>(null)
+  const { files, auto, open: openSheet, close } = useDropSheet()
+  const setFiles = (f: File[] | null) => (f ? openSheet(f) : close())
   const [busy, setBusy] = useState<string | null>(null)
   const [dubInto, setDubInto] = useState('en')
   const depth = useRef(0)
@@ -176,6 +186,16 @@ export function DropAnywhere() {
       setBusy(null)
     }
   }
+
+  // Finder Quick Actions name the action up front.
+  useEffect(() => {
+    if (files && auto) {
+      const a = auto
+      useDropSheet.setState({ auto: null })
+      void run(a)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [files, auto])
 
   const kinds = files ? [...new Set(files.map(kindOf))] : []
   const kind: Kind = kinds.length === 1 ? kinds[0] : kinds.every((k) => k === 'audio' || k === 'video') ? 'audio' : 'other'

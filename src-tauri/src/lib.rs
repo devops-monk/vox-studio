@@ -1,6 +1,7 @@
 //! VoxStudio desktop shell: window, glass effects, the voxd supervisor, dictation and tray.
 
 mod dictation;
+mod finder;
 mod menu;
 mod quick;
 mod voxd;
@@ -20,6 +21,11 @@ fn voxd_state(voxd: State<'_, Voxd>) -> VoxdState {
 #[tauri::command]
 fn voxd_logs(voxd: State<'_, Voxd>) -> Vec<String> {
     voxd.logs()
+}
+
+#[tauri::command]
+fn log_path(voxd: State<'_, Voxd>) -> Option<String> {
+    voxd.log_path().map(|p| p.to_string_lossy().into_owned())
 }
 
 #[tauri::command]
@@ -71,9 +77,12 @@ fn dictation_open_accessibility() {
     dictation::open_accessibility_settings();
 }
 
-/// Forward `voxstudio://…` links to the UI, which decides what they do.
+/// Forward `voxstudio://…` links to the UI, which decides what they do. Plain file paths (from
+/// "Open With" on Windows/Linux, or a second launch) become a `voxstudio://files` link.
 fn open_links(app: &AppHandle, urls: Vec<String>) {
-    let links: Vec<String> = urls.into_iter().filter(|u| u.starts_with("voxstudio://")).collect();
+    let mut links: Vec<String> = urls.iter().filter(|u| u.starts_with("voxstudio://")).cloned().collect();
+    let files = finder::paths_in_args(&[String::new()].into_iter().chain(urls.iter().cloned()).collect::<Vec<_>>());
+    links.extend(finder::files_link(&files, ""));
     if links.is_empty() {
         return;
     }
@@ -131,6 +140,21 @@ fn speak_selection(app: AppHandle) {
 #[tauri::command]
 fn open_link(app: AppHandle, url: String) {
     open_links(&app, vec![url]);
+}
+
+#[tauri::command]
+fn finder_actions_status() -> bool {
+    finder::installed()
+}
+
+#[tauri::command]
+fn finder_actions_install() -> Result<Vec<String>, String> {
+    finder::install()
+}
+
+#[tauri::command]
+fn finder_actions_remove() -> Result<(), String> {
+    finder::uninstall()
 }
 
 #[tauri::command]
@@ -199,6 +223,9 @@ pub fn run() {
                 }
                 #[cfg(any(windows, target_os = "linux"))]
                 let _ = app.deep_link().register_all();
+                // Windows/Linux pass "Open with" files as arguments (macOS sends RunEvent::Opened).
+                #[cfg(not(target_os = "macos"))]
+                open_links(app.handle(), std::env::args().skip(1).collect());
             }
             let voxd = Voxd::new(app.handle().clone());
             voxd.start();
@@ -219,8 +246,12 @@ pub fn run() {
             voxd_state,
             voxd_logs,
             voxd_restart,
+            log_path,
             client_log,
             take_pending_links,
+            finder_actions_status,
+            finder_actions_install,
+            finder_actions_remove,
             open_link,
             quick_toggle,
             quick_hide,
@@ -238,9 +269,16 @@ pub fn run() {
         ])
         .build(tauri::generate_context!())
         .expect("error while building VoxStudio")
-        .run(|app, event| {
-            if let RunEvent::Exit = event {
-                app.state::<Voxd>().stop();
+        .run(|app, event| match event {
+            RunEvent::Exit => app.state::<Voxd>().stop(),
+            // Files opened with VoxStudio from Finder (Open With, the Dock icon, double-click).
+            #[cfg(target_os = "macos")]
+            RunEvent::Opened { urls } => {
+                // voxstudio:// links also arrive here, but the deep-link plugin already handles
+                // them; only take the files, or every link would run twice.
+                let paths: Vec<std::path::PathBuf> = urls.iter().filter(|u| u.scheme() == "file").filter_map(|u| u.to_file_path().ok()).collect();
+                open_links(app, finder::files_link(&paths, "").into_iter().collect());
             }
+            _ => {}
         });
 }

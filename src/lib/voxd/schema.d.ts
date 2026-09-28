@@ -1520,6 +1520,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/files/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read a local file the user opened
+         * @description Lets the app load files opened from Finder (Open With, Quick Actions, `voxstudio://files`).
+         *     Only the VoxStudio app itself may call this — not API keys — and only for media, book and text files.
+         */
+        get: operations["read_local_file_v1_files_read_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/keys": {
         parameters: {
             query?: never;
@@ -8516,6 +8537,63 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["LeaderboardOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_local_file_v1_files_read_get: {
+        parameters: {
+            query: {
+                /** @description Absolute path of an audio, video, book or text file */
+                path: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
                 };
             };
             /** @description Validation Error */

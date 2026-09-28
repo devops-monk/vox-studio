@@ -6370,6 +6370,74 @@
         }
       }
     },
+    "/v1/files/read": {
+      "get": {
+        "tags": [
+          "System"
+        ],
+        "summary": "Read a local file the user opened",
+        "description": "Lets the app load files opened from Finder (Open With, Quick Actions, `voxstudio://files`).\nOnly the VoxStudio app itself may call this \u2014 not API keys \u2014 and only for media, book and text files.",
+        "operationId": "read_local_file_v1_files_read_get",
+        "parameters": [
+          {
+            "name": "path",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Absolute path of an audio, video, book or text file",
+              "title": "Path"
+            },
+            "description": "Absolute path of an audio, video, book or text file"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/keys": {
       "get": {
         "tags": [

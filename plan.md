@@ -275,7 +275,12 @@ Work goes one milestone at a time. Tick `[x]` only after the item is verified in
   - [x] Window-wide drop hint that doesn't block pages' own drop zones (drops they already handled are skipped), then a “What should VoxStudio do?” sheet with actions by file type: clone, transcribe (batch for several files, with a “ready” toast linking to the transcript), clean up, change voice, dub (language on the card), audiobook, story, open in Studio
   - [x] Hand-off to pages through a small inbox (Clone, Tools) and the existing focus store (Dub, Books, Transcripts)
   - [x] Verified: browser e2e with real drag events (audio to Clean up, audio to Clone, text to Studio, EPUB to Audiobook, audio to Transcribe)
-- [ ] **M23 Shortcuts & Finder:** `voxstudio://speak?...` for the Shortcuts app, and a "Dub with VoxStudio" action in Finder
+- [x] **M23 Shortcuts & Finder:** `voxstudio://speak?...` for the Shortcuts app, and a "Dub with VoxStudio" action in Finder ✅
+  - [x] “Open With VoxStudio” for audio, video and books (file associations at Alternate rank), Dock drops, and Windows/Linux file arguments, all shown in the Drop Anywhere sheet
+  - [x] `voxstudio://files?action=…&path=…` links; files are loaded through the new app-only `GET /v1/files/read` (media, book and text types only; API keys get 403)
+  - [x] Finder Quick Actions (Dub, Transcribe, Clean Up, Make Audiobook) generated as Automator workflows, installed or removed from Integrations; checked with `plutil` and by running one through `automator`
+  - [x] Shortcuts app recipes (Integrations page and guide)
+  - [x] Fixes found in real-app testing: bundled engine start no longer builds voxd (a stuck editable build could hang the app after updates; now `uv sync --no-install-project` plus the environment's Python); macOS links were delivered twice; links wait for the engine; hand-parsed link URLs; shell log saved to `~/Library/Logs/com.voxstudio.app/voxstudio.log` (Settings → Logs → Show log file)
 - [ ] **M24 Collections & Tags:** organize voices, takes and projects
 
 ---

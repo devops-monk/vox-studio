@@ -96,3 +96,14 @@ def test_discovery_file(client):
 def test_connection(client):
     c = client.get("/v1/connection").json()
     assert c["mcp_url"].endswith("/mcp") and c["bridge_path"].endswith("mcp_bridge.py") and c["auth_required"] is True
+
+
+def test_read_local_file_is_app_only(client, tmp_path):
+    f = tmp_path / "clip.wav"
+    f.write_bytes(b"RIFFdata")
+    assert client.get("/v1/files/read", params={"path": str(f)}).content == b"RIFFdata"
+    assert client.get("/v1/files/read", params={"path": str(tmp_path / "secret.key")}).json()["error"] == "unsupported_file"
+    assert client.get("/v1/files/read", params={"path": "clip.wav"}).json()["error"] == "unsupported_file"  # must be absolute
+    assert client.get("/v1/files/read", params={"path": str(tmp_path / "gone.mp3")}).status_code == 404
+    key = client.post("/v1/keys", json={"name": "script"}).json()["key"]
+    assert client.get("/v1/files/read", params={"path": str(f)}, headers={"Authorization": f"Bearer {key}"}).status_code == 403

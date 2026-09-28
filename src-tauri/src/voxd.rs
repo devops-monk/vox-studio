@@ -133,20 +133,37 @@ impl Voxd {
 
         self.log(format!("[shell] starting voxd on 127.0.0.1:{port} ({})", project.display()));
         let bundled = !project.starts_with(Path::new(env!("CARGO_MANIFEST_DIR")).join(".."));
-        let mut cmd = Command::new(&uv);
-        cmd.args(["run", "--no-dev", "--quiet"]);
-        if bundled {
-            // The app bundle is read-only (and signed): use the shipped lockfile as is, and keep
-            // Python's bytecode cache out of it.
-            cmd.arg("--frozen").env("PYTHONPYCACHEPREFIX", data_dir.join("pycache"));
-        }
+        let runtime = data_dir.join("runtime");
+        let mut cmd = if bundled {
+            // The app bundle is read-only (and signed). Install only the locked dependencies —
+            // voxd itself is imported straight from the bundle, so nothing is ever built — then
+            // run the environment's Python directly, with the bytecode cache kept outside.
+            self.set_phase(Phase::Starting, Some("Preparing voice engine".into()));
+            let sync = Command::new(&uv)
+                .args(["sync", "--frozen", "--no-install-project", "--no-dev", "--quiet", "--project"])
+                .arg(&project)
+                .env("UV_PROJECT_ENVIRONMENT", &runtime)
+                .output()
+                .map_err(|e| format!("Couldn't prepare the voice engine: {e}"))?;
+            for line in String::from_utf8_lossy(&sync.stderr).lines() {
+                self.log(format!("[uv] {line}"));
+            }
+            if !sync.status.success() {
+                return Err("Couldn't install the voice engine's components (see Logs)".into());
+            }
+            let python = if cfg!(windows) { runtime.join("Scripts").join("python.exe") } else { runtime.join("bin").join("python") };
+            let mut c = Command::new(python);
+            c.env("PYTHONPATH", project.join("src")).env("PYTHONPYCACHEPREFIX", data_dir.join("pycache"));
+            c
+        } else {
+            let mut c = Command::new(&uv);
+            c.args(["run", "--no-dev", "--quiet", "--project"]).arg(&project).arg("python").env("UV_PROJECT_ENVIRONMENT", &runtime);
+            c
+        };
         let mut child = cmd
-            .arg("--project")
-            .arg(&project)
-            .args(["python", "-m", "voxd", "--lifeline", "--port", &port.to_string(), "--data-dir"])
+            .args(["-m", "voxd", "--lifeline", "--port", &port.to_string(), "--data-dir"])
             .arg(&data_dir)
             .env("VOXD_TOKEN", &token)
-            .env("UV_PROJECT_ENVIRONMENT", data_dir.join("runtime"))
             .env("PYTHONUNBUFFERED", "1")
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
@@ -280,7 +297,29 @@ impl Voxd {
             }
             inner.logs.push_back(line.clone());
         }
+        self.append_to_file(&line);
         let _ = self.app.emit("voxd://log", line);
+    }
+
+    /// Also keep the log on disk (app log folder, rotated at 5 MB) for bug reports.
+    fn append_to_file(&self, line: &str) {
+        use std::io::Write;
+        const MAX_BYTES: u64 = 5 * 1024 * 1024;
+        let Ok(dir) = self.app.path().app_log_dir() else { return };
+        if std::fs::create_dir_all(&dir).is_err() {
+            return;
+        }
+        let path = dir.join("voxstudio.log");
+        if std::fs::metadata(&path).map(|m| m.len() > MAX_BYTES).unwrap_or(false) {
+            let _ = std::fs::rename(&path, dir.join("voxstudio.1.log"));
+        }
+        if let Ok(mut f) = std::fs::OpenOptions::new().create(true).append(true).open(&path) {
+            let _ = writeln!(f, "{line}");
+        }
+    }
+
+    pub fn log_path(&self) -> Option<PathBuf> {
+        self.app.path().app_log_dir().ok().map(|d| d.join("voxstudio.log"))
     }
 }
 

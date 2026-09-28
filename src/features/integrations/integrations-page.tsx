@@ -1,6 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
-import { ArrowRight, Bot, Braces, Code2, MessageSquareCode, Monitor, SquareTerminal, Workflow, type LucideIcon } from 'lucide-react'
+import { ArrowRight, Bot, Braces, Check, Code2, FolderOpen, MessageSquareCode, Monitor, SquareTerminal, Workflow, type LucideIcon } from 'lucide-react'
+import { toast } from 'sonner'
+import { finderActions } from '@/lib/finder'
 import { Button, GlassPanel } from '@/components/glass'
 import { CodeBlock, type Snippet } from '@/components/code-block'
 import { useConnection } from '@/lib/voxd/queries'
@@ -25,6 +27,45 @@ interface Integration {
 }
 
 const mono = (s: string) => <code className="rounded-[4px] bg-fill-control px-1 py-px font-[var(--font-mono)] text-[12px]">{s}</code>
+
+function FinderActionsButton() {
+  const [installed, setInstalled] = useState<boolean | null>(null)
+  const [busy, setBusy] = useState(false)
+  useEffect(() => {
+    if (finderActions.available) void finderActions.installed().then(setInstalled, () => setInstalled(false))
+  }, [])
+  if (!finderActions.available) return <p className="text-[12px] text-text-3">Quick Actions are available in the VoxStudio app for macOS.</p>
+  const toggle = async () => {
+    setBusy(true)
+    try {
+      if (installed) {
+        await finderActions.remove()
+        setInstalled(false)
+        toast('Finder actions removed')
+      } else {
+        const names = await finderActions.install()
+        setInstalled(true)
+        toast.success('Added to Finder', { description: names.join(' · ') })
+      }
+    } catch (e) {
+      toast.error('Couldn’t change the Finder actions', { description: String(e) })
+    } finally {
+      setBusy(false)
+    }
+  }
+  return (
+    <div className="flex items-center gap-3">
+      <Button size="sm" variant={installed ? 'secondary' : 'primary'} disabled={busy || installed === null} onClick={() => void toggle()}>
+        <FolderOpen size={12} /> {installed ? 'Remove Finder actions' : 'Add to Finder'}
+      </Button>
+      {installed && (
+        <span className="inline-flex items-center gap-1 text-[12px] text-[#30d158]">
+          <Check size={13} /> Installed
+        </span>
+      )}
+    </div>
+  )
+}
 
 const INTEGRATIONS: Integration[] = [
   {
@@ -119,6 +160,38 @@ const INTEGRATIONS: Integration[] = [
       },
       { text: <>Transcribe with {mono(`POST ${c.api_base}/audio/transcriptions`)}. Send the file as multipart field {mono('file')}.</> },
     ],
+  },
+  {
+    id: 'finder',
+    name: 'Finder & Shortcuts',
+    kind: 'macOS',
+    icon: FolderOpen,
+    tint: '#0a84ff',
+    intro: 'Work on files straight from Finder, and automate VoxStudio with the Shortcuts app.',
+    steps: () => [
+      {
+        text: (
+          <div className="space-y-2">
+            <p>
+              Add <b>Quick Actions</b> to Finder’s right-click menu: <b>Dub with VoxStudio</b> (videos), <b>Transcribe with VoxStudio</b>, <b>Clean Up with VoxStudio</b> (audio) and{' '}
+              <b>Make Audiobook with VoxStudio</b> (EPUB, DOCX, text).
+            </p>
+            <FinderActionsButton />
+          </div>
+        ),
+      },
+      { text: <>You can also right-click any audio, video or book file and choose <b>Open With → VoxStudio</b>, or drop it on VoxStudio’s Dock icon. VoxStudio asks what to do with it.</> },
+      {
+        text: <>In <b>Shortcuts</b>, use the <b>Open URLs</b> action with a VoxStudio link. For example, a “Read aloud” shortcut: <i>Get Clipboard</i> → <i>URL Encode</i> → <i>Open URLs</i>:</>,
+        code: [
+          { label: 'Read aloud', code: 'voxstudio://speak?text=[URL Encoded Text]' },
+          { label: 'Open Studio with text', code: 'voxstudio://studio?text=[URL Encoded Text]' },
+          { label: 'Transcribe a file', code: 'voxstudio://files?action=transcribe&path=[URL Encoded File Path]' },
+          { label: 'Open a page', code: 'voxstudio://open/dub' },
+        ],
+      },
+    ],
+    after: 'Actions for files: dub, transcribe, clean, convert, clone, audiobook, story, studio — or leave out action to choose.',
   },
   {
     id: 'shell',

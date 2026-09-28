@@ -225,6 +225,16 @@ export const voxd = {
   leaderboard: (language?: string) => call(api().GET('/v1/ratings/leaderboard', { params: { query: language ? { language } : {} } })),
   clearRatings: (language?: string) => call(api().DELETE('/v1/ratings', { params: { query: language ? { language } : {} } })),
   markupPreview: (text: string, speed = 1) => call(api().POST('/v1/markup/preview', { body: { text, speed } })),
+  /** A local file the user opened with VoxStudio (Finder), as a File. */
+  localFile: async (path: string) => {
+    const res = await fetch(withToken('/v1/files/read') + `${useVoxd.getState().state.token ? '&' : '?'}path=${encodeURIComponent(path)}`)
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}))
+      throw new VoxdError(body.error ?? 'http_error', body.message ?? res.statusText, res.status)
+    }
+    const blob = await res.blob()
+    return new File([blob], path.split(/[\\/]/).pop() || 'file', { type: blob.type })
+  },
   starTake: (id: string, starred: boolean) => call(api().PUT('/v1/takes/{take_id}/star', { params: { path: { take_id: id } }, body: { starred } })),
   exportTake: (id: string, path: string, overwrite = false) =>
     noContent(api().POST('/v1/takes/{take_id}/export', { params: { path: { take_id: id } }, body: { path, overwrite } })),

@@ -17,6 +17,7 @@ VoxStudio is a private voice studio that runs entirely on your computer. These d
 | [Compare voices](guides/compare.md) | Blind A/B tests and your favourite voices per language |
 | [History](guides/history.md) | Find, replay, star, save and clean up takes |
 | [Projects](guides/projects.md) | Group your work; find every exported file |
+| [Finder & Shortcuts](guides/finder-shortcuts.md) | Open With, Finder Quick Actions, the Shortcuts app |
 | [Install, update & automate](guides/desktop.md) | Installing, updates, menus, `voxstudio://` links, uninstalling |
 | [Settings](guides/settings.md) | Appearance, storage, performance, shortcuts, privacy and logs |
 | [Integrations & developer tools](guides/integrations.md) | Connect Claude, Cursor, n8n and OpenAI SDKs; API keys; API explorer |
