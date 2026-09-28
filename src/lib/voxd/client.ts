@@ -220,6 +220,7 @@ export const voxd = {
     return { status: res.status, type, text, ms: Math.round(performance.now() - started) }
   },
 
+  editTakes: (body: import('./schema').components['schemas']['EditIn']) => call(api().POST('/v1/takes/edit', { body })),
   starTake: (id: string, starred: boolean) => call(api().PUT('/v1/takes/{take_id}/star', { params: { path: { take_id: id } }, body: { starred } })),
   exportTake: (id: string, path: string, overwrite = false) =>
     noContent(api().POST('/v1/takes/{take_id}/export', { params: { path: { take_id: id } }, body: { path, overwrite } })),

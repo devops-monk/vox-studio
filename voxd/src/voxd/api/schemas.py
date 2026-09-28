@@ -610,3 +610,21 @@ class CleanupOut(BaseModel):
 
 class UnloadOut(BaseModel):
     unloaded: list[str] = Field(description="Engines that had a model in memory")
+
+
+class EditClip(BaseModel):
+    take_id: str
+    start: float = Field(0.0, ge=0, description="Seconds into the take")
+    end: float | None = Field(None, ge=0, description="Seconds into the take; omit for the end")
+    gain_db: float = Field(0.0, ge=-40, le=20)
+
+
+class EditIn(BaseModel):
+    clips: list[EditClip] = Field(min_length=1, max_length=200, description="Played in order. Cut a region out by using two clips of the same take.")
+    gap_s: float = Field(0.0, ge=0, le=10, description="Silence between clips; 0 joins them with a crossfade")
+    crossfade_ms: float = Field(10, ge=0, le=500, description="Crossfade at each join when there's no gap")
+    fade_in_s: float = Field(0.0, ge=0, le=30)
+    fade_out_s: float = Field(0.0, ge=0, le=30)
+    gain_db: float = Field(0.0, ge=-40, le=20, description="Overall gain")
+    normalize: bool = Field(False, description="Scale so the loudest peak is at −1 dBFS (after gain)")
+    title: str | None = Field(None, max_length=200)

@@ -286,6 +286,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/takes/edit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Render an edit as a new take
+         * @description Trim, split, splice, fade and adjust gain. Sources are never changed; the result is a new take (`engine: "editor"`).
+         */
+        post: operations["edit_takes_v1_takes_edit_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/takes/{take_id}/export": {
         parameters: {
             query?: never;
@@ -2392,6 +2412,71 @@ export interface components {
             /** Voice */
             voice: string;
         };
+        /** EditClip */
+        EditClip: {
+            /** Take Id */
+            take_id: string;
+            /**
+             * Start
+             * @description Seconds into the take
+             * @default 0
+             */
+            start: number;
+            /**
+             * End
+             * @description Seconds into the take; omit for the end
+             */
+            end?: number | null;
+            /**
+             * Gain Db
+             * @default 0
+             */
+            gain_db: number;
+        };
+        /** EditIn */
+        EditIn: {
+            /**
+             * Clips
+             * @description Played in order. Cut a region out by using two clips of the same take.
+             */
+            clips: components["schemas"]["EditClip"][];
+            /**
+             * Gap S
+             * @description Silence between clips; 0 joins them with a crossfade
+             * @default 0
+             */
+            gap_s: number;
+            /**
+             * Crossfade Ms
+             * @description Crossfade at each join when there's no gap
+             * @default 10
+             */
+            crossfade_ms: number;
+            /**
+             * Fade In S
+             * @default 0
+             */
+            fade_in_s: number;
+            /**
+             * Fade Out S
+             * @default 0
+             */
+            fade_out_s: number;
+            /**
+             * Gain Db
+             * @description Overall gain
+             * @default 0
+             */
+            gain_db: number;
+            /**
+             * Normalize
+             * @description Scale so the loudest peak is at −1 dBFS (after gain)
+             * @default false
+             */
+            normalize: boolean;
+            /** Title */
+            title?: string | null;
+        };
         /** EngineOut */
         EngineOut: {
             /** Id */
@@ -3841,6 +3926,66 @@ export interface operations {
         responses: {
             /** @description Successful Response */
             200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TakeOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    edit_takes_v1_takes_edit_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EditIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };

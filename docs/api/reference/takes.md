@@ -81,3 +81,28 @@ Copies the take's WAV file to a path on this computer, for example one chosen in
 | `overwrite` | boolean | Replace an existing file. Default `false`. |
 
 **Response 204**. **Errors:** `400 invalid_path`, `404 not_found`, `409 file_exists`
+
+## Edit
+`POST /v1/takes/edit` renders a timeline of clips into a **new** take (`engine: "editor"`). Source takes are never changed.
+
+```json
+{
+  "clips": [
+    {"take_id": "a1…", "start": 0.0, "end": 2.4},
+    {"take_id": "a1…", "start": 3.1},
+    {"take_id": "b2…", "gain_db": -3}
+  ],
+  "gap_s": 0, "crossfade_ms": 10, "fade_in_s": 0.1, "fade_out_s": 0.5,
+  "gain_db": 0, "normalize": true, "title": "Intro, tightened"
+}
+```
+| Field | |
+|---|---|
+| `clips` | 1–200 clips, played in order. `start`/`end` are seconds into that take; leave out `end` to play to the end. `gain_db` is from −40 to +20. To cut a region out, use two clips of the same take. |
+| `gap_s` | Seconds of silence between clips (0–10). At 0, clips join with an equal-power crossfade of `crossfade_ms` (0–500). |
+| `fade_in_s`, `fade_out_s` | 0–30 s |
+| `gain_db` | Overall gain, −40 to +20 |
+| `normalize` | Scale so the loudest peak is at −1 dBFS |
+| `title` | Text of the new take (default `Edited · <first take>`) |
+
+Clips with a different sample rate are resampled to the first clip's rate. The output is mono 16-bit WAV. Returns `201` with the new take. **Errors:** `404 not_found` (a take was deleted), `400 invalid_request` (for example, every clip is empty), `422` (validation).

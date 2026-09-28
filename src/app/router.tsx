@@ -16,6 +16,7 @@ import { AudiobookPage, StoriesPage } from '@/features/longform/longform-page'
 import { BatchPage } from '@/features/batch/batch-page'
 import { ProjectsPage } from '@/features/projects/projects-page'
 import { ToolsPage } from '@/features/tools/tools-page'
+import { EditorPage } from '@/features/editor/editor-page'
 import { DeveloperPage } from '@/features/developer/developer-page'
 import { IntegrationsPage } from '@/features/integrations/integrations-page'
 
@@ -38,6 +39,7 @@ const pages: Record<string, () => React.ReactNode> = {
   '/batch': BatchPage,
   '/projects': ProjectsPage,
   '/tools': ToolsPage,
+  '/editor': EditorPage,
   '/developer': DeveloperPage,
   '/integrations': IntegrationsPage,
 }

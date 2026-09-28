@@ -20,7 +20,7 @@ from ..voices import export_bundle, read_bundle
 from ..design import apply_sliders, design, parse_description, parse_recipe
 from ..keys import authenticate, create_key
 from ..pronounce import pronouncer
-from .. import storage, tools
+from .. import editor, storage, tools
 from ..transcripts import EXPORTS, LiveSession, save_live, to_text, uploads_dir
 from ..store import Transcript
 from .. import batch as batching, books, dubbing
@@ -31,6 +31,7 @@ from ..store import DesignedVoice
 from ..speech import resolve_engine, save_take
 from ..store import Job, Take
 from .schemas import (
+    EditIn,
     CleanupOut,
     StorageOut,
     UnloadOut,
@@ -322,6 +323,18 @@ def _destination(path: str, suffix: str, overwrite: bool) -> Path:
     if dest.exists() and not overwrite:
         raise HTTPException(409, detail=("file_exists", "A file with that name already exists"))
     return dest
+
+
+@router.post("/takes/edit", response_model=TakeOut, status_code=201, responses=ERRORS, tags=["Takes"], summary="Render an edit as a new take")
+async def edit_takes(request: Request, body: EditIn) -> TakeOut:
+    """Trim, split, splice, fade and adjust gain. Sources are never changed; the result is a new take (`engine: "editor"`)."""
+    services = _services(request)
+    try:
+        take = await asyncio.to_thread(editor.save_edit, services, body.model_dump())
+    except EngineError as exc:
+        code = "not_found" if "no longer exists" in str(exc) else "invalid_request"
+        raise HTTPException(404 if code == "not_found" else 400, detail=(code, str(exc))) from exc
+    return _take_out(take)
 
 
 @router.post("/takes/{take_id}/export", status_code=204, responses=ERRORS, tags=["Takes"], summary="Save a take to a file")

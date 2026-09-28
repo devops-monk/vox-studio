@@ -11,6 +11,7 @@ VoxStudio is a private voice studio that runs entirely on your computer. These d
 | [Studio](guides/studio.md) | Write a script, pick a voice, shape the delivery |
 | [Clone a voice](guides/clone.md) | Make a voice from a short recording |
 | [Your voice library](guides/voices.md) | Browse, favorite, tag, share and import voices |
+| [Editor](guides/editor.md) | Trim, split, splice, fade and polish takes on a timeline |
 | [History](guides/history.md) | Find, replay, star, save and clean up takes |
 | [Projects](guides/projects.md) | Group your work; find every exported file |
 | [Install, update & automate](guides/desktop.md) | Installing, updates, menus, `voxstudio://` links, uninstalling |
@@ -55,6 +56,6 @@ VoxStudio is a private voice studio that runs entirely on your computer. These d
 | [Speech](api/reference/speech.md) | `POST /v1/speech` |
 | [Jobs](api/reference/jobs.md) | `POST /v1/jobs/speech`, `GET /v1/jobs`, events (SSE), cancel, clear |
 | [Live events](api/reference/events.md) | `WS /v1/events` |
-| [Takes](api/reference/takes.md) | Search, page, audio, star, export, delete, stats, retention |
+| [Takes](api/reference/takes.md) | Search, page, audio, star, export, delete, stats, retention, edit |
 
 A live, interactive reference is always available from a running voxd at `http://127.0.0.1:<port>/docs`.

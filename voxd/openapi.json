@@ -873,6 +873,78 @@
         }
       }
     },
+    "/v1/takes/edit": {
+      "post": {
+        "tags": [
+          "Takes"
+        ],
+        "summary": "Render an edit as a new take",
+        "description": "Trim, split, splice, fade and adjust gain. Sources are never changed; the result is a new take (`engine: \"editor\"`).",
+        "operationId": "edit_takes_v1_takes_edit_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EditIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TakeOut"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/takes/{take_id}/export": {
       "post": {
         "tags": [
@@ -8434,6 +8506,121 @@
           "voice"
         ],
         "title": "DubVoice"
+      },
+      "EditClip": {
+        "properties": {
+          "take_id": {
+            "type": "string",
+            "title": "Take Id"
+          },
+          "start": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Start",
+            "description": "Seconds into the take",
+            "default": 0.0
+          },
+          "end": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End",
+            "description": "Seconds into the take; omit for the end"
+          },
+          "gain_db": {
+            "type": "number",
+            "maximum": 20.0,
+            "minimum": -40.0,
+            "title": "Gain Db",
+            "default": 0.0
+          }
+        },
+        "type": "object",
+        "required": [
+          "take_id"
+        ],
+        "title": "EditClip"
+      },
+      "EditIn": {
+        "properties": {
+          "clips": {
+            "items": {
+              "$ref": "#/components/schemas/EditClip"
+            },
+            "type": "array",
+            "maxItems": 200,
+            "minItems": 1,
+            "title": "Clips",
+            "description": "Played in order. Cut a region out by using two clips of the same take."
+          },
+          "gap_s": {
+            "type": "number",
+            "maximum": 10.0,
+            "minimum": 0.0,
+            "title": "Gap S",
+            "description": "Silence between clips; 0 joins them with a crossfade",
+            "default": 0.0
+          },
+          "crossfade_ms": {
+            "type": "number",
+            "maximum": 500.0,
+            "minimum": 0.0,
+            "title": "Crossfade Ms",
+            "description": "Crossfade at each join when there's no gap",
+            "default": 10
+          },
+          "fade_in_s": {
+            "type": "number",
+            "maximum": 30.0,
+            "minimum": 0.0,
+            "title": "Fade In S",
+            "default": 0.0
+          },
+          "fade_out_s": {
+            "type": "number",
+            "maximum": 30.0,
+            "minimum": 0.0,
+            "title": "Fade Out S",
+            "default": 0.0
+          },
+          "gain_db": {
+            "type": "number",
+            "maximum": 20.0,
+            "minimum": -40.0,
+            "title": "Gain Db",
+            "description": "Overall gain",
+            "default": 0.0
+          },
+          "normalize": {
+            "type": "boolean",
+            "title": "Normalize",
+            "description": "Scale so the loudest peak is at \u22121 dBFS (after gain)",
+            "default": false
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          }
+        },
+        "type": "object",
+        "required": [
+          "clips"
+        ],
+        "title": "EditIn"
       },
       "EngineOut": {
         "properties": {

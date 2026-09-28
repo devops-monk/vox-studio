@@ -1,6 +1,8 @@
+import { useNavigate } from '@tanstack/react-router'
+import { useFocus } from '@/lib/store/focus'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from '@tanstack/react-router'
-import { CheckSquare, Download, History as HistoryIcon, Loader2, Pause, Play, Search, Square, Star, Trash2, X } from 'lucide-react'
+import { CheckSquare, Download, History as HistoryIcon, Loader2, Pause, Play, Scissors, Search, Square, Star, Trash2, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button, SegmentedControl } from '@/components/glass'
 import { Waveform } from '@/components/waveform'
@@ -14,7 +16,7 @@ import { useCustomVoices, useDeleteTakes, useDesignedVoices, useHistory, useStar
 import type { Take } from '@/lib/voxd/types'
 import { cn } from '@/lib/cn'
 
-const ENGINE: Record<string, string> = { system: 'System', kokoro: 'Kokoro', chatterbox: 'Chatterbox' }
+const ENGINE: Record<string, string> = { system: 'System', kokoro: 'Kokoro', chatterbox: 'Chatterbox', 'chatterbox-vc': 'Voice change', tools: 'Clean up', editor: 'Editor' }
 
 function dayLabel(unix: number) {
   const d = new Date(unix * 1000)
@@ -48,6 +50,7 @@ interface RowProps {
 function Row({ take, name, selecting, selected, onToggle, onDelete }: RowProps) {
   const { current, play, stop } = usePlayer()
   const star = useStarTake()
+  const navigate = useNavigate()
   const playing = current === take.id
   const url = voxd.audioUrl(take)
   return (
@@ -91,6 +94,9 @@ function Row({ take, name, selecting, selected, onToggle, onDelete }: RowProps) 
             className={cn(take.starred ? 'text-[#ffcc00] hover:text-[#ffcc00]' : 'opacity-0 group-hover:opacity-100 focus-visible:opacity-100')}
           >
             <Star size={13} fill={take.starred ? 'currentColor' : 'none'} />
+          </Button>
+          <Button variant="ghost" size="icon" aria-label="Edit" title="Open in the Editor" onClick={() => (useFocus.getState().open('edit', take.id), void navigate({ to: '/editor' }))} className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100">
+            <Scissors size={13} />
           </Button>
           <Button variant="ghost" size="icon" aria-label="Save as…" onClick={() => void saveTake(take)} className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100">
             <Download size={13} />

@@ -257,7 +257,11 @@ Work goes one milestone at a time. Tick `[x]` only after the item is verified in
   - [x] ⌃⌥R (customizable, fires on key release): waits for modifiers to be released, clears the clipboard, sends ⌘C, reads the copied text, restores the clipboard, then the panel speaks it; queued if the panel or engine is still starting
   - [x] Clear notices for “nothing selected” and missing Accessibility permission; also in the tray menu
   - [ ] Not yet verified end to end on the built app: synthetic keystrokes from the test harness leaked into the terminal, so manual testing is still needed
-- [ ] **M19 Take Editor:** trim, fade, gain and splice on a waveform
+- [x] **M19 Take Editor:** trim, fade, gain and splice on a waveform ✅
+  - [x] `POST /v1/takes/edit`: a non-destructive clip timeline (trim, cut through split clips, splice across takes with resampling, clip and overall gain, fades, gaps or equal-power crossfades, normalize), producing a new take
+  - [x] Editor page: coloured clip blocks with canvas waveforms, drag edges to trim, drag to reorder, split at the playhead (S), delete (⌫), undo/redo (⌘Z), zoom and fit, ruler seeking, instant Web Audio preview that matches the render, clip and whole-edit panels, persisted draft
+  - [x] Entry from History (scissors), “Add take” search popover
+  - [x] Verified: unit tests (cut, splice across rates, fades, gain, gap, normalize, errors) and a browser e2e (split, trim, play, save, undo)
 - [ ] **M20 A/B Blind Compare:** rate two takes or engines to find your best engine per language
 - [ ] **M21 Script Markup:** inline pause, emphasis, speed and pronunciation tags with live preview
 - [ ] **M22 Drop Anywhere:** drop audio to clone, video to dub, a book to make an audiobook

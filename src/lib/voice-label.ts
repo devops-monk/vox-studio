@@ -3,6 +3,7 @@ import type { CustomVoice, DesignedVoice, Take } from './voxd/types'
 /** A human name for the voice a take was made with. */
 export function voiceLabel(take: Pick<Take, 'engine' | 'voice'>, custom: CustomVoice[] = [], designed: DesignedVoice[] = []) {
   if (take.engine === 'tools') return 'Cleaned audio'
+  if (take.engine === 'editor') return 'Edited'
   if (take.voice.startsWith('dv_')) return designed.find((v) => v.id === take.voice)?.name ?? 'Deleted voice'
   if (take.voice.startsWith('mix:')) return 'Voice blend'
   if (take.voice.startsWith('cv_')) return custom.find((v) => v.id === take.voice)?.name ?? 'Deleted voice'
