@@ -13,3 +13,6 @@ __pycache__
 # OS / logs
 .DS_Store
 *.log
+
+# Downloaded by scripts/fetch-uv.sh at release time
+src-tauri/binaries/

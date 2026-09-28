@@ -1,12 +1,13 @@
 //! VoxStudio desktop shell: window, glass effects, the voxd supervisor, dictation and tray.
 
 mod dictation;
+mod menu;
 mod voxd;
 
 use serde::Serialize;
 use tauri::menu::{MenuBuilder, MenuItemBuilder, PredefinedMenuItem};
 use tauri::tray::TrayIconBuilder;
-use tauri::{AppHandle, Manager, RunEvent, State};
+use tauri::{AppHandle, Emitter, Manager, RunEvent, State};
 use dictation::{DictationState, InsertResult};
 use voxd::{Voxd, VoxdState};
 
@@ -69,7 +70,31 @@ fn dictation_open_accessibility() {
     dictation::open_accessibility_settings();
 }
 
-fn show_main(app: &AppHandle) {
+/// Forward `voxstudio://…` links to the UI, which decides what they do.
+fn open_links(app: &AppHandle, urls: Vec<String>) {
+    let links: Vec<String> = urls.into_iter().filter(|u| u.starts_with("voxstudio://")).collect();
+    if links.is_empty() {
+        return;
+    }
+    show_main(app);
+    app.state::<PendingLinks>().0.lock().unwrap().extend(links.iter().cloned());
+    if let Some(w) = app.get_webview_window("main") {
+        for link in links {
+            let _ = w.emit("app://deep-link", link);
+        }
+    }
+}
+
+/// Links that arrived before the UI was listening (e.g. the app was launched by a link).
+#[derive(Default)]
+struct PendingLinks(std::sync::Mutex<Vec<String>>);
+
+#[tauri::command]
+fn take_pending_links(pending: State<'_, PendingLinks>) -> Vec<String> {
+    std::mem::take(&mut *pending.0.lock().unwrap())
+}
+
+pub(crate) fn show_main(app: &AppHandle) {
     if let Some(w) = app.get_webview_window("main") {
         let _ = w.show();
         let _ = w.unminimize();
@@ -99,12 +124,33 @@ fn build_tray(app: &tauri::App) -> tauri::Result<()> {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        // Must come first: a second launch (or a link opened while running) goes to this instance.
+        .plugin(tauri_plugin_single_instance::init(|app, argv, _cwd| {
+            show_main(app);
+            open_links(app, argv);
+        }))
+        .plugin(tauri_plugin_deep_link::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .manage(DictationState::default())
+        .manage(PendingLinks::default())
+        .menu(|app| menu::build(app))
+        .on_menu_event(|app, event| menu::handle(app, event.id().as_ref()))
         .setup(|app| {
+            {
+                use tauri_plugin_deep_link::DeepLinkExt;
+                let handle = app.handle().clone();
+                app.deep_link().on_open_url(move |event| open_links(&handle, event.urls().iter().map(|u| u.to_string()).collect()));
+                if let Ok(Some(urls)) = app.deep_link().get_current() {
+                    open_links(app.handle(), urls.iter().map(|u| u.to_string()).collect());
+                }
+                #[cfg(any(windows, target_os = "linux"))]
+                let _ = app.deep_link().register_all();
+            }
             let voxd = Voxd::new(app.handle().clone());
             voxd.start();
             app.manage(voxd);
@@ -119,6 +165,7 @@ pub fn run() {
             voxd_logs,
             voxd_restart,
             client_log,
+            take_pending_links,
             dictation_toggle,
             dictation_insert,
             dictation_hide,

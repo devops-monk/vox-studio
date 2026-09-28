@@ -33,6 +33,14 @@ class Lifecycle:
         }
 
 
+_exit_hooks: list = []
+
+
+def on_hard_exit(fn) -> None:
+    """Run ``fn`` (best effort) when the lifeline ends the process without a normal shutdown."""
+    _exit_hooks.append(fn)
+
+
 def watch_lifeline() -> None:
     """Exit as soon as the parent closes our stdin, so a crashed shell never leaves voxd behind."""
 
@@ -41,6 +49,11 @@ def watch_lifeline() -> None:
             while sys.stdin.buffer.read(4096):
                 pass
         finally:
+            for fn in _exit_hooks:
+                try:
+                    fn()
+                except Exception:
+                    pass
             os._exit(0)
 
     threading.Thread(target=wait, name="lifeline", daemon=True).start()

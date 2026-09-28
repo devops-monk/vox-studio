@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react'
+import { create } from 'zustand'
+import { useEffect, useRef } from 'react'
 import { AlertCircle, Ban, Check, Inbox, ListChecks, Loader2, Pause, Play, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/glass'
@@ -95,8 +96,11 @@ function JobRow({ job }: { job: Job }) {
 }
 
 /** Toolbar button + popover listing every background job. */
+/** Open state is shared so the menu bar (View → Show Activity) can open the popover. */
+export const useActivityPanel = create<{ open: boolean; setOpen: (open: boolean) => void }>((set) => ({ open: false, setOpen: (open) => set({ open }) }))
+
 export function Activity() {
-  const [open, setOpen] = useState(false)
+  const { open, setOpen } = useActivityPanel()
   const jobs = useJobs().data ?? []
   const clear = useClearJobs()
   const root = useRef<HTMLDivElement>(null)
@@ -125,7 +129,7 @@ export function Activity() {
         type="button"
         aria-label={active.length ? `Activity, ${active.length} running` : 'Activity'}
         aria-expanded={open}
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => setOpen(!open)}
         className={cn(
           'relative flex size-7 items-center justify-center rounded-[var(--radius-sm)] text-text-2 transition-colors hover:bg-fill-hover hover:text-text-1',
           open && 'bg-fill-active text-text-1',

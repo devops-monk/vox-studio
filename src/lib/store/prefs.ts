@@ -24,6 +24,8 @@ interface PrefsState {
   textSize: TextSizePref
   /** Page shown when the app opens. */
   startPage: string
+  /** Look for a new version once a day at launch. */
+  autoUpdate: boolean
   inspectorOpen: boolean
   /** Engine used by quick speech surfaces (Try a voice). */
   engine: string
@@ -33,7 +35,7 @@ interface PrefsState {
   dictation: { shortcut: string; paste: boolean; autoFinish: boolean; language: string }
   setDictation: (patch: Partial<PrefsState['dictation']>) => void
   setTheme: (theme: ThemePref) => void
-  setAppearance: (patch: Partial<Pick<PrefsState, 'accent' | 'glass' | 'textSize' | 'startPage'>>) => void
+  setAppearance: (patch: Partial<Pick<PrefsState, 'accent' | 'glass' | 'textSize' | 'startPage' | 'autoUpdate'>>) => void
   setEngine: (engine: string) => void
   setVoice: (engine: string, voice: string) => void
   finishOnboarding: () => void
@@ -48,6 +50,7 @@ export const usePrefs = create<PrefsState>()(
       glass: 'balanced',
       textSize: 'default',
       startPage: '/',
+      autoUpdate: true,
       inspectorOpen: false,
       engine: 'system',
       voiceByEngine: {},

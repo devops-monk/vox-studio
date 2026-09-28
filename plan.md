@@ -235,9 +235,16 @@ Work goes one milestone at a time. Tick `[x]` only after the item is verified in
 - [x] Privacy (local-only facts, every host ever contacted, keys, consent), Logs (engine log, copy, restart), About (versions, links, credits)
 - [x] Docs: settings guide and settings reference
 
-### M16 — Desktop polish & packaging
-- [ ] Auto-updater, single instance, deep links (`voxstudio://`), native menus
-- [ ] Bundle `uv` as a sidecar; signed `.dmg`, MSI and AppImage
+### M16 — Desktop polish & packaging ✅
+- [x] Native menu bar: App, File, Edit (so the system clipboard shortcuts reach text fields), View, Go, Window and Help, forwarded to the UI as `app://menu`
+- [x] Single instance: a second launch focuses the running app
+- [x] `voxstudio://` deep links (open, studio, speak), queued in the shell so links that launch the app aren't lost; verified through LaunchServices on the built app
+- [x] Signed auto-updater (key kept outside the repo), daily check at launch with an off switch, "Check for Updates…" in the menu and in About, download progress, then relaunch
+- [x] Packaging: `uv` sidecar (pinned, SHA-256 verified), voxd sources and lockfile as resources, `--frozen` runs with the bytecode cache kept outside the bundle, entitlements (mic, Python native libraries)
+- [x] Built and verified locally: `.app` + `.dmg` (80 MB) + signed updater archive; the bundled engine starts in about 10 s and exits with the app
+- [x] Release workflow for macOS arm64/x64, Windows and Linux (tauri-action, optional notarization), plus `publish-update.sh` for self-hosted updates
+- [x] voxd: discovery file removed on hard exit, and a 5 s graceful-shutdown limit
+- [x] Docs: install/update/automate guide, RELEASING.md
 
 ---
 

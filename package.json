@@ -10,14 +10,18 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "tauri": "tauri",
-    "api:gen": "uv run --project voxd python -m voxd.openapi_dump > voxd/openapi.json && npx -y -p openapi-typescript@7 -p typescript@5 openapi-typescript voxd/openapi.json -o src/lib/voxd/schema.d.ts"
+    "api:gen": "uv run --project voxd python -m voxd.openapi_dump > voxd/openapi.json && npx -y -p openapi-typescript@7 -p typescript@5 openapi-typescript voxd/openapi.json -o src/lib/voxd/schema.d.ts",
+    "release:mac": "scripts/fetch-uv.sh && find voxd/src -name __pycache__ -type d -prune -exec rm -rf {} + && TAURI_SIGNING_PRIVATE_KEY=\"$(cat ~/.tauri/voxstudio.key)\" TAURI_SIGNING_PRIVATE_KEY_PASSWORD='' tauri build --config src-tauri/tauri.release.conf.json"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.104.0",
     "@tanstack/react-router": "^1.170.40",
     "@tauri-apps/api": "^2.12.0",
+    "@tauri-apps/plugin-deep-link": "^2.5.0",
     "@tauri-apps/plugin-dialog": "^2.8.0",
     "@tauri-apps/plugin-opener": "^2.6.0",
+    "@tauri-apps/plugin-process": "^2.4.0",
+    "@tauri-apps/plugin-updater": "^2.13.0",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
     "lucide-react": "^1.48.0",

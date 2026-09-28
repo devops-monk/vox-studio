@@ -51,7 +51,7 @@ def main() -> None:
         token=os.environ.get("VOXD_TOKEN", ""),
         model_mirror=os.environ.get("VOXD_MODEL_MIRROR", ""),
     )
-    uvicorn.run(create_app(settings), host="127.0.0.1", port=args.port, log_level="info")
+    uvicorn.run(create_app(settings), host="127.0.0.1", port=args.port, log_level="info", timeout_graceful_shutdown=5)
 
 
 if __name__ == "__main__":

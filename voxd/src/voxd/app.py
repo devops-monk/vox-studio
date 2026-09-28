@@ -23,7 +23,7 @@ from .engines.system import SystemEngine
 from .engines.whisper import WhisperEngine
 from .events import EventBus
 from .jobs import JobContext, JobManager
-from .lifecycle import Lifecycle, Phase
+from .lifecycle import Lifecycle, Phase, on_hard_exit
 from .models import CATALOG, TRANSLATION_MODELS, ModelSpec, ModelStore
 from .runtimes import PACKS, RuntimeManager
 from .design import TraitStore
@@ -124,6 +124,7 @@ def create_app(
         services.store = Store(settings.db_path)
         discovery = settings.data_dir / "voxd.json"
         discovery.write_text(json.dumps({"url": f"http://127.0.0.1:{settings.port}", "port": settings.port, "pid": os.getpid(), "version": __version__}))
+        on_hard_exit(lambda: discovery.unlink(missing_ok=True))
         pronouncer.bind(services.store)
         if not models.mirror:  # the environment variable wins over the saved setting
             models.mirror = services.store.get_setting("model_mirror", "") or ""

@@ -8,6 +8,7 @@ import { EngineGate } from './engine-gate'
 import { Onboarding } from '@/features/onboarding/onboarding'
 import { useApplyAppearance, useApplyTheme } from '@/lib/use-theme'
 import { useAppShortcuts, useStartPage } from './shortcuts'
+import { useDesktopIntegration } from './desktop'
 import { usePrefs } from '@/lib/store/prefs'
 import { useEffect } from 'react'
 import { dictation } from '@/lib/dictation'
@@ -17,6 +18,7 @@ export function AppShell() {
   useApplyAppearance()
   useAppShortcuts()
   useStartPage()
+  useDesktopIntegration()
   const theme = usePrefs((s) => s.theme)
   const shortcut = usePrefs((s) => s.dictation.shortcut)
 

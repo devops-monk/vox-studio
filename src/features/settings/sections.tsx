@@ -3,7 +3,8 @@ import { useNavigate } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
 import { Check, Copy, FolderOpen, Globe, HardDrive, KeyRound, Lock, MemoryStick, RotateCcw, ShieldCheck, Sparkles, WifiOff } from 'lucide-react'
 import { toast } from 'sonner'
-import { Button, Kbd, SegmentedControl } from '@/components/glass'
+import { Button, Kbd, SegmentedControl, Switch } from '@/components/glass'
+import { checkForUpdates } from '@/lib/updater'
 import { VoiceOrb } from '@/components/voice-orb'
 import { copyText } from '@/components/code-block'
 import { ALL_NAV_ITEMS } from '@/app/nav'
@@ -465,6 +466,7 @@ const CREDITS: [string, string, string][] = [
 
 export function About() {
   const status = useQuery({ queryKey: ['status'], queryFn: voxd.status }).data
+  const { autoUpdate, setAppearance } = usePrefs()
   return (
     <>
       <div className="flex flex-col items-center gap-3 py-4 text-center">
@@ -485,6 +487,18 @@ export function About() {
         </div>
         <p className="max-w-sm text-[12px] text-text-3">Open source under the Apache License 2.0. A private voice studio that runs entirely on your computer.</p>
       </div>
+      {isTauri && (
+        <Group title="Updates">
+          <Row label="Check automatically" hint="Once a day. Updates are signed, and install only when you choose.">
+            <Switch checked={autoUpdate} onChange={(v) => setAppearance({ autoUpdate: v })} label="Check for updates automatically" />
+          </Row>
+          <Row label="Check now">
+            <Button size="sm" onClick={() => void checkForUpdates()}>
+              Check for Updates
+            </Button>
+          </Row>
+        </Group>
+      )}
       <Group title="Built with">
         {CREDITS.map(([name, license, what]) => (
           <Row key={name} label={name} hint={what}>

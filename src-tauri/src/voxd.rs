@@ -132,8 +132,16 @@ impl Voxd {
         let token = self.state().token;
 
         self.log(format!("[shell] starting voxd on 127.0.0.1:{port} ({})", project.display()));
-        let mut child = Command::new(&uv)
-            .args(["run", "--no-dev", "--quiet", "--project"])
+        let bundled = !project.starts_with(Path::new(env!("CARGO_MANIFEST_DIR")).join(".."));
+        let mut cmd = Command::new(&uv);
+        cmd.args(["run", "--no-dev", "--quiet"]);
+        if bundled {
+            // The app bundle is read-only (and signed): use the shipped lockfile as is, and keep
+            // Python's bytecode cache out of it.
+            cmd.arg("--frozen").env("PYTHONPYCACHEPREFIX", data_dir.join("pycache"));
+        }
+        let mut child = cmd
+            .arg("--project")
             .arg(&project)
             .args(["python", "-m", "voxd", "--lifeline", "--port", &port.to_string(), "--data-dir"])
             .arg(&data_dir)

@@ -24,9 +24,15 @@
         "titleBarStyle": "Overlay",
         "hiddenTitle": true,
         "dragDropEnabled": false,
-        "trafficLightPosition": { "x": 18, "y": 22 },
+        "trafficLightPosition": {
+          "x": 18,
+          "y": 22
+        },
         "windowEffects": {
-          "effects": ["sidebar", "mica"],
+          "effects": [
+            "sidebar",
+            "mica"
+          ],
           "state": "followsWindowActiveState"
         }
       }
@@ -39,7 +45,35 @@
     "active": true,
     "targets": "all",
     "category": "Productivity",
-    "icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.icns", "icons/icon.ico"],
-    "macOS": { "minimumSystemVersion": "13.3" }
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "macOS": {
+      "minimumSystemVersion": "13.3",
+      "entitlements": "Entitlements.plist"
+    },
+    "shortDescription": "Private AI voice studio",
+    "longDescription": "Clone, design and direct voices, dub videos, narrate books and transcribe speech — entirely on your computer.",
+    "copyright": "© 2026 VoxStudio contributors",
+    "publisher": "VoxStudio"
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDA4MjRGRkZEQTc5OTIzOUIKUldTYkk1bW4vZjhrQ05mVUwwNkxvMFFZNDl2Zms2SG9ZUWdRWHp5N2JQK3hSa2RxQVp4eDEvZnMK",
+      "endpoints": [
+        "https://vox-studio.devops-monk.com/updates/latest.json"
+      ]
+    },
+    "deep-link": {
+      "desktop": {
+        "schemes": [
+          "voxstudio"
+        ]
+      }
+    }
   }
 }
