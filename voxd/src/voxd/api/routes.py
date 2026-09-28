@@ -21,7 +21,7 @@ from ..voices import export_bundle, read_bundle
 from ..design import apply_sliders, design, parse_description, parse_recipe
 from ..transcripts import EXPORTS, LiveSession, save_live, to_text, uploads_dir
 from ..store import Transcript
-from .. import books, dubbing
+from .. import batch as batching, books, dubbing
 from ..store import Book
 from ..store import Dub
 from ..history import RETENTION_CHOICES, RETENTION_KEY, delete_takes, sweep, usage_bytes
@@ -39,6 +39,12 @@ from .schemas import (
     DesignStatusOut,
     DesignTargetOut,
     DeletedOut,
+    BatchIn,
+    BatchItemOut,
+    BatchOut,
+    WatchFolderIn,
+    WatchFolderOut,
+    WatchFolderPatch,
     BookExportIn,
     BookOut,
     BookPatch,
@@ -1207,6 +1213,176 @@ def save_book(request: Request, book_id: str, body: ExportPathIn, format: str = 
         raise HTTPException(409, detail=("not_exported", "Export the book first"))
     dest = _destination(body.path, f".{format}", body.overwrite)
     shutil.copyfile(books.book_dir(services, book_id) / b.exports[format], dest)
+    return Response(status_code=204)
+
+
+# --- Batches & watch folders -------------------------------------------------------
+
+TRANSCRIPT_FORMATS = {"txt", "srt", "vtt", "json"}
+
+
+def _check_voice(services, engine_id: str | None, voice: str | None) -> None:
+    if not engine_id or not voice:
+        raise HTTPException(400, detail=("missing_voice", "Choose an engine and a voice"))
+    try:
+        engine = services.registry.get(engine_id)
+    except EngineError as exc:
+        raise HTTPException(400, detail=("engine_unavailable", str(exc))) from exc
+    if not any(v.id == voice for v in engine.voices()):
+        raise HTTPException(400, detail=("unknown_voice", f"{voice} isn't a {engine_id} voice"))
+
+
+def _check_dir(path: str | None, create: bool = False) -> str | None:
+    if not path:
+        return None
+    p = Path(path).expanduser()
+    if not p.is_absolute():
+        raise HTTPException(400, detail=("invalid_path", "Use an absolute folder path"))
+    if create:
+        p.mkdir(parents=True, exist_ok=True)
+    if not p.is_dir():
+        raise HTTPException(400, detail=("invalid_path", f"{path} isn't a folder"))
+    return str(p)
+
+
+def _batch_out(services, b: dict) -> BatchOut:
+    items = []
+    for job_id in b["job_ids"]:
+        job = services.store.get_job(job_id)
+        if job is None:
+            continue
+        result = job.result or {}
+        output = result.get("output") or ";".join(result.get("outputs", [])) or None
+        name = job.input.get("name") or Path(job.input.get("path", "item")).name
+        items.append(BatchItemOut(job_id=job.id, name=name, status=job.status, progress=job.progress, message=job.message, error=job.error, output=output))
+    return BatchOut(
+        id=b["id"], kind=b["kind"], title=b["title"], output_dir=b["output_dir"], created_at=b["created_at"], total=len(items),
+        done=sum(i.status == "succeeded" for i in items), failed=sum(i.status == "failed" for i in items), items=items,
+    )
+
+
+@router.post("/batches", response_model=BatchOut, status_code=201, responses=ERRORS, tags=["Batch"], summary="Queue many items")
+def create_batch(request: Request, body: BatchIn) -> BatchOut:
+    """`speech`: render each `items[]` text with one voice. `transcribe`: transcribe each file in `paths[]`.
+    Every item becomes its own job; with `output_dir`, results are also written there."""
+    services = _services(request)
+    output_dir = _check_dir(body.output_dir, create=True)
+    if body.kind == "speech":
+        if not body.items:
+            raise HTTPException(400, detail=("empty_batch", "Add at least one text"))
+        _check_voice(services, body.engine, body.voice)
+        items = [i.model_dump() for i in body.items]
+        options = {"engine": body.engine, "voice": body.voice, "speed": body.speed}
+    else:
+        if not body.paths:
+            raise HTTPException(400, detail=("empty_batch", "Add at least one file"))
+        missing = [p for p in body.paths if not Path(p).is_file()]
+        if missing:
+            raise HTTPException(400, detail=("invalid_path", f"Not found: {missing[0]}"))
+        if bad := set(body.formats) - TRANSCRIPT_FORMATS:
+            raise HTTPException(400, detail=("invalid_request", f"Unknown format: {sorted(bad)[0]}"))
+        try:
+            services.registry.get("whisper").pick(body.model)  # type: ignore[attr-defined]
+        except EngineError as exc:
+            raise HTTPException(400, detail=("engine_unavailable", str(exc))) from exc
+        items = [{"path": p} for p in body.paths]
+        options = {"language": body.language, "model": body.model, "formats": body.formats}
+    title = body.title or f"{len(items)} {'texts' if body.kind == 'speech' else 'files'}"
+    return _batch_out(services, batching.submit_batch(services, body.kind, title, items, options, output_dir))
+
+
+@router.get("/batches", response_model=list[BatchOut], tags=["Batch"], summary="List batches")
+def list_batches(request: Request) -> list[BatchOut]:
+    services = _services(request)
+    return [_batch_out(services, b) for b in services.store.list_batches()]
+
+
+@router.get("/batches/{batch_id}", response_model=BatchOut, responses=ERRORS, tags=["Batch"], summary="Get a batch")
+def get_batch(request: Request, batch_id: str) -> BatchOut:
+    services = _services(request)
+    b = services.store.get_batch(batch_id)
+    if b is None:
+        raise HTTPException(404, detail=("not_found", "No such batch"))
+    return _batch_out(services, b)
+
+
+@router.post("/batches/{batch_id}/cancel", response_model=BatchOut, responses=ERRORS, tags=["Batch"], summary="Cancel remaining items")
+def cancel_batch(request: Request, batch_id: str) -> BatchOut:
+    services = _services(request)
+    b = services.store.get_batch(batch_id)
+    if b is None:
+        raise HTTPException(404, detail=("not_found", "No such batch"))
+    for job_id in b["job_ids"]:
+        services.jobs.cancel(job_id)
+    return _batch_out(services, b)
+
+
+@router.delete("/batches/{batch_id}", status_code=204, responses=ERRORS, tags=["Batch"], summary="Remove a batch from the list")
+def delete_batch(request: Request, batch_id: str) -> Response:
+    """Cancels anything still running. Takes, transcripts and files already written are kept."""
+    services = _services(request)
+    b = services.store.get_batch(batch_id)
+    if b is None:
+        raise HTTPException(404, detail=("not_found", "No such batch"))
+    for job_id in b["job_ids"]:
+        services.jobs.cancel(job_id)
+    services.store.delete_batch(batch_id)
+    services.bus.publish("batches.changed", {"id": batch_id})
+    return Response(status_code=204)
+
+
+def _watch_out(services, w: dict) -> WatchFolderOut:
+    recent = services.store.watch_files(w["id"])
+    return WatchFolderOut(
+        **w, exists=Path(w["path"]).is_dir(), output_dir=str(Path(w["path"]) / batching.OUTPUT_DIR),
+        processed=len(services.store.watch_seen(w["id"])), recent=recent,
+    )
+
+
+@router.get("/watch-folders", response_model=list[WatchFolderOut], tags=["Batch"], summary="List watch folders")
+def list_watch_folders(request: Request) -> list[WatchFolderOut]:
+    services = _services(request)
+    return [_watch_out(services, w) for w in services.store.list_watch_folders()]
+
+
+@router.post("/watch-folders", response_model=WatchFolderOut, status_code=201, responses=ERRORS, tags=["Batch"], summary="Watch a folder")
+def add_watch_folder(request: Request, body: WatchFolderIn) -> WatchFolderOut:
+    """Files already in the folder are processed too. Results go to a `VoxStudio output` subfolder."""
+    services = _services(request)
+    path = _check_dir(body.path)
+    if any(w["path"] == path for w in services.store.list_watch_folders()):
+        raise HTTPException(409, detail=("already_watched", "That folder is already being watched"))
+    if body.action == "speak":
+        _check_voice(services, body.engine, body.voice)
+        options = {"engine": body.engine, "voice": body.voice, "speed": body.speed}
+    else:
+        try:
+            services.registry.get("whisper").pick(body.model)  # type: ignore[attr-defined]
+        except EngineError as exc:
+            raise HTTPException(400, detail=("engine_unavailable", str(exc))) from exc
+        options = {"language": body.language, "model": body.model, "formats": [f for f in body.formats if f in TRANSCRIPT_FORMATS] or ["txt"]}
+    w = {"id": uuid.uuid4().hex, "path": path, "action": body.action, "options": options, "enabled": body.enabled, "created_at": time.time()}
+    services.store.add_watch_folder(w)
+    services.bus.publish("watch.changed", {"id": w["id"]})
+    return _watch_out(services, w)
+
+
+@router.patch("/watch-folders/{watch_id}", response_model=WatchFolderOut, responses=ERRORS, tags=["Batch"], summary="Pause or resume a watch folder")
+def patch_watch_folder(request: Request, watch_id: str, body: WatchFolderPatch) -> WatchFolderOut:
+    services = _services(request)
+    if services.store.get_watch_folder(watch_id) is None:
+        raise HTTPException(404, detail=("not_found", "No such watch folder"))
+    w = services.store.update_watch_folder(watch_id, **body.model_dump(exclude_none=True)) if body.enabled is not None else services.store.get_watch_folder(watch_id)
+    services.bus.publish("watch.changed", {"id": watch_id})
+    return _watch_out(services, w)
+
+
+@router.delete("/watch-folders/{watch_id}", status_code=204, responses=ERRORS, tags=["Batch"], summary="Stop watching a folder")
+def delete_watch_folder(request: Request, watch_id: str) -> Response:
+    services = _services(request)
+    if not services.store.delete_watch_folder(watch_id):
+        raise HTTPException(404, detail=("not_found", "No such watch folder"))
+    services.bus.publish("watch.changed", {"id": watch_id})
     return Response(status_code=204)
 
 

@@ -190,8 +190,13 @@ Work goes one milestone at a time. Tick `[x]` only after the item is verified in
 - [x] Verified: a real story rendered with system voices, and an M4B export read back with correct chapters
 - [x] Docs: books reference and guide
 
-### M11 — Batch & Watch folders
-- [ ] Queue many texts or files, plus watch folders that auto-process new files
+### M11 — Batch & Watch folders ✅
+- [x] Batches: speak many texts or transcribe many files; each item is its own job (Activity, progress, independent failure), optional output folder with safe, never-overwriting file names; cancel and remove
+- [x] Watch folders (polled by voxd): speak new .txt/.md or transcribe new media, only after the file size is stable, each file once, results in a `VoxStudio output` subfolder, pause/resume, per-file status including errors
+- [x] Batch page: Speak many (paste or add files), Transcribe many (native file picker, formats), Watch folders (native folder picker, cards with recent files), recent batches with progress
+- [x] Fix: HTML drag-and-drop now receives files in the desktop app (`dragDropEnabled: false`)
+- [x] Verified: two items spoken into an output folder; a file dropped into a watched folder was spoken automatically and the card updated live
+- [x] Docs: batch reference and guide
 
 ### M12 — Projects
 - [ ] Group renders, dubs and books into projects, with export history and reveal-in-Finder

@@ -154,6 +154,16 @@ export const voxd = {
   saveBook: (id: string, format: 'm4b' | 'mp3', path: string) =>
     noContent(api().POST('/v1/books/{book_id}/save', { params: { path: { book_id: id }, query: { format } }, body: { path, overwrite: true } })),
 
+  batches: () => call(api().GET('/v1/batches')),
+  createBatch: (body: import('./schema').components['schemas']['BatchIn']) => call(api().POST('/v1/batches', { body })),
+  cancelBatch: (id: string) => call(api().POST('/v1/batches/{batch_id}/cancel', { params: { path: { batch_id: id } } })),
+  deleteBatch: (id: string) => noContent(api().DELETE('/v1/batches/{batch_id}', { params: { path: { batch_id: id } } })),
+  watchFolders: () => call(api().GET('/v1/watch-folders')),
+  addWatchFolder: (body: import('./schema').components['schemas']['WatchFolderIn']) => call(api().POST('/v1/watch-folders', { body })),
+  setWatchFolder: (id: string, enabled: boolean) =>
+    call(api().PATCH('/v1/watch-folders/{watch_id}', { params: { path: { watch_id: id } }, body: { enabled } })),
+  removeWatchFolder: (id: string) => noContent(api().DELETE('/v1/watch-folders/{watch_id}', { params: { path: { watch_id: id } } })),
+
   starTake: (id: string, starred: boolean) => call(api().PUT('/v1/takes/{take_id}/star', { params: { path: { take_id: id } }, body: { starred } })),
   exportTake: (id: string, path: string, overwrite = false) =>
     noContent(api().POST('/v1/takes/{take_id}/export', { params: { path: { take_id: id } }, body: { path, overwrite } })),

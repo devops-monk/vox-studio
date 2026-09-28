@@ -28,6 +28,7 @@ from .runtimes import PACKS, RuntimeManager
 from .design import TraitStore
 from .history import sweeper
 from .media import Media
+from .batch import Watcher, speech_item, transcribe_item
 from .books import export_book as book_export, render_book as book_render
 from .dubbing import prepare as dub_prepare, render as dub_render, retranslate as dub_retranslate
 from .speech import render_long
@@ -67,6 +68,7 @@ class Services:
     custom: CustomVoices
     traits: TraitStore
     media: Media = None  # type: ignore[assignment]
+    watcher: Watcher = None  # type: ignore[assignment]
     store: Store = None  # type: ignore[assignment]  # opened in lifespan
     jobs: JobManager = None  # type: ignore[assignment]
 
@@ -125,8 +127,12 @@ def create_app(
         services.jobs.register("dub.translate", partial(dub_retranslate, services), lane="asr")
         services.jobs.register("book.render", partial(book_render, services))
         services.jobs.register("book.export", partial(book_export, services), lane="media")
+        services.jobs.register("batch.speech", partial(speech_item, services))
+        services.jobs.register("batch.transcribe", partial(transcribe_item, services), lane="asr")
         services.jobs.start()
         cleanup = asyncio.create_task(sweeper(services), name="retention")
+        services.watcher = Watcher(services)
+        watching = asyncio.create_task(services.watcher.run(), name="watch-folders")
         services.lifecycle.set(Phase.LOADING_ENGINES, "Checking engines")
         try:
             await asyncio.to_thread(services.registry.probe_all)
@@ -136,6 +142,7 @@ def create_app(
             services.lifecycle.set(Phase.ERROR, str(exc))
         yield
         cleanup.cancel()
+        watching.cancel()
         services.media.stop()
         for engine_id in ("chatterbox", "kokoro", "whisper"):
             if engine := services.registry.raw(engine_id):

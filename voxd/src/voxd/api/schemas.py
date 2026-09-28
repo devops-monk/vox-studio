@@ -408,3 +408,73 @@ class BookExportIn(BaseModel):
 class TimingsOut(BaseModel):
     duration_s: float
     timings: list[dict] = Field(description="`{start, end, from, to, speaker}`: seconds, character offsets into the chapter text, and the character speaking (null for narration)")
+
+
+class BatchSpeechItem(BaseModel):
+    name: str = Field(min_length=1, max_length=120, description="Used for the output file name")
+    text: str = Field(min_length=1, max_length=200_000)
+
+
+class BatchIn(BaseModel):
+    kind: str = Field(pattern="^(speech|transcribe)$")
+    title: str | None = Field(None, max_length=120)
+    items: list[BatchSpeechItem] | None = Field(None, max_length=500, description="For `speech`")
+    paths: list[str] | None = Field(None, max_length=500, description="For `transcribe`: absolute paths of audio/video files on this computer")
+    engine: str | None = None
+    voice: str | None = None
+    speed: float = Field(1.0, ge=0.5, le=2.0)
+    language: str | None = None
+    model: str | None = None
+    formats: list[str] = Field(default_factory=lambda: ["txt"], description="Transcript files to write: txt, srt, vtt, json")
+    output_dir: str | None = Field(None, description="Absolute folder to write results into (optional)")
+
+
+class BatchItemOut(BaseModel):
+    job_id: str
+    name: str
+    status: str
+    progress: float
+    message: str | None = None
+    error: str | None = None
+    output: str | None = Field(None, description="Where the result was written, if an output folder was set")
+
+
+class BatchOut(BaseModel):
+    id: str
+    kind: str
+    title: str
+    output_dir: str | None
+    created_at: float
+    total: int
+    done: int
+    failed: int
+    items: list[BatchItemOut]
+
+
+class WatchFolderIn(BaseModel):
+    path: str = Field(description="Absolute path of an existing folder")
+    action: str = Field(pattern="^(speak|transcribe)$", description="`speak` new .txt/.md files, or `transcribe` new audio/video files")
+    engine: str | None = None
+    voice: str | None = None
+    speed: float = Field(1.0, ge=0.5, le=2.0)
+    language: str | None = None
+    model: str | None = None
+    formats: list[str] = Field(default_factory=lambda: ["txt", "srt"])
+    enabled: bool = True
+
+
+class WatchFolderPatch(BaseModel):
+    enabled: bool | None = None
+
+
+class WatchFolderOut(BaseModel):
+    id: str
+    path: str
+    action: str
+    options: dict
+    enabled: bool
+    exists: bool
+    output_dir: str
+    processed: int
+    recent: list[dict] = Field(description="Latest files: `{path, state (queued|done|error), output, error, at}`")
+    created_at: float

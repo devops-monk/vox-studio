@@ -267,3 +267,14 @@ export const useChapterTimings = (bookId: string, chapterId: string | null, enab
     queryFn: () => voxd.chapterTimings(bookId, chapterId!),
     enabled: useReady() && !!chapterId && enabled,
   })
+
+export function useBatches() {
+  const live = useLive((s) => s.connected)
+  return useQuery({
+    queryKey: ['batches'],
+    queryFn: voxd.batches,
+    enabled: useReady(),
+    refetchInterval: (q) => (!live && q.state.data?.some((b) => b.done + b.failed < b.total) ? POLL_MS : false),
+  })
+}
+export const useWatchFolders = () => useQuery({ queryKey: ['watch-folders'], queryFn: voxd.watchFolders, enabled: useReady(), refetchInterval: 10_000 })

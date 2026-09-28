@@ -12,6 +12,7 @@ VoxStudio is a private voice studio that runs entirely on your computer. These d
 | [Clone a voice](guides/clone.md) | Make a voice from a short recording |
 | [Your voice library](guides/voices.md) | Browse, favorite, tag, share and import voices |
 | [History](guides/history.md) | Find, replay, star, save and clean up takes |
+| [Batch & watch folders](guides/batch.md) | Speak or transcribe many files; automate a folder |
 | [Design a voice](guides/design.md) | Describe a voice in words and fine-tune it by ear |
 | [Dub a video](guides/dub.md) | Translate and re-voice a video |
 | [Stories & audiobooks](guides/stories-audiobooks.md) | Import books, cast characters, narrate, read along, export M4B |
@@ -34,6 +35,7 @@ VoxStudio is a private voice studio that runs entirely on your computer. These d
 | [Models](api/reference/models.md) | `GET /v1/models`, download, remove, mirrors |
 | [Voices](api/reference/voices.md) | `GET /v1/voices`, library, favorites and tags |
 | [Custom voices](api/reference/custom-voices.md) | Create, rename or delete voices; export and import `.voxvoice` |
+| [Batch & watch folders](api/reference/batch.md) | Batches of speech/transcription; folders processed automatically |
 | [Stories & audiobooks](api/reference/books.md) | Import EPUB/DOCX/TXT/MD, cast, resumable render, timings, M4B/MP3 |
 | [Dubbing](api/reference/dubbing.md) | Prepare, edit, cast, render and export dubs |
 | [Transcription](api/reference/transcription.md) | File jobs, transcripts, exports, `WS /v1/transcribe/live` |

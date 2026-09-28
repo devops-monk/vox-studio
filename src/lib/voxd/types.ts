@@ -28,6 +28,8 @@ export type DubLanguage = Schemas['DubLanguageOut']
 export type Book = Schemas['BookOut']
 export type BookSummary = Schemas['BookSummaryOut']
 export type Chapter = Schemas['ChapterOut']
+export type Batch = Schemas['BatchOut']
+export type WatchFolder = Schemas['WatchFolderOut']
 export interface Timing {
   start: number
   end: number

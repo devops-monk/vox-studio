@@ -134,6 +134,34 @@ MIGRATIONS: list[str] = [
         updated_at  REAL NOT NULL
     );
     """,
+    """
+    CREATE TABLE batches (
+        id          TEXT PRIMARY KEY,
+        kind        TEXT NOT NULL,
+        title       TEXT NOT NULL,
+        options     TEXT NOT NULL,
+        output_dir  TEXT,
+        job_ids     TEXT NOT NULL,
+        created_at  REAL NOT NULL
+    );
+    CREATE TABLE watch_folders (
+        id          TEXT PRIMARY KEY,
+        path        TEXT NOT NULL UNIQUE,
+        action      TEXT NOT NULL,
+        options     TEXT NOT NULL,
+        enabled     INTEGER NOT NULL,
+        created_at  REAL NOT NULL
+    );
+    CREATE TABLE watch_files (
+        watch_id  TEXT NOT NULL REFERENCES watch_folders(id) ON DELETE CASCADE,
+        path      TEXT NOT NULL,
+        state     TEXT NOT NULL,
+        output    TEXT,
+        error     TEXT,
+        at        REAL NOT NULL,
+        PRIMARY KEY (watch_id, path)
+    );
+    """,
 ]
 
 ACTIVE = ("queued", "running")
@@ -578,6 +606,79 @@ class Store:
         with self._lock:
             return self._db.execute("DELETE FROM books WHERE id = ?", (book_id,)).rowcount > 0
 
+    # --- batches ----------------------------------------------------------------
+
+    def add_batch(self, b: dict) -> None:
+        with self._lock:
+            self._db.execute(
+                "INSERT INTO batches VALUES (?,?,?,?,?,?,?)",
+                (b["id"], b["kind"], b["title"], json.dumps(b["options"]), b["output_dir"], json.dumps(b["job_ids"]), b["created_at"]),
+            )
+
+    def list_batches(self, limit: int = 50) -> list[dict]:
+        return [_batch(r) for r in self._db.execute("SELECT * FROM batches ORDER BY created_at DESC LIMIT ?", (limit,))]
+
+    def get_batch(self, batch_id: str) -> dict | None:
+        row = self._db.execute("SELECT * FROM batches WHERE id = ?", (batch_id,)).fetchone()
+        return _batch(row) if row else None
+
+    def delete_batch(self, batch_id: str) -> bool:
+        with self._lock:
+            return self._db.execute("DELETE FROM batches WHERE id = ?", (batch_id,)).rowcount > 0
+
+    # --- watch folders ------------------------------------------------------------
+
+    def list_watch_folders(self) -> list[dict]:
+        return [_watch(r) for r in self._db.execute("SELECT * FROM watch_folders ORDER BY created_at")]
+
+    def get_watch_folder(self, watch_id: str) -> dict | None:
+        row = self._db.execute("SELECT * FROM watch_folders WHERE id = ?", (watch_id,)).fetchone()
+        return _watch(row) if row else None
+
+    def add_watch_folder(self, w: dict) -> None:
+        with self._lock:
+            self._db.execute(
+                "INSERT INTO watch_folders VALUES (?,?,?,?,?,?)",
+                (w["id"], w["path"], w["action"], json.dumps(w["options"]), int(w["enabled"]), w["created_at"]),
+            )
+
+    def update_watch_folder(self, watch_id: str, **fields: Any) -> dict | None:
+        if "options" in fields:
+            fields["options"] = json.dumps(fields["options"])
+        if "enabled" in fields:
+            fields["enabled"] = int(fields["enabled"])
+        cols = ", ".join(f"{k} = ?" for k in fields)
+        with self._lock:
+            self._db.execute(f"UPDATE watch_folders SET {cols} WHERE id = ?", (*fields.values(), watch_id))
+        return self.get_watch_folder(watch_id)
+
+    def delete_watch_folder(self, watch_id: str) -> bool:
+        with self._lock:
+            return self._db.execute("DELETE FROM watch_folders WHERE id = ?", (watch_id,)).rowcount > 0
+
+    def watch_seen(self, watch_id: str) -> set[str]:
+        return {r[0] for r in self._db.execute("SELECT path FROM watch_files WHERE watch_id = ?", (watch_id,))}
+
+    def mark_watch_seen(self, watch_id: str, path: str, error: str | None = None) -> None:
+        with self._lock:
+            self._db.execute(
+                "INSERT OR REPLACE INTO watch_files VALUES (?,?,?,?,?,?)",
+                (watch_id, path, "error" if error else "queued", None, error, time.time()),
+            )
+
+    def mark_watch_done(self, watch_id: str, path: str, output: str | None) -> None:
+        with self._lock:
+            self._db.execute(
+                "UPDATE watch_files SET state = 'done', output = ?, at = ? WHERE watch_id = ? AND path = ?",
+                (output, time.time(), watch_id, path),
+            )
+
+    def watch_files(self, watch_id: str, limit: int = 20) -> list[dict]:
+        rows = self._db.execute(
+            "SELECT path, state, output, error, at FROM watch_files WHERE watch_id = ? ORDER BY at DESC LIMIT ?", (watch_id, limit)
+        )
+        return [dict(r) for r in rows]
+
     # --- favorites & tags (any voice) ----------------------------------------
 
     def voice_meta(self) -> dict[tuple[str, str], VoiceMeta]:
@@ -642,3 +743,17 @@ def _book(row: sqlite3.Row) -> Book:
         chapters=json.loads(d["chapters"]), cast=json.loads(d["cast_json"]), characters=json.loads(d["characters"]),
         exports=json.loads(d["exports"]), created_at=d["created_at"], updated_at=d["updated_at"],
     )
+
+
+def _batch(row: sqlite3.Row) -> dict:
+    d = dict(row)
+    d["options"] = json.loads(d["options"])
+    d["job_ids"] = json.loads(d["job_ids"])
+    return d
+
+
+def _watch(row: sqlite3.Row) -> dict:
+    d = dict(row)
+    d["options"] = json.loads(d["options"])
+    d["enabled"] = bool(d["enabled"])
+    return d
