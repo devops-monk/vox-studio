@@ -16,3 +16,6 @@ __pycache__
 
 # Downloaded by scripts/fetch-uv.sh at release time
 src-tauri/binaries/
+
+# Local deploy target (see website/deploy.sh)
+.deploy.env

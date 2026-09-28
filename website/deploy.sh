@@ -2,7 +2,9 @@
 # Deploys the built site (dist/) to the VPS. Additive only: its own web root, its own nginx
 # server block, its own certificate. Validates nginx before a graceful reload.
 set -euo pipefail
-HOST="${VOX_DEPLOY_HOST:-root@168.231.79.163}"
+# The server lives in a local, git-ignored file: echo 'VOX_DEPLOY_HOST=user@server' > .deploy.env
+[ -f "$(dirname "$0")/../.deploy.env" ] && . "$(dirname "$0")/../.deploy.env"
+HOST="${VOX_DEPLOY_HOST:?Set VOX_DEPLOY_HOST=user@server (for example in .deploy.env at the repo root)}"
 DOMAIN="vox-studio.devops-monk.com"
 ROOT="/var/www/vox-studio"
 CONF="/etc/nginx/sites-enabled/vox-studio"

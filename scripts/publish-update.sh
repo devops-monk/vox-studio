@@ -4,7 +4,9 @@
 #
 #   npm run release:mac && scripts/publish-update.sh "Release notes…"
 set -euo pipefail
-HOST="${VOX_DEPLOY_HOST:-root@168.231.79.163}"
+# The server lives in a local, git-ignored file: echo 'VOX_DEPLOY_HOST=user@server' > .deploy.env
+[ -f "$(dirname "$0")/../.deploy.env" ] && . "$(dirname "$0")/../.deploy.env"
+HOST="${VOX_DEPLOY_HOST:?Set VOX_DEPLOY_HOST=user@server (for example in .deploy.env at the repo root)}"
 ROOT="/var/www/vox-studio/updates"
 BASE_URL="https://vox-studio.devops-monk.com/updates"
 cd "$(dirname "$0")/.."
