@@ -33,6 +33,7 @@ On **Home**, the **Try a voice** card now has a **System | Kokoro** switch. VoxS
 |---|---|---|---|---|
 | **Kokoro** | 54 | English (US & UK), Spanish, French, Hindi, Italian, Japanese, Portuguese, Mandarin | 354 MB | Apache-2.0 |
 | **Chatterbox** | Your own (voice cloning) | English | 3.2 GB + 1.3 GB engine | MIT |
+| **Whisper Base / Small / Large v3 Turbo** | (speech recognition) | ~99 languages | 145 MB / 484 MB / 1.6 GB + 260 MB engine | MIT |
 
 Chatterbox brings its own engine (PyTorch), installed in a separate, isolated space so it can't interfere with anything else. Removing Chatterbox removes that too.
 

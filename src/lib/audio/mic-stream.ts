@@ -57,9 +57,13 @@ export async function startMicStream(onChunk: (pcm16: ArrayBuffer) => void): Pro
   source.connect(processor)
   processor.connect(ctx.destination) // required for onaudioprocess to fire; outputs silence
 
+  let stopped = false
   return {
     analyser,
+    /** Safe to call more than once. */
     stop: () => {
+      if (stopped) return
+      stopped = true
       processor.disconnect()
       source.disconnect()
       stream.getTracks().forEach((t) => t.stop())

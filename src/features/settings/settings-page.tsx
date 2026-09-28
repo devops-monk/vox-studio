@@ -1,6 +1,7 @@
 import { GlassPanel, SegmentedControl } from '@/components/glass'
 import { usePrefs, type ThemePref } from '@/lib/store/prefs'
 import { useSettings, useSystem, useUpdateSettings } from '@/lib/voxd/queries'
+import { DictationSettings } from './dictation-settings'
 
 function Row({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
   return (
@@ -94,6 +95,7 @@ export function SettingsPage() {
       </section>
       <Performance />
       <History />
+      <DictationSettings />
       <p className="px-1 text-[12px] text-text-3">Storage, privacy, shortcuts and the rest of settings are coming in M15.</p>
     </div>
   )

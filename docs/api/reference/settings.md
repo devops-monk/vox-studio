@@ -5,6 +5,7 @@
 |---|---|---|
 | `compute_device` | string | Where PyTorch engines (Chatterbox) run: `auto`, `cpu`, `mps` (Apple GPU) or `cuda` (NVIDIA). `auto` picks the fastest available. |
 | `history_retention_days` | number | `0` (keep forever, the default), `7`, `30` or `90`. Unstarred takes older than this are deleted automatically; starred takes are always kept. |
+| `asr_model` | string \| null | Preferred Whisper model for file transcription. `null` means the most accurate installed. Send `""` to clear it. |
 | `compute_device_in_use` | string \| null | The device the running engine actually uses, or null if none is loaded. If a GPU can't run the model, voxd falls back to `cpu` and reports it here. |
 
 ## `GET /v1/settings`

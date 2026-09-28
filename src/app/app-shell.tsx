@@ -8,10 +8,18 @@ import { EngineGate } from './engine-gate'
 import { Onboarding } from '@/features/onboarding/onboarding'
 import { useApplyTheme } from '@/lib/use-theme'
 import { usePrefs } from '@/lib/store/prefs'
+import { useEffect } from 'react'
+import { dictation } from '@/lib/dictation'
 
 export function AppShell() {
   useApplyTheme()
   const theme = usePrefs((s) => s.theme)
+  const shortcut = usePrefs((s) => s.dictation.shortcut)
+
+  // The shell registers the default shortcut at launch; apply the user's choice if different.
+  useEffect(() => {
+    if (dictation.available && shortcut !== 'CommandOrControl+Shift+Space') void dictation.setShortcut(shortcut).catch(() => {})
+  }, [shortcut])
 
   return (
     <div className="flex h-full">

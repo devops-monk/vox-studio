@@ -158,10 +158,16 @@ Work goes one milestone at a time. Tick `[x]` only after the item is verified in
 - [x] Fixes found in testing: `cn()` now uses tailwind-merge (class overrides were silently lost); waveforms share one decoder, decode at most 3 at a time, and load only when visible; narrow waveforms use fewer bars
 - [x] Docs: takes reference (search, paging, delete, retention), History guide
 
-### M8 — Transcribe & Dictate
-- [ ] Whisper engine: transcribe a file, export (txt/srt/vtt)
-- [ ] Live transcription over WebSocket
-- [ ] Global-hotkey dictation into any app, a floating glass capture pill, and a menu-bar tray
+### M8 — Transcribe & Dictate ✅
+- [x] Whisper engine in its own runtime pack (faster-whisper/CTranslate2; int8 CPU, CUDA when present); Base / Small / Large v3 Turbo models, pinned and SHA-256 verified
+- [x] File transcription jobs (separate `asr` lane, progress, cancel), transcripts storage, correct/rename/delete, export txt/srt/vtt/json, save to file
+- [x] Live transcription over `WS /v1/transcribe/live` (16 kHz PCM16): partial results about once a second, finals after pauses
+- [x] Transcribe page: file drop, live panel with a reactive orb, transcript viewer (timestamp seek, playback highlight, double-click to correct, exports), search
+- [x] System-wide dictation: global shortcut (customisable), floating glass pill (no focus stealing), auto-finish after a pause, paste into the focused app via clipboard + ⌘V with the clipboard restored, Accessibility detection with a copy-only fallback, tray menu
+- [x] Diagnostics: UI windows can write to the app log (`client_log`)
+- [x] Verified in the real app: shortcut → pill → live WS → Whisper → text pasted and clipboard restored
+- [x] Docs: transcription reference (including the live protocol), Transcribe and Dictation guides
+- Measured on M1 Pro, Whisper Base: a 6.9 s file transcribed in about 3 s including model load; live final text about 0.7 s after speech ends
 
 ### M9 — Dubbing
 - [ ] Import video (file or URL), transcribe, detect speakers, translate (Argos)

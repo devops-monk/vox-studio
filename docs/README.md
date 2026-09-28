@@ -15,7 +15,8 @@ VoxStudio is a private voice studio that runs entirely on your computer. These d
 | [Design a voice](guides/design.md) | Describe a voice in words and fine-tune it by ear |
 | Dub a video *(M9)* | Translate and re-voice a video |
 | Stories & audiobooks *(M10)* | Long-form, multi-voice narration |
-| Transcribe & dictate *(M8)* | Speech to text, anywhere |
+| [Transcribe](guides/transcribe.md) | Files and live speech to text; fix and export |
+| [Dictation](guides/dictation.md) | Type with your voice in any app |
 
 ## Build with the API
 | Page | |
@@ -33,6 +34,7 @@ VoxStudio is a private voice studio that runs entirely on your computer. These d
 | [Models](api/reference/models.md) | `GET /v1/models`, download, remove, mirrors |
 | [Voices](api/reference/voices.md) | `GET /v1/voices`, library, favorites and tags |
 | [Custom voices](api/reference/custom-voices.md) | Create, rename or delete voices; export and import `.voxvoice` |
+| [Transcription](api/reference/transcription.md) | File jobs, transcripts, exports, `WS /v1/transcribe/live` |
 | [Voice design](api/reference/design.md) | Analyze, candidates from a description, designed voices |
 | [Settings](api/reference/settings.md) | `GET`/`PATCH /v1/settings` (compute device) |
 | [Speech](api/reference/speech.md) | `POST /v1/speech` |

@@ -261,7 +261,7 @@ impl Voxd {
         let _ = self.app.emit("voxd://state", snapshot);
     }
 
-    fn log(&self, line: String) {
+    pub fn log(&self, line: String) {
         if cfg!(debug_assertions) {
             eprintln!("[voxd] {line}");
         }

@@ -184,3 +184,8 @@ textarea,
 .vox-range:disabled {
   cursor: default;
 }
+
+/* The dictation pill window is fully transparent around its capsule. */
+:root[data-pill='true'] body {
+  background: transparent !important;
+}

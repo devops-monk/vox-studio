@@ -207,7 +207,7 @@ function LivePanel({ language, onDone }: { language: string; onDone: (id: string
           </Button>
         )}
       </div>
-      <div ref={scroller} className="max-h-48 min-h-32 flex-1 overflow-y-auto rounded-[var(--radius-md)] bg-[var(--glass-3)] p-4 text-[15px] leading-relaxed" aria-live="polite">
+      <div ref={scroller} className="max-h-48 min-h-32 flex-1 overflow-y-auto rounded-[var(--radius-md)] bg-[var(--glass-3)] p-4 text-[15px] leading-relaxed" aria-live="polite" aria-label="Live transcript">
         {finals.length || partial ? (
           <>
             {finals.join(' ')} <span className="text-text-3">{partial}</span>

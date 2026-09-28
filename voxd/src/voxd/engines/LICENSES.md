@@ -12,5 +12,7 @@ Add a row here before merging a new engine.
 | `kokoro` | `phonemizer` + `espeakng-loader` for phonemes (Python dependencies, fetched when voxd's runtime is installed) | GPL-3.0 / GPL-3.0 | https://github.com/bootphon/phonemizer · https://github.com/thewh1teagle/espeakng-loader |
 | `chatterbox` | Chatterbox weights (ResembleAI/chatterbox, pinned commit; downloaded on request) | MIT | https://huggingface.co/ResembleAI/chatterbox |
 | `chatterbox` | `chatterbox-tts` + PyTorch + `resemble-perth` watermarker (installed into an isolated runtime on request) | MIT / BSD-3 / MIT | https://github.com/resemble-ai/chatterbox |
+| `whisper` | Whisper weights, CTranslate2 conversions (Systran/faster-whisper-base, -small; dropbox-dash/faster-whisper-large-v3-turbo; pinned commits) | MIT | https://huggingface.co/Systran |
+| `whisper` | `faster-whisper` + CTranslate2 + PyAV (FFmpeg, LGPL build) in an isolated runtime | MIT / MIT / BSD (LGPL FFmpeg libs) | https://github.com/SYSTRAN/faster-whisper |
 
 > **Note on GPL components:** `phonemizer` and the espeak-ng library are installed into voxd's runtime by `uv` on the user's machine; they are not part of VoxStudio's source or app bundle. If a future release starts **bundling** the Python runtime (M16 packaging), review this — either ship those components' source per GPL-3.0 or switch to a permissively-licensed phonemizer.
