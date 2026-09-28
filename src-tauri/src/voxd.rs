@@ -164,6 +164,9 @@ impl Voxd {
             .args(["-m", "voxd", "--lifeline", "--port", &port.to_string(), "--data-dir"])
             .arg(&data_dir)
             .env("VOXD_TOKEN", &token)
+            // voxd installs engine runtimes (Chatterbox, Demucs…) with uv; apps opened from Finder
+            // get a minimal PATH, so tell it exactly which uv to use (the bundled one in releases).
+            .env("VOXD_UV", &uv)
             .env("PYTHONUNBUFFERED", "1")
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())

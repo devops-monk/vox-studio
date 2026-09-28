@@ -87,6 +87,12 @@ class RuntimeManager:
     @property
     def uv(self) -> str:
         found = self._uv or os.environ.get("VOXD_UV") or shutil.which("uv")
+        if not found:  # GUI apps don't inherit the shell PATH: try the usual install locations
+            home = Path.home()
+            for candidate in (home / ".local/bin/uv", home / ".cargo/bin/uv", Path("/opt/homebrew/bin/uv"), Path("/usr/local/bin/uv")):
+                if candidate.is_file():
+                    found = str(candidate)
+                    break
         if not found:
             raise EngineError("Installing engines needs `uv`, which wasn't found")
         return found
