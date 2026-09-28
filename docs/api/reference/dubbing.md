@@ -29,7 +29,7 @@ Requirements: a Whisper [model](models.md), plus a voice that speaks the target 
 `multipart/form-data`: `file` (up to 2 GB), `target_language` (required), `source_language` (optional), `title` (optional). Returns the new dub with `status: "preparing"` and starts preparing it.
 
 ```bash
-curl -s -X POST "$VOXD/v1/dubs" -H "Authorization: Bearer $VOXD_TOKEN" \
+curl -s -X POST "$VOX_URL/v1/dubs" -H "Authorization: Bearer $VOX_API_KEY" \
   -F file=@talk.mp4 -F target_language=en
 ```
 **Errors:** `400 unsupported_language`, `400 engine_unavailable` (no Whisper model), `400 file_too_large`

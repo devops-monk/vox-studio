@@ -20,12 +20,12 @@ Lists the voices an engine can speak with.
 **Errors:** `400 engine_unavailable`
 
 ```bash
-curl -s "$VOXD/v1/voices?engine=system" -H "Authorization: Bearer $VOXD_TOKEN"
+curl -s "$VOX_URL/v1/voices?engine=system" -H "Authorization: Bearer $VOX_API_KEY"
 # [{"id":"Samantha","name":"Samantha","language":"en-US","sample":"Hello! My name is Samantha."}, …]
 ```
 
 ```bash
-curl -s "$VOXD/v1/voices?engine=kokoro" -H "Authorization: Bearer $VOXD_TOKEN"
+curl -s "$VOX_URL/v1/voices?engine=kokoro" -H "Authorization: Bearer $VOX_API_KEY"
 # [{"id":"af_heart","name":"Heart","language":"en-US","sample":null,"gender":"female"}, …]
 ```
 
@@ -48,7 +48,7 @@ Every voice in one list: the voices of each installed engine plus your [custom v
 Favorite or tag **any** voice, built-in or custom. Only the fields you send change.
 
 ```bash
-curl -s -X PUT "$VOXD/v1/voices/meta" -H "Authorization: Bearer $VOXD_TOKEN" -H "Content-Type: application/json" \
+curl -s -X PUT "$VOX_URL/v1/voices/meta" -H "Authorization: Bearer $VOX_API_KEY" -H "Content-Type: application/json" \
   -d '{"engine": "kokoro", "voice": "af_heart", "favorite": true, "tags": ["warm", "narration"]}'
 ```
 | Field | Type | Description |

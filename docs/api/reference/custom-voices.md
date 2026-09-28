@@ -30,7 +30,7 @@ Creates a voice from a recording. Send `multipart/form-data`:
 **Response 201**: the custom voice. **Errors:** `400 invalid_audio` (with a specific message such as *"at least 3 seconds are needed"*), `422 invalid_request`
 
 ```bash
-curl -s -X POST "$VOXD/v1/voices/custom" -H "Authorization: Bearer $VOXD_TOKEN" \
+curl -s -X POST "$VOX_URL/v1/voices/custom" -H "Authorization: Bearer $VOX_API_KEY" \
   -F name="My narrator" \
   -F consent="I am the speaker and I agree to this voice being cloned." \
   -F audio=@me.wav
@@ -41,7 +41,7 @@ curl -s -X POST "$VOXD/v1/voices/custom" -H "Authorization: Bearer $VOXD_TOKEN" 
 
 ## Speak with it
 ```bash
-curl -s -X POST "$VOXD/v1/jobs/speech" -H "Authorization: Bearer $VOXD_TOKEN" -H "Content-Type: application/json" \
+curl -s -X POST "$VOX_URL/v1/jobs/speech" -H "Authorization: Bearer $VOX_API_KEY" -H "Content-Type: application/json" \
   -d '{"text": "Hello in my own voice.", "voice": "cv_426926f80c1e", "engine": "chatterbox", "emotion": 0.7}'
 ```
 Cloning takes several seconds per sentence, so use [`POST /v1/jobs/speech`](jobs.md) to get progress and the option to cancel. `POST /v1/speech` works too, but blocks until the audio is ready.
@@ -80,6 +80,6 @@ The imported voice keeps the original consent record, attached after yours: `"<y
 **Response 201**: the new custom voice. **Errors:** `400 invalid_voice_file` (not a voice file, made with a newer version, or the recording fails the usual checks)
 
 ```bash
-curl -s -X POST "$VOXD/v1/voices/custom/import" -H "Authorization: Bearer $VOXD_TOKEN" \
+curl -s -X POST "$VOX_URL/v1/voices/custom/import" -H "Authorization: Bearer $VOX_API_KEY" \
   -F file=@Narrator.voxvoice -F consent="I have permission from the speaker to use this voice."
 ```

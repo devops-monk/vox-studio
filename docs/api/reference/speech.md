@@ -17,8 +17,8 @@ Turns text into audio and saves the result as a new [take](takes.md).
 **Errors:** `400 engine_unavailable`, `400 synthesis_failed`, `422 invalid_request`
 
 ```bash
-curl -s -X POST "$VOXD/v1/speech" \
-  -H "Authorization: Bearer $VOXD_TOKEN" -H "Content-Type: application/json" \
+curl -s -X POST "$VOX_URL/v1/speech" \
+  -H "Authorization: Bearer $VOX_API_KEY" -H "Content-Type: application/json" \
   -d '{"text": "Slow and steady.", "voice": "Daniel", "speed": 0.8}'
 ```
 

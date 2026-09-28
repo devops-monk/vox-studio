@@ -20,7 +20,7 @@ On success, the job `result` holds the new take plus levels before and after, in
 The take has `engine: "tools"` and `voice: "clean"`.
 
 ```bash
-curl -H "Authorization: Bearer $VOXD_TOKEN" -F file=@memo.m4a -F trim=true -F loudness=-16 \
+curl -H "Authorization: Bearer $VOX_API_KEY" -F file=@memo.m4a -F trim=true -F loudness=-16 \
   http://127.0.0.1:$VOXD_PORT/v1/tools/clean
 ```
 

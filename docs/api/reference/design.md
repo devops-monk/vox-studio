@@ -28,7 +28,7 @@ Starts the one-time analysis [job](jobs.md) (or returns the one already running)
 | `gender` | string | Optional override: `female` or `male` |
 
 ```bash
-curl -s -X POST "$VOXD/v1/design/candidates" -H "Authorization: Bearer $VOXD_TOKEN" -H "Content-Type: application/json" \
+curl -s -X POST "$VOX_URL/v1/design/candidates" -H "Authorization: Bearer $VOX_API_KEY" -H "Content-Type: application/json" \
   -d '{"description": "A warm, deep British narrator, calm and measured"}'
 ```
 ```json

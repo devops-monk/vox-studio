@@ -33,8 +33,8 @@ Queues text of any length (up to 200,000 characters). voxd splits it at sentence
 **Response 202**: the new job, with `status: "queued"`.
 
 ```bash
-curl -s -X POST "$VOXD/v1/jobs/speech" \
-  -H "Authorization: Bearer $VOXD_TOKEN" -H "Content-Type: application/json" \
+curl -s -X POST "$VOX_URL/v1/jobs/speech" \
+  -H "Authorization: Bearer $VOX_API_KEY" -H "Content-Type: application/json" \
   -d "{\"text\": $(jq -Rs . < chapter1.txt), \"voice\": \"Daniel\", \"title\": \"Chapter 1\"}"
 ```
 

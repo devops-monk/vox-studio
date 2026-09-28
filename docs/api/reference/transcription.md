@@ -38,9 +38,9 @@ Starts a transcription [job](jobs.md) in its own **asr lane**, so it runs alongs
 **Response 202**: the job. On success, `result.transcript_id` points to the transcript. **Errors:** `400 engine_unavailable`, `400 file_too_large`
 
 ```bash
-JOB=$(curl -s -X POST "$VOXD/v1/transcriptions" -H "Authorization: Bearer $VOXD_TOKEN" -F file=@interview.m4a | jq -r .id)
+JOB=$(curl -s -X POST "$VOX_URL/v1/transcriptions" -H "Authorization: Bearer $VOX_API_KEY" -F file=@interview.m4a | jq -r .id)
 # …wait for the job (GET /v1/jobs/$JOB or its events), then:
-curl -s "$VOXD/v1/transcriptions/<transcript_id>" -H "Authorization: Bearer $VOXD_TOKEN"
+curl -s "$VOX_URL/v1/transcriptions/<transcript_id>" -H "Authorization: Bearer $VOX_API_KEY"
 ```
 
 ## `GET /v1/transcriptions`
@@ -60,7 +60,7 @@ The original recording, for file transcripts.
 ## `GET /v1/transcriptions/{id}/export?format=txt|srt|vtt|json`
 Downloads the transcript as plain text, SubRip subtitles, WebVTT subtitles or JSON.
 ```bash
-curl -s "$VOXD/v1/transcriptions/<id>/export?format=srt" -H "Authorization: Bearer $VOXD_TOKEN" -o talk.srt
+curl -s "$VOX_URL/v1/transcriptions/<id>/export?format=srt" -H "Authorization: Bearer $VOX_API_KEY" -o talk.srt
 ```
 
 ## `POST /v1/transcriptions/{id}/save?format=…`

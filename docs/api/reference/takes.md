@@ -27,7 +27,7 @@ Search and page through takes, newest first.
 | `before` | | Only takes created before this unix time. For the next page, pass the last take's `created_at`. |
 
 ```bash
-curl -s "$VOXD/v1/takes?q=chapter&starred=true&limit=20" -H "Authorization: Bearer $VOXD_TOKEN"
+curl -s "$VOX_URL/v1/takes?q=chapter&starred=true&limit=20" -H "Authorization: Bearer $VOX_API_KEY"
 ```
 
 **Paging through everything (Python):**
@@ -66,7 +66,7 @@ Downloads the take as `audio/wav`. Accepts `?token=` in place of the header, so 
 **Errors:** `404 not_found`
 
 ```bash
-curl -s "$VOXD/v1/takes/5128…/audio" -H "Authorization: Bearer $VOXD_TOKEN" -o take.wav
+curl -s "$VOX_URL/v1/takes/5128…/audio" -H "Authorization: Bearer $VOX_API_KEY" -o take.wav
 ```
 
 ## `PUT /v1/takes/{id}/star`

@@ -24,7 +24,7 @@ Neural engines such as Kokoro need model files. voxd downloads them on request, 
 The whole catalog, with status and fit.
 
 ```bash
-curl -s "$VOXD/v1/models" -H "Authorization: Bearer $VOXD_TOKEN"
+curl -s "$VOX_URL/v1/models" -H "Authorization: Bearer $VOX_API_KEY"
 ```
 
 ## `POST /v1/models/{id}/download`
@@ -38,8 +38,8 @@ Starts a download [job](jobs.md) in the **network lane**, so it never delays spe
 **Response 202**: the download job. **Errors:** `404 not_found`, `409 already_installed`
 
 ```bash
-JOB=$(curl -s -X POST "$VOXD/v1/models/kokoro-v1/download" -H "Authorization: Bearer $VOXD_TOKEN" | jq -r .id)
-curl -sN "$VOXD/v1/jobs/$JOB/events" -H "Authorization: Bearer $VOXD_TOKEN"
+JOB=$(curl -s -X POST "$VOX_URL/v1/models/kokoro-v1/download" -H "Authorization: Bearer $VOX_API_KEY" | jq -r .id)
+curl -sN "$VOX_URL/v1/jobs/$JOB/events" -H "Authorization: Bearer $VOX_API_KEY"
 # event: progress
 # data: {"progress": 0.17, "message": "Downloading 59 MB of 354 MB"}
 ```

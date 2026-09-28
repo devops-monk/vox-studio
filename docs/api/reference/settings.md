@@ -15,7 +15,7 @@
 Changes only the fields you send. A new `compute_device` takes effect the next time the engine runs.
 
 ```bash
-curl -s -X PATCH "$VOXD/v1/settings" -H "Authorization: Bearer $VOXD_TOKEN" \
+curl -s -X PATCH "$VOX_URL/v1/settings" -H "Authorization: Bearer $VOX_API_KEY" \
   -H "Content-Type: application/json" -d '{"compute_device": "cpu"}'
 ```
 **Errors:** `400 invalid_setting` (retention isn't 0, 7, 30 or 90, an unknown Whisper model, or a mirror that isn't http(s)), `400 unsupported_device` (this computer doesn't have that device; see `accelerators` in [`GET /v1/system`](system.md)), `422 invalid_request`

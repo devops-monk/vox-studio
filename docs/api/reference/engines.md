@@ -14,7 +14,7 @@ Lists every engine voxd knows about, including ones that can't run on this machi
 | `unavailable_reason` | string \| null | Why not, e.g. `"Install espeak-ng to enable system voices"` |
 
 ```bash
-curl -s "$VOXD/v1/engines" -H "Authorization: Bearer $VOXD_TOKEN"
+curl -s "$VOX_URL/v1/engines" -H "Authorization: Bearer $VOX_API_KEY"
 # [{"id":"system","name":"System Voices","capabilities":["tts"],"license":"Built into your OS","available":true,"unavailable_reason":null},
 #  {"id":"kokoro","name":"Kokoro","capabilities":["tts"],"license":"Apache-2.0","available":false,"unavailable_reason":"Download Kokoro from Models to use it"}]
 ```
