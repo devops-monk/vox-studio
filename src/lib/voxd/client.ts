@@ -192,6 +192,30 @@ export const voxd = {
   deletePronunciation: (id: string) => noContent(api().DELETE('/v1/pronunciations/{pid}', { params: { path: { pid: id } } })),
   previewPronunciation: (text: string) => call(api().POST('/v1/pronunciations/preview', { body: { text } })),
 
+  connection: () => call(api().GET('/v1/connection')),
+  apiKeys: () => call(api().GET('/v1/keys')),
+  createApiKey: (name: string) => call(api().POST('/v1/keys', { body: { name } })),
+  revokeApiKey: (id: string) => noContent(api().DELETE('/v1/keys/{key_id}', { params: { path: { key_id: id } } })),
+  openapi: async () => {
+    const { url } = useVoxd.getState().state
+    if (!url) throw new VoxdError('offline', 'The voice engine is not running', 0)
+    return (await fetch(`${url}/openapi.json`)).json() as Promise<OpenApiDoc>
+  },
+  /** Raw request for the API explorer; returns status, content type and a printable body. */
+  raw: async (method: string, path: string, body?: string) => {
+    const { url, token } = useVoxd.getState().state
+    if (!url) throw new VoxdError('offline', 'The voice engine is not running', 0)
+    const started = performance.now()
+    const res = await fetch(url + path, {
+      method,
+      body: body || undefined,
+      headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}), ...(body ? { 'Content-Type': 'application/json' } : {}) },
+    })
+    const type = res.headers.get('content-type') ?? ''
+    const text = type.includes('json') ? JSON.stringify(await res.json(), null, 2) : type.startsWith('text/') ? await res.text() : `(${type || 'binary'} · ${(await res.blob()).size} bytes)`
+    return { status: res.status, type, text, ms: Math.round(performance.now() - started) }
+  },
+
   starTake: (id: string, starred: boolean) => call(api().PUT('/v1/takes/{take_id}/star', { params: { path: { take_id: id } }, body: { starred } })),
   exportTake: (id: string, path: string, overwrite = false) =>
     noContent(api().POST('/v1/takes/{take_id}/export', { params: { path: { take_id: id } }, body: { path, overwrite } })),
@@ -230,4 +254,32 @@ function withToken(path: string) {
   const { url, token } = useVoxd.getState().state
   if (!url) throw new VoxdError('offline', 'The voice engine is not running', 0)
   return `${url}${path}${token ? `?token=${token}` : ''}`
+}
+
+/** The subset of OpenAPI 3.1 the API explorer reads. */
+export interface OpenApiDoc {
+  paths: Record<string, Record<string, OpenApiOperation>>
+  components?: { schemas?: Record<string, OpenApiSchema> }
+}
+export interface OpenApiOperation {
+  summary?: string
+  description?: string
+  tags?: string[]
+  parameters?: { name: string; in: string; required?: boolean; description?: string; schema?: OpenApiSchema }[]
+  requestBody?: { content: Record<string, { schema?: OpenApiSchema }> }
+}
+export interface OpenApiSchema {
+  $ref?: string
+  type?: string | string[]
+  properties?: Record<string, OpenApiSchema>
+  required?: string[]
+  description?: string
+  default?: unknown
+  enum?: unknown[]
+  items?: OpenApiSchema
+  anyOf?: OpenApiSchema[]
+  title?: string
+  minimum?: number
+  maximum?: number
+  format?: string
 }

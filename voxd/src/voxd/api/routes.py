@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import asyncio
-import hmac
 import json
 import time
 import uuid
@@ -19,6 +18,7 @@ from ..runtimes import PACKS
 from ..store import CustomVoice
 from ..voices import export_bundle, read_bundle
 from ..design import apply_sliders, design, parse_description, parse_recipe
+from ..keys import authenticate, create_key
 from ..pronounce import pronouncer
 from .. import tools
 from ..transcripts import EXPORTS, LiveSession, save_live, to_text, uploads_dir
@@ -31,6 +31,10 @@ from ..store import DesignedVoice
 from ..speech import resolve_engine, save_take
 from ..store import Job, Take
 from .schemas import (
+    ConnectionOut,
+    ApiKeyCreated,
+    ApiKeyIn,
+    ApiKeyOut,
     PronunciationIn,
     PronunciationOut,
     PronunciationPatch,
@@ -738,8 +742,7 @@ async def live_transcription(websocket: WebSocket, token: str = "", language: st
     `{"type":"partial","text"}` while speaking, `{"type":"final","segment"}` after each pause.
     Send `{"type":"stop"}` to finish; the reply is `{"type":"done","text","transcript_id"}`."""
     services = websocket.app.state.services
-    expected = services.settings.token
-    if expected and not hmac.compare_digest(token, expected):
+    if authenticate(services, token) is None:
         await websocket.close(code=4401, reason="unauthorized")
         return
     try:
@@ -1697,6 +1700,49 @@ def preview_pronunciations(body: PronunciationPreviewIn) -> PronunciationPreview
     return PronunciationPreviewOut(text=pronouncer.apply(body.text))
 
 
+@router.get("/connection", response_model=ConnectionOut, tags=["API keys"], summary="How to connect to this voxd")
+def connection(request: Request) -> ConnectionOut:
+    services = _services(request)
+    url = f"http://127.0.0.1:{services.settings.port}"
+    return ConnectionOut(
+        url=url, api_base=f"{url}/v1", mcp_url=f"{url}/mcp", openapi_url=f"{url}/openapi.json", docs_url=f"{url}/docs",
+        bridge_path=str(Path(__file__).resolve().parent.parent / "mcp_bridge.py"), auth_required=bool(services.settings.token),
+    )
+
+
+# --- API keys -----------------------------------------------------------------
+
+
+def _require_app(request: Request) -> None:
+    if getattr(request.state, "auth", "app") != "app":
+        raise HTTPException(403, detail=("forbidden", "API keys can't manage API keys — use the VoxStudio app"))
+
+
+@router.get("/keys", response_model=list[ApiKeyOut], responses=ERRORS, tags=["API keys"], summary="List API keys")
+def list_keys(request: Request) -> list[ApiKeyOut]:
+    _require_app(request)
+    return [ApiKeyOut(**k) for k in _services(request).store.list_api_keys()]
+
+
+@router.post("/keys", response_model=ApiKeyCreated, status_code=201, responses=ERRORS, tags=["API keys"], summary="Create an API key")
+def create_api_key(request: Request, body: ApiKeyIn) -> ApiKeyCreated:
+    """The full `key` is returned only here — store it safely. Only the app itself can create keys."""
+    _require_app(request)
+    services = _services(request)
+    key, row = create_key(services, body.name.strip())
+    services.bus.publish("keys.changed", {})
+    return ApiKeyCreated(**row, key=key)
+
+
+@router.delete("/keys/{key_id}", status_code=204, responses=ERRORS, tags=["API keys"], summary="Revoke an API key")
+def revoke_key(request: Request, key_id: str) -> None:
+    _require_app(request)
+    services = _services(request)
+    if not services.store.delete_api_key(key_id):
+        raise HTTPException(404, detail=("not_found", "No such key"))
+    services.bus.publish("keys.changed", {})
+
+
 # --- Live events --------------------------------------------------------------
 
 
@@ -1704,8 +1750,7 @@ def preview_pronunciations(body: PronunciationPreviewIn) -> PronunciationPreview
 async def events(websocket: WebSocket, token: str = ""):
     """App-wide live events as JSON messages `{"type": ..., "data": ...}`. Authenticate with `?token=`."""
     services = websocket.app.state.services
-    expected = services.settings.token
-    if expected and not hmac.compare_digest(token, expected):
+    if authenticate(services, token) is None:
         await websocket.close(code=4401, reason="unauthorized")
         return
     await websocket.accept()

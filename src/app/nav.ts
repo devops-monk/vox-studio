@@ -2,6 +2,7 @@ import {
   AudioLines,
   BookOpen,
   Boxes,
+  Code2,
   Copy,
   Film,
   FolderKanban,
@@ -65,7 +66,8 @@ export const NAV: NavSection[] = [
     items: [
       { path: '/models', label: 'Models', icon: Boxes, description: 'Download and manage voice models.', milestone: 'M3', keywords: ['download', 'kokoro', 'engines'] },
       { path: '/tools', label: 'Tools', icon: Wrench, description: 'Clean up recordings, change a voice, fix pronunciation.', milestone: 'M13', keywords: ['convert', 'pronunciation', 'denoise', 'normalize', 'loudness', 'speech to speech'] },
-      { path: '/integrations', label: 'Integrations', icon: Plug, description: 'OpenAI-compatible API and MCP for AI agents.', milestone: 'M14', keywords: ['mcp', 'api'] },
+      { path: '/integrations', label: 'Integrations', icon: Plug, description: 'Connect AI agents, editors, automations and OpenAI SDKs.', milestone: 'M14', keywords: ['mcp', 'claude', 'cursor', 'n8n', 'openai'] },
+      { path: '/developer', label: 'Developer', icon: Code2, description: 'API keys and an interactive API explorer.', milestone: 'M14', keywords: ['api', 'keys', 'token', 'curl', 'openapi'] },
     ],
   },
 ]

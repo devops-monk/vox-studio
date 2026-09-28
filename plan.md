@@ -215,12 +215,14 @@ Work goes one milestone at a time. Tick `[x]` only after the item is verified in
 - [x] Verified: a 9.9 s noisy clip went to 7.5 s at −16.9 dB RMS; a converted clip transcribes back to the original words
 - [x] Docs: tools guide and tools & pronunciations reference
 
-### M14 — Integrations & Developer
-- [ ] **API keys:** create, name and revoke long-lived keys in Settings → Developer, so scripts can use the app-managed voxd
-- [ ] **Developer page:** an interactive glass API reference generated from `/openapi.json`, with try-it requests and copy-as-curl/Python/JS
-- [ ] OpenAI-compatible `/v1/audio/speech` + `/v1/audio/transcriptions` endpoints
-- [ ] MCP server so AI agents can speak and transcribe
-- [ ] Integration pages with copy-paste setup
+### M14 — Integrations & Developer ✅
+- [x] **API keys** (`vox_sk_…`, stored as SHA-256 hashes, shown once, last-used tracking, revoke); keys work on HTTP and WebSockets but can't manage keys
+- [x] `GET /v1/connection` and a `voxd.json` discovery file, so scripts and bridges can find the running voxd
+- [x] **OpenAI-compatible** `POST /v1/audio/speech` (OpenAI voice names mapped to Kokoro, any voxd voice id, mp3/opus/aac/flac/wav/pcm via a new media `encode` op) and `POST /v1/audio/transcriptions` (json/text/srt/vtt/verbose_json), with OpenAI-shaped errors; tested with the official `openai` Python SDK
+- [x] **MCP server** at `POST /mcp` (Streamable HTTP, JSON responses, batches), with tools speak, list_voices, transcribe, clean_audio, convert_voice and add_pronunciation, plus a standard-library stdio bridge (`mcp_bridge.py`); tested with the official MCP SDK over both transports
+- [x] **Developer page:** connection details, keys, and an API explorer built from `/openapi.json` (search, parameter and body tables, curl/Python/JS snippets, Try it with live responses)
+- [x] **Integrations page:** OpenAI SDKs, Claude Code, Claude Desktop, Cursor and VS Code, custom agents, n8n, Terminal and Shortcuts, with the port and a new key filled in
+- [x] Docs: integrations guide; keys, OpenAI and MCP references; authentication updated
 
 ### M15 — Settings
 - [ ] Appearance (theme, accent, glass intensity), General, Models, Performance, Storage, Privacy, Shortcuts, Logs, About/credits

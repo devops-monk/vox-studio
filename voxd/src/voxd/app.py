@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import asyncio
-import hmac
+import json
 import logging
+import os
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from functools import partial
@@ -31,6 +32,9 @@ from .media import Media
 from .batch import Watcher, speech_item, transcribe_item
 from .books import export_book as book_export, render_book as book_render
 from .dubbing import prepare as dub_prepare, render as dub_render, retranslate as dub_retranslate
+from .api.mcp import router as mcp_router
+from .api.openai import OpenAIError, router as openai_router
+from .keys import authenticate
 from .pronounce import pronouncer
 from . import tools
 from .speech import render_long
@@ -118,6 +122,8 @@ def create_app(
     async def lifespan(app: FastAPI):
         services.bus.bind(asyncio.get_running_loop())
         services.store = Store(settings.db_path)
+        discovery = settings.data_dir / "voxd.json"
+        discovery.write_text(json.dumps({"url": f"http://127.0.0.1:{settings.port}", "port": settings.port, "pid": os.getpid(), "version": __version__}))
         pronouncer.bind(services.store)
         custom.store = services.store
         services.jobs = JobManager(services.store, services.bus)
@@ -154,17 +160,21 @@ def create_app(
                 engine.unload()
         await services.jobs.stop()
         services.store.close()
+        discovery.unlink(missing_ok=True)
 
     app = FastAPI(title="voxd", version=__version__, description=DESCRIPTION, lifespan=lifespan, redoc_url=None)
     app.state.services = services
 
     @app.middleware("http")
     async def require_token(request: Request, call_next):
-        if settings.token and request.method != "OPTIONS" and request.url.path not in PUBLIC_PATHS:
-            header = request.headers.get("authorization", "")
-            supplied = header.removeprefix("Bearer ").strip() or request.query_params.get("token", "")
-            if not hmac.compare_digest(supplied, settings.token):
-                return JSONResponse({"error": "unauthorized", "message": "Missing or invalid token"}, status_code=401)
+        if request.method == "OPTIONS" or request.url.path in PUBLIC_PATHS:
+            return await call_next(request)
+        header = request.headers.get("authorization", "")
+        supplied = header.removeprefix("Bearer ").strip() or request.query_params.get("token", "")
+        auth = authenticate(services, supplied)
+        if auth is None:
+            return JSONResponse({"error": "unauthorized", "message": "Missing or invalid token or API key"}, status_code=401)
+        request.state.auth = auth
         return await call_next(request)
 
     # Added last so it wraps the token check and answers preflights first.
@@ -181,10 +191,18 @@ def create_app(
         return JSONResponse({"error": code, "message": message}, status_code=exc.status_code)
 
     @app.exception_handler(RequestValidationError)
-    async def validation_error(_: Request, exc: RequestValidationError):
+    async def validation_error(request: Request, exc: RequestValidationError):
         first = exc.errors()[0]
         where = ".".join(str(p) for p in first["loc"][1:])
+        if request.url.path.startswith("/v1/audio/"):
+            return OpenAIError(400, f"{where}: {first['msg']}", "invalid_value", where or None).response()
         return JSONResponse({"error": "invalid_request", "message": f"{where}: {first['msg']}"}, status_code=422)
 
+    @app.exception_handler(OpenAIError)
+    async def openai_error(_: Request, exc: OpenAIError):
+        return exc.response()
+
     app.include_router(router)
+    app.include_router(openai_router)
+    app.include_router(mcp_router)
     return app

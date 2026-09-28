@@ -63,3 +63,5 @@ export interface VoxdState {
   restarts: number
 }
 export type Pronunciation = Schemas['PronunciationOut']
+export type ApiKey = Schemas['ApiKeyOut']
+export type Connection = Schemas['ConnectionOut']

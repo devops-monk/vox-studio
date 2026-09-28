@@ -1364,10 +1364,170 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/connection": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** How to connect to this voxd */
+        get: operations["connection_v1_connection_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/keys": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List API keys */
+        get: operations["list_keys_v1_keys_get"];
+        put?: never;
+        /**
+         * Create an API key
+         * @description The full `key` is returned only here — store it safely. Only the app itself can create keys.
+         */
+        post: operations["create_api_key_v1_keys_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/keys/{key_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Revoke an API key */
+        delete: operations["revoke_key_v1_keys__key_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/audio/speech": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create speech (OpenAI compatible)
+         * @description Same request as OpenAI's `POST /v1/audio/speech`; returns audio bytes. The result is also saved as a take in History.
+         */
+        post: operations["create_speech_v1_audio_speech_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/audio/transcriptions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create transcription (OpenAI compatible)
+         * @description Same request as OpenAI's `POST /v1/audio/transcriptions`. The transcript is also saved in Transcribe.
+         */
+        post: operations["create_transcription_v1_audio_transcriptions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mcp": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * MCP endpoint (Streamable HTTP)
+         * @description JSON-RPC 2.0 over HTTP for Model Context Protocol clients. See the MCP guide for setup.
+         */
+        post: operations["mcp_mcp_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** ApiKeyCreated */
+        ApiKeyCreated: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /**
+             * Hint
+             * @description Start and end of the key, to tell keys apart
+             */
+            hint: string;
+            /** Created At */
+            created_at: number;
+            /** Last Used At */
+            last_used_at: number | null;
+            /**
+             * Key
+             * @description The secret key. Shown once.
+             */
+            key: string;
+        };
+        /** ApiKeyIn */
+        ApiKeyIn: {
+            /**
+             * Name
+             * @description What the key is for, e.g. “n8n” or “my script”
+             */
+            name: string;
+        };
+        /** ApiKeyOut */
+        ApiKeyOut: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /**
+             * Hint
+             * @description Start and end of the key, to tell keys apart
+             */
+            hint: string;
+            /** Created At */
+            created_at: number;
+            /** Last Used At */
+            last_used_at: number | null;
+        };
         /** BatchIn */
         BatchIn: {
             /** Kind */
@@ -1585,6 +1745,42 @@ export interface components {
             /** Title */
             title?: string | null;
         };
+        /** Body_create_transcription_v1_audio_transcriptions_post */
+        Body_create_transcription_v1_audio_transcriptions_post: {
+            /**
+             * File
+             * @description Audio or video: flac, mp3, mp4, mpeg, mpga, m4a, ogg, wav, webm and more
+             */
+            file: string;
+            /**
+             * Model
+             * @description `whisper-1`, `gpt-4o-transcribe` etc. use your preferred Whisper model; or a voxd Whisper model id
+             * @default whisper-1
+             */
+            model: string;
+            /**
+             * Language
+             * @description ISO-639-1 code; omit to detect
+             */
+            language?: string | null;
+            /**
+             * Prompt
+             * @description Accepted for compatibility; ignored
+             */
+            prompt?: string | null;
+            /**
+             * Response Format
+             * @default json
+             * @enum {string}
+             */
+            response_format: "json" | "text" | "srt" | "verbose_json" | "vtt";
+            /**
+             * Temperature
+             * @description Accepted for compatibility; ignored
+             * @default 0
+             */
+            temperature: number;
+        };
         /** Body_create_transcription_v1_transcriptions_post */
         Body_create_transcription_v1_transcriptions_post: {
             /**
@@ -1778,6 +1974,29 @@ export interface components {
         ClearedOut: {
             /** Deleted */
             deleted: number;
+        };
+        /** ConnectionOut */
+        ConnectionOut: {
+            /** Url */
+            url: string;
+            /**
+             * Api Base
+             * @description Base URL for OpenAI SDKs
+             */
+            api_base: string;
+            /** Mcp Url */
+            mcp_url: string;
+            /** Openapi Url */
+            openapi_url: string;
+            /** Docs Url */
+            docs_url: string;
+            /**
+             * Bridge Path
+             * @description stdio MCP bridge script, for clients that launch a command
+             */
+            bridge_path: string;
+            /** Auth Required */
+            auth_required: boolean;
         };
         /** CustomVoiceOut */
         CustomVoiceOut: {
@@ -2595,6 +2814,43 @@ export interface components {
              * @description Shown in the Activity list; defaults to the text's start
              */
             title?: string | null;
+        };
+        /** SpeechRequest */
+        SpeechRequest: {
+            /**
+             * Model
+             * @description `tts-1`, `tts-1-hd` or `gpt-4o-mini-tts` pick the best installed engine; or name one: `kokoro`, `chatterbox`, `system`
+             * @default tts-1
+             */
+            model: string;
+            /**
+             * Input
+             * @description Text to speak. Long text is rendered in chunks.
+             */
+            input: string;
+            /**
+             * Voice
+             * @description An OpenAI voice name (alloy, ash, ballad, coral, echo, fable, nova, onyx, sage, shimmer, verse) or any voxd voice id
+             * @default alloy
+             */
+            voice: string;
+            /**
+             * Response Format
+             * @default mp3
+             * @enum {string}
+             */
+            response_format: "mp3" | "opus" | "aac" | "flac" | "wav" | "pcm";
+            /**
+             * Speed
+             * @description Clamped to 0.5–2.0
+             * @default 1
+             */
+            speed: number;
+            /**
+             * Instructions
+             * @description Accepted for compatibility; ignored
+             */
+            instructions?: string | null;
         };
         /** StarIn */
         StarIn: {
@@ -7580,6 +7836,280 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    connection_v1_connection_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConnectionOut"];
+                };
+            };
+        };
+    };
+    list_keys_v1_keys_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiKeyOut"][];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+        };
+    };
+    create_api_key_v1_keys_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApiKeyIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiKeyCreated"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    revoke_key_v1_keys__key_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                key_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_speech_v1_audio_speech_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SpeechRequest"];
+            };
+        };
+        responses: {
+            /** @description The audio file */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "audio/mpeg": unknown;
+                    "audio/ogg": unknown;
+                    "audio/aac": unknown;
+                    "audio/flac": unknown;
+                    "audio/wav": unknown;
+                    "audio/L16": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_transcription_v1_audio_transcriptions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_create_transcription_v1_audio_transcriptions_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    mcp_mcp_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
         };

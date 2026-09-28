@@ -16,6 +16,8 @@ import { AudiobookPage, StoriesPage } from '@/features/longform/longform-page'
 import { BatchPage } from '@/features/batch/batch-page'
 import { ProjectsPage } from '@/features/projects/projects-page'
 import { ToolsPage } from '@/features/tools/tools-page'
+import { DeveloperPage } from '@/features/developer/developer-page'
+import { IntegrationsPage } from '@/features/integrations/integrations-page'
 
 const rootRoute = createRootRoute({ component: AppShell })
 
@@ -36,6 +38,8 @@ const pages: Record<string, () => React.ReactNode> = {
   '/batch': BatchPage,
   '/projects': ProjectsPage,
   '/tools': ToolsPage,
+  '/developer': DeveloperPage,
+  '/integrations': IntegrationsPage,
 }
 
 const routes = ALL_NAV_ITEMS.map((item) =>

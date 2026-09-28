@@ -5998,10 +5998,428 @@
           }
         }
       }
+    },
+    "/v1/connection": {
+      "get": {
+        "tags": [
+          "API keys"
+        ],
+        "summary": "How to connect to this voxd",
+        "operationId": "connection_v1_connection_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConnectionOut"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/keys": {
+      "get": {
+        "tags": [
+          "API keys"
+        ],
+        "summary": "List API keys",
+        "operationId": "list_keys_v1_keys_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ApiKeyOut"
+                  },
+                  "type": "array",
+                  "title": "Response List Keys V1 Keys Get"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "API keys"
+        ],
+        "summary": "Create an API key",
+        "description": "The full `key` is returned only here \u2014 store it safely. Only the app itself can create keys.",
+        "operationId": "create_api_key_v1_keys_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApiKeyIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiKeyCreated"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/keys/{key_id}": {
+      "delete": {
+        "tags": [
+          "API keys"
+        ],
+        "summary": "Revoke an API key",
+        "operationId": "revoke_key_v1_keys__key_id__delete",
+        "parameters": [
+          {
+            "name": "key_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Key Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/audio/speech": {
+      "post": {
+        "tags": [
+          "OpenAI compatible"
+        ],
+        "summary": "Create speech (OpenAI compatible)",
+        "description": "Same request as OpenAI's `POST /v1/audio/speech`; returns audio bytes. The result is also saved as a take in History.",
+        "operationId": "create_speech_v1_audio_speech_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SpeechRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "The audio file",
+            "content": {
+              "audio/mpeg": {},
+              "audio/ogg": {},
+              "audio/aac": {},
+              "audio/flac": {},
+              "audio/wav": {},
+              "audio/L16": {}
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/audio/transcriptions": {
+      "post": {
+        "tags": [
+          "OpenAI compatible"
+        ],
+        "summary": "Create transcription (OpenAI compatible)",
+        "description": "Same request as OpenAI's `POST /v1/audio/transcriptions`. The transcript is also saved in Transcribe.",
+        "operationId": "create_transcription_v1_audio_transcriptions_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_create_transcription_v1_audio_transcriptions_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/mcp": {
+      "post": {
+        "tags": [
+          "MCP"
+        ],
+        "summary": "MCP endpoint (Streamable HTTP)",
+        "description": "JSON-RPC 2.0 over HTTP for Model Context Protocol clients. See the MCP guide for setup.",
+        "operationId": "mcp_mcp_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
     "schemas": {
+      "ApiKeyCreated": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "hint": {
+            "type": "string",
+            "title": "Hint",
+            "description": "Start and end of the key, to tell keys apart"
+          },
+          "created_at": {
+            "type": "number",
+            "title": "Created At"
+          },
+          "last_used_at": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Used At"
+          },
+          "key": {
+            "type": "string",
+            "title": "Key",
+            "description": "The secret key. Shown once."
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "hint",
+          "created_at",
+          "last_used_at",
+          "key"
+        ],
+        "title": "ApiKeyCreated"
+      },
+      "ApiKeyIn": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 60,
+            "minLength": 1,
+            "title": "Name",
+            "description": "What the key is for, e.g. \u201cn8n\u201d or \u201cmy script\u201d"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "ApiKeyIn"
+      },
+      "ApiKeyOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "hint": {
+            "type": "string",
+            "title": "Hint",
+            "description": "Start and end of the key, to tell keys apart"
+          },
+          "created_at": {
+            "type": "number",
+            "title": "Created At"
+          },
+          "last_used_at": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Used At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "hint",
+          "created_at",
+          "last_used_at"
+        ],
+        "title": "ApiKeyOut"
+      },
       "BatchIn": {
         "properties": {
           "kind": {
@@ -6518,6 +6936,69 @@
         ],
         "title": "Body_create_dub_v1_dubs_post"
       },
+      "Body_create_transcription_v1_audio_transcriptions_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "description": "Audio or video: flac, mp3, mp4, mpeg, mpga, m4a, ogg, wav, webm and more"
+          },
+          "model": {
+            "type": "string",
+            "title": "Model",
+            "description": "`whisper-1`, `gpt-4o-transcribe` etc. use your preferred Whisper model; or a voxd Whisper model id",
+            "default": "whisper-1"
+          },
+          "language": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Language",
+            "description": "ISO-639-1 code; omit to detect"
+          },
+          "prompt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prompt",
+            "description": "Accepted for compatibility; ignored"
+          },
+          "response_format": {
+            "type": "string",
+            "enum": [
+              "json",
+              "text",
+              "srt",
+              "verbose_json",
+              "vtt"
+            ],
+            "title": "Response Format",
+            "default": "json"
+          },
+          "temperature": {
+            "type": "number",
+            "title": "Temperature",
+            "description": "Accepted for compatibility; ignored",
+            "default": 0.0
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_create_transcription_v1_audio_transcriptions_post"
+      },
       "Body_create_transcription_v1_transcriptions_post": {
         "properties": {
           "file": {
@@ -7001,6 +7482,51 @@
           "deleted"
         ],
         "title": "ClearedOut"
+      },
+      "ConnectionOut": {
+        "properties": {
+          "url": {
+            "type": "string",
+            "title": "Url"
+          },
+          "api_base": {
+            "type": "string",
+            "title": "Api Base",
+            "description": "Base URL for OpenAI SDKs"
+          },
+          "mcp_url": {
+            "type": "string",
+            "title": "Mcp Url"
+          },
+          "openapi_url": {
+            "type": "string",
+            "title": "Openapi Url"
+          },
+          "docs_url": {
+            "type": "string",
+            "title": "Docs Url"
+          },
+          "bridge_path": {
+            "type": "string",
+            "title": "Bridge Path",
+            "description": "stdio MCP bridge script, for clients that launch a command"
+          },
+          "auth_required": {
+            "type": "boolean",
+            "title": "Auth Required"
+          }
+        },
+        "type": "object",
+        "required": [
+          "url",
+          "api_base",
+          "mcp_url",
+          "openapi_url",
+          "docs_url",
+          "bridge_path",
+          "auth_required"
+        ],
+        "title": "ConnectionOut"
       },
       "CustomVoiceOut": {
         "properties": {
@@ -8932,6 +9458,67 @@
           "voice"
         ],
         "title": "SpeechJobIn"
+      },
+      "SpeechRequest": {
+        "properties": {
+          "model": {
+            "type": "string",
+            "title": "Model",
+            "description": "`tts-1`, `tts-1-hd` or `gpt-4o-mini-tts` pick the best installed engine; or name one: `kokoro`, `chatterbox`, `system`",
+            "default": "tts-1"
+          },
+          "input": {
+            "type": "string",
+            "maxLength": 100000,
+            "minLength": 1,
+            "title": "Input",
+            "description": "Text to speak. Long text is rendered in chunks."
+          },
+          "voice": {
+            "type": "string",
+            "title": "Voice",
+            "description": "An OpenAI voice name (alloy, ash, ballad, coral, echo, fable, nova, onyx, sage, shimmer, verse) or any voxd voice id",
+            "default": "alloy"
+          },
+          "response_format": {
+            "type": "string",
+            "enum": [
+              "mp3",
+              "opus",
+              "aac",
+              "flac",
+              "wav",
+              "pcm"
+            ],
+            "title": "Response Format",
+            "default": "mp3"
+          },
+          "speed": {
+            "type": "number",
+            "maximum": 4.0,
+            "minimum": 0.25,
+            "title": "Speed",
+            "description": "Clamped to 0.5\u20132.0",
+            "default": 1.0
+          },
+          "instructions": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Instructions",
+            "description": "Accepted for compatibility; ignored"
+          }
+        },
+        "type": "object",
+        "required": [
+          "input"
+        ],
+        "title": "SpeechRequest"
       },
       "StarIn": {
         "properties": {

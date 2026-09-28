@@ -90,6 +90,20 @@ class JobManager:
         self._queues[self._handlers[kind][1]].put_nowait(job.id)
         return job
 
+    async def wait(self, job_id: str, timeout: float = 3600.0) -> Job:
+        """Wait for a job to finish (for synchronous APIs built on jobs)."""
+        deadline = time.monotonic() + timeout
+        while True:
+            job = self._store.get_job(job_id)
+            if job is None or job.finished:
+                if job is None:
+                    raise EngineError("The job disappeared")
+                return job
+            if time.monotonic() > deadline:
+                self.cancel(job_id)
+                raise EngineError("Timed out")
+            await asyncio.sleep(0.1)
+
     def cancel(self, job_id: str) -> Job | None:
         job = self._store.get_job(job_id)
         if job is None or job.finished:

@@ -134,6 +134,51 @@ def encode_book(wavs, titles, out, fmt, title="", author=""):
     container.close()
 
 
+# format -> (container, codec, sample format, frame size, forced rate, bit rate)
+ENCODINGS = {
+    "mp3": ("mp3", "libmp3lame", "fltp", 1152, None, 128_000),
+    "aac": ("adts", "aac", "fltp", 1024, None, 96_000),
+    "opus": ("ogg", "libopus", "flt", 960, 48_000, 64_000),
+    "flac": ("flac", "flac", "s16", 4096, None, None),
+}
+
+
+def encode(path, out, fmt):
+    """Encode a WAV (mono or stereo, 16-bit) as mono mp3, aac (ADTS), opus (Ogg) or flac."""
+    import av
+    import numpy as np
+
+    container_fmt, codec, sample_fmt, frame_size, forced_rate, bit_rate = ENCODINGS[fmt]
+    with wave.open(path, "rb") as w:
+        rate, channels = w.getframerate(), w.getnchannels()
+        pcm = np.frombuffer(w.readframes(w.getnframes()), dtype="<i2")
+    if channels > 1:
+        pcm = pcm.reshape(-1, channels).mean(axis=1).astype("<i2")
+    target = forced_rate or rate
+    src = av.AudioFrame.from_ndarray(pcm.reshape(1, -1), format="s16", layout="mono")
+    src.sample_rate = rate
+    resampler = av.AudioResampler(format=sample_fmt, layout="mono", rate=target)
+    chunks = [f.to_ndarray() for f in resampler.resample(src)] + [f.to_ndarray() for f in resampler.resample(None)]
+    data = np.concatenate(chunks, axis=1) if chunks else np.zeros((1, 0), dtype=np.float32)
+
+    with av.open(out, "w", format=container_fmt) as c:
+        stream = c.add_stream(codec, rate=target)
+        stream.layout = "mono"
+        if bit_rate:
+            stream.bit_rate = bit_rate
+        pts = 0
+        for j in range(0, data.shape[1], frame_size):
+            frame = av.AudioFrame.from_ndarray(np.ascontiguousarray(data[:, j : j + frame_size]), format=sample_fmt, layout="mono")
+            frame.sample_rate = target
+            frame.pts = pts
+            pts += frame.samples
+            for packet in stream.encode(frame):
+                c.mux(packet)
+        for packet in stream.encode(None):
+            c.mux(packet)
+    return {"bytes": os.path.getsize(out)}
+
+
 def _levels(samples):
     """(peak dBFS, RMS dBFS) of float samples."""
     import numpy as np
@@ -263,6 +308,8 @@ def main():
             elif op == "mux":
                 mux(req["video"], req["audio"], req["out"], progress if req.get("progress") else None)
                 result = {}
+            elif op == "encode":
+                result = encode(req["path"], req["out"], req["format"])
             elif op == "clean":
                 result = clean(req["path"], req["out"], req.get("denoise", True), req.get("normalize"), req.get("trim", False), req.get("highpass", True))
             elif op == "encode_book":

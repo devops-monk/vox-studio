@@ -560,3 +560,29 @@ class PronunciationPreviewIn(BaseModel):
 
 class PronunciationPreviewOut(BaseModel):
     text: str = Field(description="The text with every pronunciation applied")
+
+
+class ApiKeyIn(BaseModel):
+    name: str = Field(min_length=1, max_length=60, description="What the key is for, e.g. “n8n” or “my script”")
+
+
+class ApiKeyOut(BaseModel):
+    id: str
+    name: str
+    hint: str = Field(description="Start and end of the key, to tell keys apart")
+    created_at: float
+    last_used_at: float | None
+
+
+class ApiKeyCreated(ApiKeyOut):
+    key: str = Field(description="The secret key. Shown once.")
+
+
+class ConnectionOut(BaseModel):
+    url: str
+    api_base: str = Field(description="Base URL for OpenAI SDKs")
+    mcp_url: str
+    openapi_url: str
+    docs_url: str
+    bridge_path: str = Field(description="stdio MCP bridge script, for clients that launch a command")
+    auth_required: bool

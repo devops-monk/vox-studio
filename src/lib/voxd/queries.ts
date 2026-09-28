@@ -285,3 +285,6 @@ export const useMembership = (kind: string, id: string, enabled: boolean) =>
   useQuery({ queryKey: ['membership', kind, id], queryFn: () => voxd.membership(kind, id), enabled: useReady() && enabled })
 export const useExportHistory = () => useQuery({ queryKey: ['exports'], queryFn: voxd.exportHistory, enabled: useReady() })
 export const usePronunciations = () => useQuery({ queryKey: ['pronunciations'], queryFn: voxd.pronunciations, enabled: useReady() })
+export const useConnection = () => useQuery({ queryKey: ['connection'], queryFn: voxd.connection, enabled: useReady(), staleTime: Infinity })
+export const useApiKeys = () => useQuery({ queryKey: ['api-keys'], queryFn: voxd.apiKeys, enabled: useReady() })
+export const useOpenApi = () => useQuery({ queryKey: ['openapi'], queryFn: voxd.openapi, enabled: useReady(), staleTime: Infinity })

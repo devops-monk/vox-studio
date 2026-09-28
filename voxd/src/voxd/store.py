@@ -200,6 +200,16 @@ MIGRATIONS: list[str] = [
         created_at      REAL NOT NULL
     );
     """,
+    """
+    CREATE TABLE api_keys (
+        id            TEXT PRIMARY KEY,
+        name          TEXT NOT NULL,
+        hash          TEXT NOT NULL UNIQUE,
+        hint          TEXT NOT NULL,
+        created_at    REAL NOT NULL,
+        last_used_at  REAL
+    );
+    """,
 ]
 
 ACTIVE = ("queued", "running")
@@ -785,6 +795,27 @@ class Store:
         marks = " OR ".join("(kind = ? AND item_id = ?)" for _ in items)
         rows = self._db.execute(f"SELECT * FROM exports WHERE {marks} ORDER BY at DESC LIMIT ?", (*[x for pair in items for x in pair], limit))
         return [dict(r) for r in rows]
+
+    # --- API keys ---------------------------------------------------------------
+
+    def list_api_keys(self) -> list[dict]:
+        return [dict(r) for r in self._db.execute("SELECT id, name, hint, created_at, last_used_at FROM api_keys ORDER BY created_at DESC")]
+
+    def add_api_key(self, key_id: str, name: str, digest: str, hint: str, now: float) -> None:
+        with self._lock:
+            self._db.execute("INSERT INTO api_keys VALUES (?,?,?,?,?,NULL)", (key_id, name, digest, hint, now))
+
+    def api_key_by_hash(self, digest: str) -> dict | None:
+        row = self._db.execute("SELECT id, last_used_at FROM api_keys WHERE hash = ?", (digest,)).fetchone()
+        return dict(row) if row else None
+
+    def touch_api_key(self, key_id: str, now: float) -> None:
+        with self._lock:
+            self._db.execute("UPDATE api_keys SET last_used_at = ? WHERE id = ?", (now, key_id))
+
+    def delete_api_key(self, key_id: str) -> bool:
+        with self._lock:
+            return self._db.execute("DELETE FROM api_keys WHERE id = ?", (key_id,)).rowcount > 0
 
     # --- pronunciations ---------------------------------------------------------
 

@@ -14,3 +14,17 @@ export async function revealInFinder(path: string) {
     toast.error('Couldn’t show the file', { description: String(e) })
   }
 }
+
+/** Open a web page in the default browser (the desktop webview can't navigate away). */
+export async function openExternal(url: string) {
+  if (!isTauri) {
+    window.open(url, '_blank', 'noopener')
+    return
+  }
+  try {
+    const { openUrl } = await import('@tauri-apps/plugin-opener')
+    await openUrl(url)
+  } catch (e) {
+    toast.error('Couldn’t open the page', { description: String(e) })
+  }
+}
