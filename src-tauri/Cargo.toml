@@ -1,6 +1,6 @@
 [package]
 name = "voxstudio"
-version = "0.1.2"
+version = "1.0.0"
 description = "VoxStudio – local AI voice cloning, design and dubbing"
 license = "Apache-2.0"
 publish = false
