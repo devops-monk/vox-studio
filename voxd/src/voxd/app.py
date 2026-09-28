@@ -19,6 +19,7 @@ from .engines.chatterbox import ChatterboxEngine
 from .engines.kokoro import KokoroEngine
 from .engines.registry import Registry
 from .engines.system import SystemEngine
+from .engines.whisper import WhisperEngine
 from .events import EventBus
 from .jobs import JobContext, JobManager
 from .lifecycle import Lifecycle, Phase
@@ -27,6 +28,7 @@ from .runtimes import PACKS, RuntimeManager
 from .design import TraitStore
 from .history import sweeper
 from .speech import render_long
+from .transcripts import transcribe_file
 from .voices import CustomVoices
 from .store import Store
 
@@ -97,6 +99,7 @@ def create_app(
             SystemEngine(),
             KokoroEngine(models, designed=lambda: services.store.list_designed_voices()),
             ChatterboxEngine(models, runtimes, custom, device=lambda: services.store.get_setting("compute_device", "auto")),
+            WhisperEngine(models, runtimes, preferred=lambda: services.store.get_setting("asr_model")),
         ]
     )
     services = Services(settings, Lifecycle(), registry, EventBus(), models, runtimes, custom, TraitStore(settings.data_dir / "voice-traits.json"))
@@ -110,6 +113,7 @@ def create_app(
         services.jobs.register("speech", partial(render_long, services))
         services.jobs.register("model.download", partial(download_model, services), lane="network")
         services.jobs.register("design.analyze", partial(analyze_voices, services))
+        services.jobs.register("transcribe", partial(transcribe_file, services), lane="asr")
         services.jobs.start()
         cleanup = asyncio.create_task(sweeper(services), name="retention")
         services.lifecycle.set(Phase.LOADING_ENGINES, "Checking engines")
@@ -121,7 +125,7 @@ def create_app(
             services.lifecycle.set(Phase.ERROR, str(exc))
         yield
         cleanup.cancel()
-        for engine_id in ("chatterbox", "kokoro"):
+        for engine_id in ("chatterbox", "kokoro", "whisper"):
             if engine := services.registry.raw(engine_id):
                 engine.unload()
         await services.jobs.stop()

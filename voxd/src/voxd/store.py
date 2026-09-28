@@ -83,6 +83,21 @@ MIGRATIONS: list[str] = [
         created_at   REAL NOT NULL
     );
     """,
+    """
+    CREATE TABLE transcripts (
+        id          TEXT PRIMARY KEY,
+        title       TEXT NOT NULL,
+        source      TEXT NOT NULL,
+        language    TEXT NOT NULL,
+        duration_s  REAL NOT NULL,
+        model       TEXT NOT NULL,
+        text        TEXT NOT NULL,
+        segments    TEXT NOT NULL,
+        audio       TEXT NOT NULL,
+        created_at  REAL NOT NULL
+    );
+    CREATE INDEX transcripts_created ON transcripts(created_at DESC);
+    """,
 ]
 
 ACTIVE = ("queued", "running")
@@ -159,6 +174,20 @@ class DesignedVoice:
 
     def public(self) -> dict:
         return asdict(self)
+
+
+@dataclass
+class Transcript:
+    id: str
+    title: str
+    source: str  # file | live
+    language: str
+    duration_s: float
+    model: str
+    text: str
+    segments: list[dict]
+    audio: str  # file name under uploads/, or "" when no audio was kept
+    created_at: float
 
 
 @dataclass
@@ -366,6 +395,43 @@ class Store:
         with self._lock:
             return self._db.execute("DELETE FROM designed_voices WHERE id = ?", (voice_id,)).rowcount > 0
 
+    # --- transcripts --------------------------------------------------------
+
+    def add_transcript(self, t: Transcript) -> None:
+        with self._lock:
+            self._db.execute(
+                "INSERT INTO transcripts VALUES (?,?,?,?,?,?,?,?,?,?)",
+                (t.id, t.title, t.source, t.language, t.duration_s, t.model, t.text, json.dumps(t.segments), t.audio, t.created_at),
+            )
+
+    def list_transcripts(self, limit: int = 100, query: str | None = None) -> list[Transcript]:
+        sql, args = "SELECT * FROM transcripts", []
+        if query:
+            sql += " WHERE title LIKE ? ESCAPE '\\' OR text LIKE ? ESCAPE '\\'"
+            like = "%" + query.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + "%"
+            args = [like, like]
+        rows = self._db.execute(sql + " ORDER BY created_at DESC LIMIT ?", (*args, limit))
+        return [_transcript(r) for r in rows]
+
+    def get_transcript(self, transcript_id: str) -> Transcript | None:
+        row = self._db.execute("SELECT * FROM transcripts WHERE id = ?", (transcript_id,)).fetchone()
+        return _transcript(row) if row else None
+
+    def update_transcript(self, transcript_id: str, **fields: Any) -> Transcript | None:
+        if "segments" in fields:
+            fields["segments"] = json.dumps(fields["segments"])
+        cols = ", ".join(f"{k} = ?" for k in fields)
+        with self._lock:
+            self._db.execute(f"UPDATE transcripts SET {cols} WHERE id = ?", (*fields.values(), transcript_id))
+        return self.get_transcript(transcript_id)
+
+    def delete_transcript(self, transcript_id: str) -> Transcript | None:
+        t = self.get_transcript(transcript_id)
+        if t:
+            with self._lock:
+                self._db.execute("DELETE FROM transcripts WHERE id = ?", (transcript_id,))
+        return t
+
     # --- favorites & tags (any voice) ----------------------------------------
 
     def voice_meta(self) -> dict[tuple[str, str], VoiceMeta]:
@@ -405,3 +471,9 @@ def _job(row: sqlite3.Row) -> Job:
     d["input"] = json.loads(d["input"])
     d["result"] = json.loads(d["result"]) if d["result"] else None
     return Job(**d)
+
+
+def _transcript(row: sqlite3.Row) -> Transcript:
+    d = dict(row)
+    d["segments"] = json.loads(d["segments"])
+    return Transcript(**d)

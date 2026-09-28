@@ -115,12 +115,14 @@ class SystemOut(BaseModel):
 class SettingsOut(BaseModel):
     compute_device: str = Field(description="auto | cpu | mps | cuda — where PyTorch engines run")
     history_retention_days: int = Field(0, description="Delete unstarred takes older than this many days; 0 keeps everything")
+    asr_model: str | None = Field(None, description="Preferred Whisper model for file transcription (default: most accurate installed)")
     compute_device_in_use: str | None = Field(None, description="What the running engine actually uses, if one is loaded")
 
 
 class SettingsPatch(BaseModel):
     compute_device: str | None = Field(None, pattern="^(auto|cpu|mps|cuda)$")
     history_retention_days: int | None = Field(None, description="One of 0, 7, 30, 90")
+    asr_model: str | None = Field(None, description="A Whisper model id, or \"\" to clear")
 
 
 class CustomVoiceOut(BaseModel):
@@ -240,3 +242,31 @@ class DeleteTakesIn(BaseModel):
 
 class DeletedOut(BaseModel):
     deleted: list[str]
+
+
+class SegmentOut(BaseModel):
+    start: float = Field(description="Seconds")
+    end: float
+    text: str
+
+
+class TranscriptSummaryOut(BaseModel):
+    id: str
+    title: str
+    source: str = Field(description="`file` or `live`")
+    language: str
+    duration_s: float
+    model: str
+    preview: str = Field(description="The first ~160 characters")
+    has_audio: bool
+    created_at: float
+
+
+class TranscriptOut(TranscriptSummaryOut):
+    text: str
+    segments: list[SegmentOut]
+
+
+class TranscriptPatch(BaseModel):
+    title: str | None = Field(None, min_length=1, max_length=120)
+    segments: list[SegmentOut] | None = Field(None, description="Corrected segments (text edits)")

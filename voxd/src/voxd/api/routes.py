@@ -19,6 +19,8 @@ from ..runtimes import PACKS
 from ..store import CustomVoice
 from ..voices import export_bundle, read_bundle
 from ..design import apply_sliders, design, parse_description, parse_recipe
+from ..transcripts import EXPORTS, LiveSession, save_live, to_text, uploads_dir
+from ..store import Transcript
 from ..history import RETENTION_CHOICES, RETENTION_KEY, delete_takes, sweep, usage_bytes
 from ..store import DesignedVoice
 from ..speech import resolve_engine, save_take
@@ -34,6 +36,9 @@ from .schemas import (
     DesignStatusOut,
     DesignTargetOut,
     DeletedOut,
+    TranscriptOut,
+    TranscriptPatch,
+    TranscriptSummaryOut,
     DeleteTakesIn,
     TakeStatsOut,
     EngineOut,
@@ -293,6 +298,7 @@ def _settings_out(services) -> SettingsOut:
     chatterbox = services.registry.raw("chatterbox")
     return SettingsOut(
         history_retention_days=int(services.store.get_setting(RETENTION_KEY, 0) or 0),
+        asr_model=services.store.get_setting("asr_model"),
         compute_device=services.store.get_setting("compute_device", "auto"),
         compute_device_in_use=getattr(chatterbox, "device_in_use", None),
     )
@@ -316,6 +322,10 @@ def patch_settings(request: Request, body: SettingsPatch) -> SettingsOut:
             raise HTTPException(400, detail=("invalid_setting", f"history_retention_days must be one of {RETENTION_CHOICES}"))
         services.store.set_setting(RETENTION_KEY, body.history_retention_days)
         sweep(services)  # apply the new policy right away
+    if body.asr_model is not None:
+        if body.asr_model and body.asr_model not in {m.id for m in services.models.all_for_engine("whisper")}:
+            raise HTTPException(400, detail=("invalid_setting", f"Unknown Whisper model: {body.asr_model}"))
+        services.store.set_setting("asr_model", body.asr_model or None)
     return _settings_out(services)
 
 
@@ -562,6 +572,169 @@ def delete_designed_voice(request: Request, voice_id: str) -> Response:
     services.store.delete_voice_meta("kokoro", voice_id)
     services.bus.publish("voices.changed", {"id": voice_id})
     return Response(status_code=204)
+
+
+# --- Transcription ------------------------------------------------------------
+
+MAX_UPLOAD = 2 * 1024**3
+
+
+def _summary(t: Transcript) -> TranscriptSummaryOut:
+    return TranscriptSummaryOut(
+        id=t.id, title=t.title, source=t.source, language=t.language, duration_s=t.duration_s, model=t.model,
+        preview=t.text[:160], has_audio=bool(t.audio), created_at=t.created_at,
+    )
+
+
+def _full(t: Transcript) -> TranscriptOut:
+    return TranscriptOut(**_summary(t).model_dump(), text=t.text, segments=t.segments)
+
+
+def _get_transcript(services, transcript_id: str) -> Transcript:
+    t = services.store.get_transcript(transcript_id)
+    if t is None:
+        raise HTTPException(404, detail=("not_found", "No such transcript"))
+    return t
+
+
+@router.post("/transcriptions", response_model=JobOut, status_code=202, responses=ERRORS, tags=["Transcription"], summary="Transcribe an audio or video file")
+async def create_transcription(
+    request: Request,
+    file: UploadFile = File(description="Any common audio or video format (wav, mp3, m4a, mp4, mov, webm…), up to 2 GB"),
+    language: str | None = Form(None, description="ISO code such as `en`; omit to detect automatically"),
+    model: str | None = Form(None, description="Whisper model id; defaults to your preference or the most accurate installed"),
+    title: str | None = Form(None, max_length=120),
+) -> JobOut:
+    """Starts a transcription job. On success its `result.transcript_id` points to the transcript."""
+    services = _services(request)
+    try:
+        services.registry.get("whisper").pick(model)  # type: ignore[attr-defined]
+    except EngineError as exc:
+        raise HTTPException(400, detail=("engine_unavailable", str(exc))) from exc
+    suffix = Path(file.filename or "audio").suffix.lower()[:8] or ".bin"
+    audio_name = f"{uuid.uuid4().hex}{suffix}"
+    dest = uploads_dir(services) / audio_name
+    size = 0
+    with dest.open("wb") as out:
+        while chunk := await file.read(1 << 20):
+            size += len(chunk)
+            if size > MAX_UPLOAD:
+                out.close()
+                dest.unlink(missing_ok=True)
+                raise HTTPException(400, detail=("file_too_large", "Files up to 2 GB are supported"))
+            out.write(chunk)
+    name = title or Path(file.filename or "Recording").stem[:120] or "Recording"
+    spec = {"audio": audio_name, "language": language, "model": model, "title": name, "transcript_id": uuid.uuid4().hex}
+    return _job_out(services.jobs.submit("transcribe", f"Transcribing {name}", spec))
+
+
+@router.get("/transcriptions", response_model=list[TranscriptSummaryOut], tags=["Transcription"], summary="List transcripts")
+def list_transcriptions(request: Request, q: str | None = Query(None, max_length=200), limit: int = Query(100, ge=1, le=500)) -> list[TranscriptSummaryOut]:
+    return [_summary(t) for t in _services(request).store.list_transcripts(limit, q)]
+
+
+@router.get("/transcriptions/{transcript_id}", response_model=TranscriptOut, responses=ERRORS, tags=["Transcription"], summary="Get a transcript")
+def get_transcription(request: Request, transcript_id: str) -> TranscriptOut:
+    return _full(_get_transcript(_services(request), transcript_id))
+
+
+@router.patch("/transcriptions/{transcript_id}", response_model=TranscriptOut, responses=ERRORS, tags=["Transcription"], summary="Rename or correct a transcript")
+def patch_transcription(request: Request, transcript_id: str, body: TranscriptPatch) -> TranscriptOut:
+    services = _services(request)
+    _get_transcript(services, transcript_id)
+    fields: dict = {}
+    if body.title is not None:
+        fields["title"] = body.title.strip()
+    if body.segments is not None:
+        segs = [s.model_dump() for s in body.segments]
+        fields.update(segments=segs, text=to_text(segs))
+    t = services.store.update_transcript(transcript_id, **fields) if fields else _get_transcript(services, transcript_id)
+    services.bus.publish("transcripts.changed", {"id": transcript_id})
+    return _full(t)
+
+
+@router.delete("/transcriptions/{transcript_id}", status_code=204, responses=ERRORS, tags=["Transcription"], summary="Delete a transcript")
+def delete_transcription(request: Request, transcript_id: str) -> Response:
+    services = _services(request)
+    t = services.store.delete_transcript(transcript_id)
+    if t is None:
+        raise HTTPException(404, detail=("not_found", "No such transcript"))
+    if t.audio:
+        (uploads_dir(services) / t.audio).unlink(missing_ok=True)
+    services.bus.publish("transcripts.changed", {"id": transcript_id})
+    return Response(status_code=204)
+
+
+@router.get("/transcriptions/{transcript_id}/audio", response_class=FileResponse, responses=ERRORS, tags=["Transcription"], summary="The transcribed recording")
+def transcription_audio(request: Request, transcript_id: str) -> FileResponse:
+    services = _services(request)
+    t = _get_transcript(services, transcript_id)
+    path = uploads_dir(services) / t.audio if t.audio else None
+    if path is None or not path.exists():
+        raise HTTPException(404, detail=("not_found", "This transcript has no audio"))
+    return FileResponse(path)
+
+
+@router.get("/transcriptions/{transcript_id}/export", responses={200: {"content": {"text/plain": {}}}, **ERRORS}, tags=["Transcription"], summary="Export as txt, srt, vtt or json")
+def export_transcription(request: Request, transcript_id: str, format: str = Query("txt", pattern="^(txt|srt|vtt|json)$")) -> Response:
+    t = _get_transcript(_services(request), transcript_id)
+    media, render = EXPORTS[format]
+    safe = "".join(c if c.isalnum() or c in " -_" else "_" for c in t.title).strip() or "transcript"
+    return Response(render(t), media_type=f"{media}; charset=utf-8", headers={"Content-Disposition": f'attachment; filename="{safe}.{format}"'})
+
+
+@router.post("/transcriptions/{transcript_id}/save", status_code=204, responses=ERRORS, tags=["Transcription"], summary="Save an export to a file")
+def save_transcription(request: Request, transcript_id: str, body: ExportPathIn, format: str = Query("txt", pattern="^(txt|srt|vtt|json)$")) -> Response:
+    """Writes the transcript in `format` to `path` (which must end in `.<format>`)."""
+    t = _get_transcript(_services(request), transcript_id)
+    dest = _destination(body.path, f".{format}", body.overwrite)
+    dest.write_text(EXPORTS[format][1](t), encoding="utf-8")
+    return Response(status_code=204)
+
+
+@router.websocket("/transcribe/live")
+async def live_transcription(websocket: WebSocket, token: str = "", language: str = "", model: str = "", save: bool = True, title: str = ""):
+    """Stream 16 kHz mono PCM16 (little-endian) as binary frames; receive JSON:
+    `{"type":"partial","text"}` while speaking, `{"type":"final","segment"}` after each pause.
+    Send `{"type":"stop"}` to finish; the reply is `{"type":"done","text","transcript_id"}`."""
+    services = websocket.app.state.services
+    expected = services.settings.token
+    if expected and not hmac.compare_digest(token, expected):
+        await websocket.close(code=4401, reason="unauthorized")
+        return
+    try:
+        engine = services.registry.get("whisper")
+        engine.pick(model or None, fast=True)  # type: ignore[attr-defined]
+    except EngineError as exc:
+        await websocket.accept()
+        await websocket.send_json({"type": "error", "error": "engine_unavailable", "message": str(exc)})
+        await websocket.close()
+        return
+    await websocket.accept()
+    session = LiveSession(engine, language or None, model or None)  # type: ignore[arg-type]
+    await websocket.send_json({"type": "ready", "sample_rate": 16000})
+    try:
+        while True:
+            msg = await websocket.receive()
+            if msg.get("type") == "websocket.disconnect":
+                return
+            if msg.get("bytes"):
+                session.add(msg["bytes"])
+                if session.should_finalize():
+                    if seg := await session.finalize():
+                        await websocket.send_json({"type": "final", "segment": seg})
+                elif (text := await session.partial()) is not None:
+                    await websocket.send_json({"type": "partial", "text": text})
+            elif msg.get("text"):
+                if json.loads(msg["text"]).get("type") == "stop":
+                    if seg := await session.finalize():
+                        await websocket.send_json({"type": "final", "segment": seg})
+                    saved = save_live(services, session, title or None) if save else None
+                    await websocket.send_json({"type": "done", "text": to_text(session.segments), "transcript_id": saved.id if saved else None})
+                    await websocket.close()
+                    return
+    except (WebSocketDisconnect, RuntimeError):
+        return
 
 
 # --- Jobs -------------------------------------------------------------------

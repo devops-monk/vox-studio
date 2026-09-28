@@ -561,6 +561,100 @@ export interface paths {
         patch: operations["rename_designed_voice_v1_voices_designed__voice_id__patch"];
         trace?: never;
     };
+    "/v1/transcriptions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List transcripts */
+        get: operations["list_transcriptions_v1_transcriptions_get"];
+        put?: never;
+        /**
+         * Transcribe an audio or video file
+         * @description Starts a transcription job. On success its `result.transcript_id` points to the transcript.
+         */
+        post: operations["create_transcription_v1_transcriptions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/transcriptions/{transcript_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a transcript */
+        get: operations["get_transcription_v1_transcriptions__transcript_id__get"];
+        put?: never;
+        post?: never;
+        /** Delete a transcript */
+        delete: operations["delete_transcription_v1_transcriptions__transcript_id__delete"];
+        options?: never;
+        head?: never;
+        /** Rename or correct a transcript */
+        patch: operations["patch_transcription_v1_transcriptions__transcript_id__patch"];
+        trace?: never;
+    };
+    "/v1/transcriptions/{transcript_id}/audio": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The transcribed recording */
+        get: operations["transcription_audio_v1_transcriptions__transcript_id__audio_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/transcriptions/{transcript_id}/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Export as txt, srt, vtt or json */
+        get: operations["export_transcription_v1_transcriptions__transcript_id__export_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/transcriptions/{transcript_id}/save": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Save an export to a file
+         * @description Writes the transcript in `format` to `path` (which must end in `.<format>`).
+         */
+        post: operations["save_transcription_v1_transcriptions__transcript_id__save_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/jobs": {
         parameters: {
             query?: never;
@@ -669,6 +763,26 @@ export interface components {
              * @default
              */
             consent_by: string;
+        };
+        /** Body_create_transcription_v1_transcriptions_post */
+        Body_create_transcription_v1_transcriptions_post: {
+            /**
+             * File
+             * @description Any common audio or video format (wav, mp3, m4a, mp4, mov, webm…), up to 2 GB
+             */
+            file: string;
+            /**
+             * Language
+             * @description ISO code such as `en`; omit to detect automatically
+             */
+            language?: string | null;
+            /**
+             * Model
+             * @description Whisper model id; defaults to your preference or the most accurate installed
+             */
+            model?: string | null;
+            /** Title */
+            title?: string | null;
         };
         /** Body_import_custom_voice_v1_voices_custom_import_post */
         Body_import_custom_voice_v1_voices_custom_import_post: {
@@ -1073,6 +1187,18 @@ export interface components {
             job_id?: string | null;
             fit: components["schemas"]["FitOut"];
         };
+        /** SegmentOut */
+        SegmentOut: {
+            /**
+             * Start
+             * @description Seconds
+             */
+            start: number;
+            /** End */
+            end: number;
+            /** Text */
+            text: string;
+        };
         /** SettingsOut */
         SettingsOut: {
             /**
@@ -1086,6 +1212,11 @@ export interface components {
              * @default 0
              */
             history_retention_days: number;
+            /**
+             * Asr Model
+             * @description Preferred Whisper model for file transcription (default: most accurate installed)
+             */
+            asr_model?: string | null;
             /**
              * Compute Device In Use
              * @description What the running engine actually uses, if one is loaded
@@ -1101,6 +1232,11 @@ export interface components {
              * @description One of 0, 7, 30, 90
              */
             history_retention_days?: number | null;
+            /**
+             * Asr Model
+             * @description A Whisper model id, or "" to clear
+             */
+            asr_model?: string | null;
         };
         /** SpeechIn */
         SpeechIn: {
@@ -1249,6 +1385,74 @@ export interface components {
              * @description Disk space used by take audio
              */
             bytes: number;
+        };
+        /** TranscriptOut */
+        TranscriptOut: {
+            /** Id */
+            id: string;
+            /** Title */
+            title: string;
+            /**
+             * Source
+             * @description `file` or `live`
+             */
+            source: string;
+            /** Language */
+            language: string;
+            /** Duration S */
+            duration_s: number;
+            /** Model */
+            model: string;
+            /**
+             * Preview
+             * @description The first ~160 characters
+             */
+            preview: string;
+            /** Has Audio */
+            has_audio: boolean;
+            /** Created At */
+            created_at: number;
+            /** Text */
+            text: string;
+            /** Segments */
+            segments: components["schemas"]["SegmentOut"][];
+        };
+        /** TranscriptPatch */
+        TranscriptPatch: {
+            /** Title */
+            title?: string | null;
+            /**
+             * Segments
+             * @description Corrected segments (text edits)
+             */
+            segments?: components["schemas"]["SegmentOut"][] | null;
+        };
+        /** TranscriptSummaryOut */
+        TranscriptSummaryOut: {
+            /** Id */
+            id: string;
+            /** Title */
+            title: string;
+            /**
+             * Source
+             * @description `file` or `live`
+             */
+            source: string;
+            /** Language */
+            language: string;
+            /** Duration S */
+            duration_s: number;
+            /** Model */
+            model: string;
+            /**
+             * Preview
+             * @description The first ~160 characters
+             */
+            preview: string;
+            /** Has Audio */
+            has_audio: boolean;
+            /** Created At */
+            created_at: number;
         };
         /** ValidationError */
         ValidationError: {
@@ -2821,6 +3025,453 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["DesignedVoiceOut"];
                 };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_transcriptions_v1_transcriptions_get: {
+        parameters: {
+            query?: {
+                q?: string | null;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TranscriptSummaryOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_transcription_v1_transcriptions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_create_transcription_v1_transcriptions_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_transcription_v1_transcriptions__transcript_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                transcript_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TranscriptOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_transcription_v1_transcriptions__transcript_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                transcript_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    patch_transcription_v1_transcriptions__transcript_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                transcript_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TranscriptPatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TranscriptOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    transcription_audio_v1_transcriptions__transcript_id__audio_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                transcript_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_transcription_v1_transcriptions__transcript_id__export_get: {
+        parameters: {
+            query?: {
+                format?: string;
+            };
+            header?: never;
+            path: {
+                transcript_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                    "text/plain": unknown;
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    save_transcription_v1_transcriptions__transcript_id__save_post: {
+        parameters: {
+            query?: {
+                format?: string;
+            };
+            header?: never;
+            path: {
+                transcript_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExportPathIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Bad Request */
             400: {

@@ -49,7 +49,8 @@ class ModelSpec:
     voice_count: int
     featured: bool = False
     runtime: str | None = None  # runtime pack id this model's engine needs
-    kind: str = "tts"  # tts | clone
+    kind: str = "tts"  # tts | clone | asr
+    rank: int = 0  # among models for the same engine, higher = more capable
 
     @property
     def size(self) -> int:
@@ -57,6 +58,16 @@ class ModelSpec:
 
 
 _KOKORO_RELEASE = "https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0"
+_WHISPER_LANGS = ("multilingual",)
+
+
+def _hf(repo: str, commit: str, files: tuple[tuple[str, int, str], ...]) -> tuple[ModelFile, ...]:
+    return tuple(ModelFile(n, f"https://huggingface.co/{repo}/resolve/{commit}/{n}", size, sha) for n, size, sha in files)
+
+
+_WHISPER_TOKENIZER = ("tokenizer.json", 2_203_239, "fb7b63191e9bb045082c79fd742a3106a12c99513ab30df4a0d47fa6cb6fd0ab")
+_WHISPER_VOCAB = ("vocabulary.txt", 459_861, "34ce3fe1c5041027b3f8d42912270993f986dbc4bb34cf27f951e34a1e453913")
+
 # Pinned to a commit so the files (and their checksums) can never change underneath us.
 _CHATTERBOX = "https://huggingface.co/ResembleAI/chatterbox/resolve/5bb1f6ee58e50c3b8d408bc82a6d3740c2db6e18"
 
@@ -122,6 +133,86 @@ CATALOG: tuple[ModelSpec, ...] = (
         runtime="chatterbox",
         kind="clone",
     ),
+    ModelSpec(
+        id="whisper-base",
+        engine="whisper",
+        name="Whisper Base",
+        tagline="Quick transcription and dictation",
+        description="OpenAI's Whisper speech recognition (CTranslate2 build). Fast enough for live dictation on any computer; ~99 languages.",
+        license="MIT",
+        license_url="https://huggingface.co/Systran/faster-whisper-base",
+        homepage="https://github.com/SYSTRAN/faster-whisper",
+        files=_hf(
+            "Systran/faster-whisper-base",
+            "ebe41f70d5b6dfa9166e2c581c45c9c0cfc57b66",
+            (
+                ("config.json", 2_309, "56a6d8110d311f19c8f0471e562832c7527f146b567275bfca59fcf7c184da9a"),
+                ("model.bin", 145_217_532, "d01c3014881c9c6f3133c182f3d2887eb6ca1c789a7538c5c007196857a0a6a9"),
+                _WHISPER_TOKENIZER,
+                _WHISPER_VOCAB,
+            ),
+        ),
+        languages=_WHISPER_LANGS,
+        min_ram_gb=2,
+        voice_count=0,
+        runtime="whisper",
+        kind="asr",
+        rank=1,
+        featured=True,
+    ),
+    ModelSpec(
+        id="whisper-small",
+        engine="whisper",
+        name="Whisper Small",
+        tagline="More accurate transcription, still quick",
+        description="A larger Whisper model: noticeably better with accents, names and noisy audio. Good default for transcribing files.",
+        license="MIT",
+        license_url="https://huggingface.co/Systran/faster-whisper-small",
+        homepage="https://github.com/SYSTRAN/faster-whisper",
+        files=_hf(
+            "Systran/faster-whisper-small",
+            "536b0662742c02347bc0e980a01041f333bce120",
+            (
+                ("config.json", 2_370, "b55496ac7940a7ae47d2c01eab40edfd8701feec1229d9cce3b40014383fb828"),
+                ("model.bin", 483_546_902, "3e305921506d8872816023e4c273e75d2419fb89b24da97b4fe7bce14170d671"),
+                _WHISPER_TOKENIZER,
+                _WHISPER_VOCAB,
+            ),
+        ),
+        languages=_WHISPER_LANGS,
+        min_ram_gb=4,
+        voice_count=0,
+        runtime="whisper",
+        kind="asr",
+        rank=2,
+    ),
+    ModelSpec(
+        id="whisper-large-v3-turbo",
+        engine="whisper",
+        name="Whisper Large v3 Turbo",
+        tagline="Best accuracy for important recordings",
+        description="Whisper's most accurate model in a speed-optimized form. Best for interviews, lectures and hard audio; slower on CPU-only machines.",
+        license="MIT",
+        license_url="https://huggingface.co/dropbox-dash/faster-whisper-large-v3-turbo",
+        homepage="https://github.com/SYSTRAN/faster-whisper",
+        files=_hf(
+            "dropbox-dash/faster-whisper-large-v3-turbo",
+            "0a363e9161cbc7ed1431c9597a8ceaf0c4f78fcf",
+            (
+                ("config.json", 2_263, "b0253ea6c0d3bea6b1e19e91a02acfd3b53f4467362efcb5a3e6b16c9b3a9b7e"),
+                ("model.bin", 1_617_884_929, "e76620f83d5f5b69efd3d87e3dc180c1bd21df9fbebacfd4335e5e1efcc018da"),
+                ("preprocessor_config.json", 340, "7ccc62c6f2765af1f3b46c00c9b5894426835a05021c8b9c01eecb6dfb542711"),
+                ("tokenizer.json", 2_710_337, "297b13372ac43916285644fb9687add3cc62ee2a1adb60da3dc25cc94c1871fd"),
+                ("vocabulary.json", 1_068_114, "c69260f2ab26d659b7c398f9a2b2b48ed0df16c3b47d7326782fd9cba71690c1"),
+            ),
+        ),
+        languages=_WHISPER_LANGS,
+        min_ram_gb=6,
+        voice_count=0,
+        runtime="whisper",
+        kind="asr",
+        rank=3,
+    ),
 )
 
 
@@ -144,6 +235,9 @@ class ModelStore:
 
     def for_engine(self, engine: str) -> ModelSpec | None:
         return next((m for m in self.catalog if m.engine == engine), None)
+
+    def all_for_engine(self, engine: str) -> list[ModelSpec]:
+        return sorted((m for m in self.catalog if m.engine == engine), key=lambda m: m.rank)
 
     def dir(self, spec: ModelSpec) -> Path:
         return self.root / spec.id

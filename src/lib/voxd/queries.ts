@@ -222,3 +222,19 @@ export function useDeleteTakes() {
   const qc = useQueryClient()
   return useMutation({ mutationFn: voxd.deleteTakes, onSuccess: () => qc.invalidateQueries({ queryKey: ['takes'] }) })
 }
+
+export const useTranscripts = (q?: string) => useQuery({ queryKey: ['transcripts', q ?? ''], queryFn: () => voxd.transcripts(q), enabled: useReady() })
+
+export const useTranscript = (id: string | null) =>
+  useQuery({ queryKey: ['transcript', id], queryFn: () => voxd.transcript(id!), enabled: useReady() && !!id })
+
+export function usePatchTranscript() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, ...body }: { id: string; title?: string; segments?: import('./types').Segment[] }) => voxd.patchTranscript(id, body),
+    onSuccess: (t) => {
+      qc.setQueryData(['transcript', t.id], t)
+      void qc.invalidateQueries({ queryKey: ['transcripts'] })
+    },
+  })
+}

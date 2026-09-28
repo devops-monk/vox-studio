@@ -55,6 +55,15 @@ PACKS: dict[str, RuntimePack] = {
         check_import="chatterbox.tts",
         approx_bytes=1_300_000_000,
     ),
+    "whisper": RuntimePack(
+        id="whisper",
+        name="Whisper runtime (CTranslate2)",
+        python="3.11",
+        requirements=("faster-whisper==1.2.1",),
+        excludes=(),
+        check_import="faster_whisper",
+        approx_bytes=260_000_000,
+    ),
 }
 
 

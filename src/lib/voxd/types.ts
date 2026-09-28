@@ -18,6 +18,9 @@ export type DesignResult = Schemas['DesignOut']
 export type DesignCandidate = Schemas['CandidateOut']
 export type DesignedVoice = Schemas['DesignedVoiceOut']
 export type DesignRequest = Schemas['DesignIn']
+export type Transcript = Schemas['TranscriptOut']
+export type TranscriptSummary = Schemas['TranscriptSummaryOut']
+export type Segment = Schemas['SegmentOut']
 
 export type JobStatus = 'queued' | 'running' | 'succeeded' | 'failed' | 'cancelled'
 export const isActive = (job: Job) => job.status === 'queued' || job.status === 'running'

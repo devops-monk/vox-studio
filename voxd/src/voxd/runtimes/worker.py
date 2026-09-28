@@ -12,6 +12,7 @@ import logging
 import subprocess
 import threading
 import time
+from collections.abc import Callable
 from typing import Any
 
 from ..engines.base import EngineError
@@ -33,7 +34,8 @@ class Worker:
     def running(self) -> bool:
         return self._proc is not None and self._proc.poll() is None
 
-    def call(self, op: str, **params: Any) -> dict[str, Any]:
+    def call(self, op: str, on_progress: Callable[[float], None] | None = None, **params: Any) -> dict[str, Any]:
+        """Send a request and wait for its reply. Interim `{"progress": x}` lines go to ``on_progress``."""
         with self._lock:
             self._ensure_started()
             assert self._proc and self._proc.stdin and self._proc.stdout
@@ -42,6 +44,10 @@ class Worker:
                 self._proc.stdin.write(json.dumps({"id": self._seq, "op": op, **params}) + "\n")
                 self._proc.stdin.flush()
                 reply = self._read_line()
+                while "ok" not in reply and "progress" in reply:
+                    if on_progress:
+                        on_progress(float(reply["progress"]))
+                    reply = self._read_line()
             finally:
                 self._last_used = time.monotonic()
             if not reply.get("ok"):

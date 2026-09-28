@@ -58,7 +58,7 @@ export const voxd = {
   deleteModel: (id: string) => noContent(api().DELETE('/v1/models/{model_id}', { params: { path: { model_id: id } } })),
 
   settings: () => call(api().GET('/v1/settings')),
-  updateSettings: (body: { compute_device?: string; history_retention_days?: number }) => call(api().PATCH('/v1/settings', { body })),
+  updateSettings: (body: { compute_device?: string; history_retention_days?: number; asr_model?: string }) => call(api().PATCH('/v1/settings', { body })),
 
   customVoices: () => call(api().GET('/v1/voices/custom')),
   /** Upload a WAV recording as a new voice (multipart). */
@@ -87,6 +87,29 @@ export const voxd = {
   renameDesigned: (id: string, name: string) =>
     call(api().PATCH('/v1/voices/designed/{voice_id}', { params: { path: { voice_id: id } }, body: { name } })),
   deleteDesigned: (id: string) => noContent(api().DELETE('/v1/voices/designed/{voice_id}', { params: { path: { voice_id: id } } })),
+
+  transcribe: (file: File, opts: { language?: string; model?: string; title?: string } = {}) =>
+    upload<import('./types').Job>(
+      '/v1/transcriptions',
+      { file, ...(opts.language ? { language: opts.language } : {}), ...(opts.model ? { model: opts.model } : {}), ...(opts.title ? { title: opts.title } : {}) },
+      'file',
+    ),
+  transcripts: (q?: string) => call(api().GET('/v1/transcriptions', { params: { query: q ? { q } : {} } })),
+  transcript: (id: string) => call(api().GET('/v1/transcriptions/{transcript_id}', { params: { path: { transcript_id: id } } })),
+  patchTranscript: (id: string, body: { title?: string; segments?: import('./types').Segment[] }) =>
+    call(api().PATCH('/v1/transcriptions/{transcript_id}', { params: { path: { transcript_id: id } }, body })),
+  deleteTranscript: (id: string) => noContent(api().DELETE('/v1/transcriptions/{transcript_id}', { params: { path: { transcript_id: id } } })),
+  saveTranscript: (id: string, format: 'txt' | 'srt' | 'vtt' | 'json', path: string) =>
+    noContent(
+      api().POST('/v1/transcriptions/{transcript_id}/save', { params: { path: { transcript_id: id }, query: { format } }, body: { path, overwrite: true } }),
+    ),
+  transcriptExportUrl: (id: string, format: string) => withToken(`/v1/transcriptions/${id}/export`) + `${useVoxd.getState().state.token ? '&' : '?'}format=${format}`,
+  transcriptAudioUrl: (id: string) => withToken(`/v1/transcriptions/${id}/audio`),
+  liveUrl: (params: Record<string, string>) => {
+    const base = withToken('/v1/transcribe/live').replace(/^http/, 'ws')
+    const qs = new URLSearchParams(params).toString()
+    return qs ? `${base}${base.includes('?') ? '&' : '?'}${qs}` : base
+  },
 
   starTake: (id: string, starred: boolean) => call(api().PUT('/v1/takes/{take_id}/star', { params: { path: { take_id: id } }, body: { starred } })),
   exportTake: (id: string, path: string, overwrite = false) =>
