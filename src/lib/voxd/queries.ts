@@ -201,6 +201,7 @@ export interface HistoryFilter {
   q?: string
   engine?: string
   starred?: boolean
+  tag?: string
 }
 
 const PAGE = 40
@@ -290,3 +291,5 @@ export const useApiKeys = () => useQuery({ queryKey: ['api-keys'], queryFn: voxd
 export const useOpenApi = () => useQuery({ queryKey: ['openapi'], queryFn: voxd.openapi, enabled: useReady(), staleTime: Infinity })
 export const useStorage = () => useQuery({ queryKey: ['storage'], queryFn: voxd.storage, enabled: useReady(), staleTime: 30_000 })
 export const useLeaderboard = (language: string) => useQuery({ queryKey: ['leaderboard', language], queryFn: () => voxd.leaderboard(language), enabled: useReady() && !!language })
+export const useTags = () => useQuery({ queryKey: ['tags'], queryFn: voxd.tags, enabled: useReady() })
+export const useCollection = (tag: string | null) => useQuery({ queryKey: ['collection', tag], queryFn: () => voxd.collection(tag!), enabled: useReady() && !!tag })

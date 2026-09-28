@@ -281,7 +281,10 @@ Work goes one milestone at a time. Tick `[x]` only after the item is verified in
   - [x] Finder Quick Actions (Dub, Transcribe, Clean Up, Make Audiobook) generated as Automator workflows, installed or removed from Integrations; checked with `plutil` and by running one through `automator`
   - [x] Shortcuts app recipes (Integrations page and guide)
   - [x] Fixes found in real-app testing: bundled engine start no longer builds voxd (a stuck editable build could hang the app after updates; now `uv sync --no-install-project` plus the environment's Python); macOS links were delivered twice; links wait for the engine; hand-parsed link URLs; shell log saved to `~/Library/Logs/com.voxstudio.app/voxstudio.log` (Settings → Logs → Show log file)
-- [ ] **M24 Collections & Tags:** organize voices, takes and projects
+- [x] **M24 Collections & Tags:** organize voices, takes and projects ✅
+  - [x] One tag system across voices, takes and projects (normalised the same everywhere): the `item_tags` table, tags in take/project responses, `?tag=` filtering, `/v1/tags` counts, `/v1/tags/{tag}` collections, rename (merges) and remove everywhere, cleanup on delete
+  - [x] UI: # tag popover (with suggestions) on History rows and project headers, tag chips and an “All tags” filter in History, tags on project tiles; Collections page (tag list with counts, voices/takes/projects together, rename, remove)
+  - [x] Verified: API tests and a browser e2e (tag from History, collection shows voices, takes and projects, rename)
 
 ---
 

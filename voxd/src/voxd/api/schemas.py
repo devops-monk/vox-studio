@@ -49,6 +49,7 @@ class TakeOut(BaseModel):
     duration_s: float
     starred: bool
     created_at: float = Field(description="Unix timestamp (seconds)")
+    tags: list[str] = Field(default_factory=list)
     audio_url: str = Field(description="Relative URL of the WAV file")
 
 
@@ -505,6 +506,7 @@ class ProjectSummaryOut(BaseModel):
     item_count: int
     created_at: float
     updated_at: float
+    tags: list[str] = Field(default_factory=list)
 
 
 class ProjectItemIn(BaseModel):
@@ -689,3 +691,31 @@ class MarkupOut(BaseModel):
     segments: list[MarkupSegmentOut]
     estimated_s: float = Field(description="Rough length of the result")
     has_markup: bool
+
+
+class TagsIn(BaseModel):
+    tags: list[str] = Field(max_length=50, description="Replaces the item's tags. Lower-cased and trimmed; up to 12, 24 characters each.")
+
+
+class TagCountOut(BaseModel):
+    tag: str
+    voices: int
+    takes: int
+    projects: int
+    total: int
+
+
+class TaggedVoiceOut(BaseModel):
+    engine: str
+    voice: str
+
+
+class CollectionOut(BaseModel):
+    tag: str
+    voices: list[TaggedVoiceOut]
+    takes: list[TakeOut]
+    projects: list[ProjectSummaryOut]
+
+
+class TagRenameIn(BaseModel):
+    to: str = Field(min_length=1, max_length=24)

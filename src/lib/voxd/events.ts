@@ -23,6 +23,7 @@ type Message =
   | { type: 'pronunciations.changed'; data: Record<string, never> }
   | { type: 'keys.changed'; data: Record<string, never> }
   | { type: 'ratings.changed'; data: { language: string | null } }
+  | { type: 'tags.changed'; data: { kind?: string; id?: string; tag?: string } }
 
 /** Whether live events are flowing; queries fall back to polling while they aren't. */
 export const useLive = create<{ connected: boolean }>(() => ({ connected: false }))
@@ -129,6 +130,9 @@ function apply(message: Message) {
     case 'transcripts.changed':
       void queryClient.invalidateQueries({ queryKey: ['transcripts'] })
       void queryClient.invalidateQueries({ queryKey: ['transcript', message.data.id] })
+      break
+    case 'tags.changed':
+      for (const key of ['tags', 'collection', 'takes', 'projects', 'project', 'library']) void queryClient.invalidateQueries({ queryKey: [key] })
       break
     case 'ratings.changed':
       void queryClient.invalidateQueries({ queryKey: ['leaderboard'] })

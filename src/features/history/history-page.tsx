@@ -12,7 +12,8 @@ import { saveTake } from '@/lib/save'
 import { voiceLabel } from '@/lib/voice-label'
 import { formatBytes } from '@/lib/format'
 import { voxd } from '@/lib/voxd/client'
-import { useCustomVoices, useDeleteTakes, useDesignedVoices, useHistory, useStarTake, useTakeStats, type HistoryFilter } from '@/lib/voxd/queries'
+import { useCustomVoices, useDeleteTakes, useDesignedVoices, useHistory, useStarTake, useTags, useTakeStats, type HistoryFilter } from '@/lib/voxd/queries'
+import { TagButton, TagChips } from '@/components/tags'
 import type { Take } from '@/lib/voxd/types'
 import { cn } from '@/lib/cn'
 
@@ -45,9 +46,10 @@ interface RowProps {
   selected: boolean
   onToggle: () => void
   onDelete: () => void
+  onTag: (tag: string) => void
 }
 
-function Row({ take, name, selecting, selected, onToggle, onDelete }: RowProps) {
+function Row({ take, name, selecting, selected, onToggle, onDelete, onTag }: RowProps) {
   const { current, play, stop } = usePlayer()
   const star = useStarTake()
   const navigate = useNavigate()
@@ -79,6 +81,7 @@ function Row({ take, name, selecting, selected, onToggle, onDelete }: RowProps) 
           <span className="truncate">
             {name} · {ENGINE[take.engine] ?? take.engine} · {new Date(take.created_at * 1000).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}
           </span>
+          <TagChips tags={take.tags ?? []} onPick={onTag} className="ml-1" />
         </div>
       </div>
       <Waveform id={take.id} url={url} duration={take.duration_s} bars={40} className="hidden h-6 w-40 shrink-0 md:flex" />
@@ -95,6 +98,11 @@ function Row({ take, name, selecting, selected, onToggle, onDelete }: RowProps) 
           >
             <Star size={13} fill={take.starred ? 'currentColor' : 'none'} />
           </Button>
+          <TagButton
+            tags={take.tags ?? []}
+            onChange={(tags) => void voxd.tagTake(take.id, tags).catch((e: Error) => toast.error(e.message))}
+            className={cn(!take.tags?.length && 'opacity-0 group-hover:opacity-100 focus-visible:opacity-100')}
+          />
           <Button variant="ghost" size="icon" aria-label="Edit" title="Open in the Editor" onClick={() => (useFocus.getState().open('edit', take.id), void navigate({ to: '/editor' }))} className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100">
             <Scissors size={13} />
           </Button>
@@ -114,10 +122,12 @@ export function HistoryPage() {
   const [query, setQuery] = useState('')
   const [show, setShow] = useState<'all' | 'starred'>('all')
   const [engine, setEngine] = useState('')
+  const [tag, setTag] = useState('')
+  const allTags = (useTags().data ?? []).filter((t) => t.takes > 0)
   const [selecting, setSelecting] = useState(false)
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const q = useDebounced(query.trim(), 250)
-  const filter: HistoryFilter = { q: q || undefined, starred: show === 'starred' ? true : undefined, engine: engine || undefined }
+  const filter: HistoryFilter = { q: q || undefined, starred: show === 'starred' ? true : undefined, engine: engine || undefined, tag: tag || undefined }
   const history = useHistory(filter)
   const stats = useTakeStats().data
   const custom = useCustomVoices().data ?? []
@@ -166,7 +176,7 @@ export function HistoryPage() {
       return next
     })
 
-  const filtered = !!(q || show === 'starred' || engine)
+  const filtered = !!(q || show === 'starred' || engine || tag)
 
   return (
     <div className="mx-auto flex h-full max-w-4xl flex-col px-8 py-8">
@@ -203,6 +213,16 @@ export function HistoryPage() {
             { value: 'starred', label: 'Starred' },
           ]}
         />
+        {allTags.length > 0 && (
+          <select value={tag} onChange={(e) => setTag(e.target.value)} aria-label="Tag" className="h-7 rounded-[7px] border-[0.5px] border-hairline bg-fill-control px-2 text-[12px] outline-none">
+            <option value="">All tags</option>
+            {allTags.map((t) => (
+              <option key={t.tag} value={t.tag}>
+                #{t.tag} ({t.takes})
+              </option>
+            ))}
+          </select>
+        )}
         <select value={engine} onChange={(e) => setEngine(e.target.value)} aria-label="Engine" className="h-7 rounded-[7px] border-[0.5px] border-hairline bg-fill-control px-2 text-[12px] outline-none">
           <option value="">All engines</option>
           {Object.entries(ENGINE).map(([id, label]) => (
@@ -231,6 +251,7 @@ export function HistoryPage() {
                       selected={selected.has(t.id)}
                       onToggle={() => toggle(t.id)}
                       onDelete={() => deleteIds([t.id])}
+                      onTag={setTag}
                     />
                   ))}
                 </ul>

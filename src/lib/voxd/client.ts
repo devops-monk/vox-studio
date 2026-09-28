@@ -41,7 +41,7 @@ export const voxd = {
   voices: (engine: string) => call(api().GET('/v1/voices', { params: { query: { engine } } })),
   speak: (body: SpeechRequest) => call(api().POST('/v1/speech', { body: { markup: false, ...body } })),
   takes: (limit = 50) => call(api().GET('/v1/takes', { params: { query: { limit } } })),
-  searchTakes: (query: { q?: string; engine?: string; starred?: boolean; before?: number; limit?: number }) =>
+  searchTakes: (query: { q?: string; engine?: string; starred?: boolean; tag?: string; before?: number; limit?: number }) =>
     call(api().GET('/v1/takes', { params: { query } })),
   takeStats: () => call(api().GET('/v1/takes/stats')),
   deleteTakes: (ids: string[]) => call(api().POST('/v1/takes/delete', { body: { ids } })),
@@ -235,6 +235,12 @@ export const voxd = {
     const blob = await res.blob()
     return new File([blob], path.split(/[\\/]/).pop() || 'file', { type: blob.type })
   },
+  tagTake: (id: string, tags: string[]) => call(api().PUT('/v1/takes/{take_id}/tags', { params: { path: { take_id: id } }, body: { tags } })),
+  tagProject: (id: string, tags: string[]) => call(api().PUT('/v1/projects/{project_id}/tags', { params: { path: { project_id: id } }, body: { tags } })),
+  tags: () => call(api().GET('/v1/tags')),
+  collection: (tag: string) => call(api().GET('/v1/tags/{tag}', { params: { path: { tag } } })),
+  renameTag: (tag: string, to: string) => noContent(api().POST('/v1/tags/{tag}/rename', { params: { path: { tag } }, body: { to } })),
+  deleteTag: (tag: string) => noContent(api().DELETE('/v1/tags/{tag}', { params: { path: { tag } } })),
   starTake: (id: string, starred: boolean) => call(api().PUT('/v1/takes/{take_id}/star', { params: { path: { take_id: id } }, body: { starred } })),
   exportTake: (id: string, path: string, overwrite = false) =>
     noContent(api().POST('/v1/takes/{take_id}/export', { params: { path: { take_id: id } }, body: { path, overwrite } })),

@@ -16,6 +16,7 @@ VoxStudio is a private voice studio that runs entirely on your computer. These d
 | [Editor](guides/editor.md) | Trim, split, splice, fade and polish takes on a timeline |
 | [Compare voices](guides/compare.md) | Blind A/B tests and your favourite voices per language |
 | [History](guides/history.md) | Find, replay, star, save and clean up takes |
+| [Collections & tags](guides/collections.md) | Tag voices, takes and projects; browse by tag |
 | [Projects](guides/projects.md) | Group your work; find every exported file |
 | [Finder & Shortcuts](guides/finder-shortcuts.md) | Open With, Finder Quick Actions, the Shortcuts app |
 | [Install, update & automate](guides/desktop.md) | Installing, updates, menus, `voxstudio://` links, uninstalling |
@@ -49,6 +50,7 @@ VoxStudio is a private voice studio that runs entirely on your computer. These d
 | [Models](api/reference/models.md) | `GET /v1/models`, download, remove, mirrors |
 | [Voices](api/reference/voices.md) | `GET /v1/voices`, library, favorites and tags |
 | [Custom voices](api/reference/custom-voices.md) | Create, rename or delete voices; export and import `.voxvoice` |
+| [Tags & collections](api/reference/tags.md) | Tag takes and projects, list, rename and remove tags |
 | [Projects & exports](api/reference/projects.md) | Projects, items, membership, export history |
 | [Compare](api/reference/compare.md) | Blind ratings and the per-language leaderboard |
 | [Tools & pronunciations](api/reference/tools.md) | Clean audio, voice conversion, pronunciation dictionary |

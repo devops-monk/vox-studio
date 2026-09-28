@@ -610,6 +610,24 @@
               "title": "Before"
             },
             "description": "Only takes created before this unix time \u2014 pass the last `created_at` to get the next page"
+          },
+          {
+            "name": "tag",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Only takes with this tag",
+              "title": "Tag"
+            },
+            "description": "Only takes with this tag"
           }
         ],
         "responses": {
@@ -6438,6 +6456,349 @@
         }
       }
     },
+    "/v1/takes/{take_id}/tags": {
+      "put": {
+        "tags": [
+          "Tags"
+        ],
+        "summary": "Tag a take",
+        "operationId": "tag_take_v1_takes__take_id__tags_put",
+        "parameters": [
+          {
+            "name": "take_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Take Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TagsIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TakeOut"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/projects/{project_id}/tags": {
+      "put": {
+        "tags": [
+          "Tags"
+        ],
+        "summary": "Tag a project",
+        "operationId": "tag_project_v1_projects__project_id__tags_put",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TagsIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectSummaryOut"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/tags": {
+      "get": {
+        "tags": [
+          "Tags"
+        ],
+        "summary": "All tags",
+        "description": "Every tag used on voices, takes or projects, most used first.",
+        "operationId": "list_tags_v1_tags_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/TagCountOut"
+                  },
+                  "type": "array",
+                  "title": "Response List Tags V1 Tags Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/tags/{tag}": {
+      "get": {
+        "tags": [
+          "Tags"
+        ],
+        "summary": "Everything with a tag",
+        "description": "A collection: the voices, takes and projects that share a tag.",
+        "operationId": "collection_v1_tags__tag__get",
+        "parameters": [
+          {
+            "name": "tag",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Tag"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectionOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Tags"
+        ],
+        "summary": "Remove a tag everywhere",
+        "description": "Removes the tag from every voice, take and project. The items themselves are kept.",
+        "operationId": "delete_tag_v1_tags__tag__delete",
+        "parameters": [
+          {
+            "name": "tag",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Tag"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/tags/{tag}/rename": {
+      "post": {
+        "tags": [
+          "Tags"
+        ],
+        "summary": "Rename a tag everywhere",
+        "description": "Renames the tag on every voice, take and project. Renaming onto an existing tag merges them.",
+        "operationId": "rename_tag_v1_tags__tag__rename_post",
+        "parameters": [
+          {
+            "name": "tag",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Tag"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TagRenameIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/keys": {
       "get": {
         "tags": [
@@ -7919,6 +8280,43 @@
           "deleted"
         ],
         "title": "ClearedOut"
+      },
+      "CollectionOut": {
+        "properties": {
+          "tag": {
+            "type": "string",
+            "title": "Tag"
+          },
+          "voices": {
+            "items": {
+              "$ref": "#/components/schemas/TaggedVoiceOut"
+            },
+            "type": "array",
+            "title": "Voices"
+          },
+          "takes": {
+            "items": {
+              "$ref": "#/components/schemas/TakeOut"
+            },
+            "type": "array",
+            "title": "Takes"
+          },
+          "projects": {
+            "items": {
+              "$ref": "#/components/schemas/ProjectSummaryOut"
+            },
+            "type": "array",
+            "title": "Projects"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tag",
+          "voices",
+          "takes",
+          "projects"
+        ],
+        "title": "CollectionOut"
       },
       "ConnectionOut": {
         "properties": {
@@ -9724,6 +10122,13 @@
             "type": "number",
             "title": "Updated At"
           },
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Tags"
+          },
           "items": {
             "items": {
               "$ref": "#/components/schemas/ProjectItemOut"
@@ -9825,6 +10230,13 @@
           "updated_at": {
             "type": "number",
             "title": "Updated At"
+          },
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Tags"
           }
         },
         "type": "object",
@@ -10579,6 +10991,90 @@
         ],
         "title": "SystemOut"
       },
+      "TagCountOut": {
+        "properties": {
+          "tag": {
+            "type": "string",
+            "title": "Tag"
+          },
+          "voices": {
+            "type": "integer",
+            "title": "Voices"
+          },
+          "takes": {
+            "type": "integer",
+            "title": "Takes"
+          },
+          "projects": {
+            "type": "integer",
+            "title": "Projects"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tag",
+          "voices",
+          "takes",
+          "projects",
+          "total"
+        ],
+        "title": "TagCountOut"
+      },
+      "TagRenameIn": {
+        "properties": {
+          "to": {
+            "type": "string",
+            "maxLength": 24,
+            "minLength": 1,
+            "title": "To"
+          }
+        },
+        "type": "object",
+        "required": [
+          "to"
+        ],
+        "title": "TagRenameIn"
+      },
+      "TaggedVoiceOut": {
+        "properties": {
+          "engine": {
+            "type": "string",
+            "title": "Engine"
+          },
+          "voice": {
+            "type": "string",
+            "title": "Voice"
+          }
+        },
+        "type": "object",
+        "required": [
+          "engine",
+          "voice"
+        ],
+        "title": "TaggedVoiceOut"
+      },
+      "TagsIn": {
+        "properties": {
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 50,
+            "title": "Tags",
+            "description": "Replaces the item's tags. Lower-cased and trimmed; up to 12, 24 characters each."
+          }
+        },
+        "type": "object",
+        "required": [
+          "tags"
+        ],
+        "title": "TagsIn"
+      },
       "TakeOut": {
         "properties": {
           "id": {
@@ -10609,6 +11105,13 @@
             "type": "number",
             "title": "Created At",
             "description": "Unix timestamp (seconds)"
+          },
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Tags"
           },
           "audio_url": {
             "type": "string",

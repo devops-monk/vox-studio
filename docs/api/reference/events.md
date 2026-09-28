@@ -29,6 +29,7 @@ Every message is JSON: `{"type": "...", "data": {...}}`.
 | `projects.changed` | `{"id": …}` | A project or its items changed |
 | `pronunciations.changed` | `{}` | The pronunciation dictionary changed |
 | `keys.changed` | `{}` | An API key was created or revoked |
+| `tags.changed` | `{"kind"?, "id"?, "tag"?}` | Tags were added, renamed or removed |
 | `ratings.changed` | `{"language": …}` | A blind comparison was recorded or ratings were cleared |
 | `take.created` | a [take object](takes.md#take-object), without `audio_url` | Whenever a new take is saved, by any client |
 

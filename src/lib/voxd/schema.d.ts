@@ -1541,6 +1541,104 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/takes/{take_id}/tags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Tag a take */
+        put: operations["tag_take_v1_takes__take_id__tags_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/projects/{project_id}/tags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Tag a project */
+        put: operations["tag_project_v1_projects__project_id__tags_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/tags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * All tags
+         * @description Every tag used on voices, takes or projects, most used first.
+         */
+        get: operations["list_tags_v1_tags_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/tags/{tag}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Everything with a tag
+         * @description A collection: the voices, takes and projects that share a tag.
+         */
+        get: operations["collection_v1_tags__tag__get"];
+        put?: never;
+        post?: never;
+        /**
+         * Remove a tag everywhere
+         * @description Removes the tag from every voice, take and project. The items themselves are kept.
+         */
+        delete: operations["delete_tag_v1_tags__tag__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/tags/{tag}/rename": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Rename a tag everywhere
+         * @description Renames the tag on every voice, take and project. Renaming onto an existing tag merges them.
+         */
+        post: operations["rename_tag_v1_tags__tag__rename_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/keys": {
         parameters: {
             query?: never;
@@ -2144,6 +2242,17 @@ export interface components {
         ClearedOut: {
             /** Deleted */
             deleted: number;
+        };
+        /** CollectionOut */
+        CollectionOut: {
+            /** Tag */
+            tag: string;
+            /** Voices */
+            voices: components["schemas"]["TaggedVoiceOut"][];
+            /** Takes */
+            takes: components["schemas"]["TakeOut"][];
+            /** Projects */
+            projects: components["schemas"]["ProjectSummaryOut"][];
         };
         /** ConnectionOut */
         ConnectionOut: {
@@ -2926,6 +3035,8 @@ export interface components {
             created_at: number;
             /** Updated At */
             updated_at: number;
+            /** Tags */
+            tags?: string[];
             /** Items */
             items: components["schemas"]["ProjectItemOut"][];
             /** Exports */
@@ -2956,6 +3067,8 @@ export interface components {
             created_at: number;
             /** Updated At */
             updated_at: number;
+            /** Tags */
+            tags?: string[];
         };
         /** PronunciationIn */
         PronunciationIn: {
@@ -3304,6 +3417,39 @@ export interface components {
             /** Disk Free Bytes */
             disk_free_bytes: number;
         };
+        /** TagCountOut */
+        TagCountOut: {
+            /** Tag */
+            tag: string;
+            /** Voices */
+            voices: number;
+            /** Takes */
+            takes: number;
+            /** Projects */
+            projects: number;
+            /** Total */
+            total: number;
+        };
+        /** TagRenameIn */
+        TagRenameIn: {
+            /** To */
+            to: string;
+        };
+        /** TaggedVoiceOut */
+        TaggedVoiceOut: {
+            /** Engine */
+            engine: string;
+            /** Voice */
+            voice: string;
+        };
+        /** TagsIn */
+        TagsIn: {
+            /**
+             * Tags
+             * @description Replaces the item's tags. Lower-cased and trimmed; up to 12, 24 characters each.
+             */
+            tags: string[];
+        };
         /** TakeOut */
         TakeOut: {
             /** Id */
@@ -3323,6 +3469,8 @@ export interface components {
              * @description Unix timestamp (seconds)
              */
             created_at: number;
+            /** Tags */
+            tags?: string[];
             /**
              * Audio Url
              * @description Relative URL of the WAV file
@@ -3969,6 +4117,8 @@ export interface operations {
                 starred?: boolean | null;
                 /** @description Only takes created before this unix time — pass the last `created_at` to get the next page */
                 before?: number | null;
+                /** @description Only takes with this tag */
+                tag?: string | null;
             };
             header?: never;
             path?: never;
@@ -8564,6 +8714,270 @@ export interface operations {
         responses: {
             /** @description Successful Response */
             200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    tag_take_v1_takes__take_id__tags_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                take_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TagsIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TakeOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    tag_project_v1_projects__project_id__tags_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TagsIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectSummaryOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_tags_v1_tags_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TagCountOut"][];
+                };
+            };
+        };
+    };
+    collection_v1_tags__tag__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tag: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CollectionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_tag_v1_tags__tag__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tag: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    rename_tag_v1_tags__tag__rename_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tag: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TagRenameIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };

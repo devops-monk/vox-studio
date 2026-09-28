@@ -29,8 +29,13 @@ from ..store import Dub
 from ..history import RETENTION_CHOICES, RETENTION_KEY, delete_takes, sweep, usage_bytes
 from ..store import DesignedVoice
 from ..speech import render_markup, resolve_engine, save_take
-from ..store import Job, Take
+from ..store import Job, Take, clean_tags
 from .schemas import (
+    CollectionOut,
+    TagCountOut,
+    TaggedVoiceOut,
+    TagRenameIn,
+    TagsIn,
     MarkupIn,
     MarkupOut,
     MarkupSegmentOut,
@@ -291,9 +296,10 @@ def takes(
     voice: str | None = Query(None),
     starred: bool | None = Query(None),
     before: float | None = Query(None, description="Only takes created before this unix time — pass the last `created_at` to get the next page"),
+    tag: str | None = Query(None, description="Only takes with this tag"),
 ) -> list[TakeOut]:
     """Newest first. Page through history with `before`."""
-    found = _services(request).store.list_takes(limit, query=q, engine=engine, voice=voice, starred=starred, before=before)
+    found = _services(request).store.list_takes(limit, query=q, engine=engine, voice=voice, starred=starred, before=before, tag=tag.lower() if tag else None)
     return [_take_out(t) for t in found]
 
 
@@ -598,7 +604,7 @@ def voice_library(request: Request) -> list[LibraryVoiceOut]:
 def set_voice_meta(request: Request, body: VoiceMetaIn) -> Response:
     """Set `favorite` and/or `tags` for any voice. For custom voices pass their `cv_…` id (any `engine`)."""
     services = _services(request)
-    tags = None if body.tags is None else sorted({t.strip()[:24] for t in body.tags if t.strip()})
+    tags = None if body.tags is None else sorted(clean_tags(body.tags))
     key = "custom" if body.voice.startswith("cv_") else body.engine
     services.store.set_voice_meta(key, body.voice, body.favorite, tags)
     services.bus.publish("voices.changed", {"id": body.voice})
@@ -1833,6 +1839,71 @@ def read_local_file(request: Request, path: str = Query(description="Absolute pa
     if not file.is_file():
         raise HTTPException(404, detail=("not_found", f"No such file: {file.name}"))
     return FileResponse(file, filename=file.name)
+
+
+# --- Tags & collections -----------------------------------------------------------
+
+
+@router.put("/takes/{take_id}/tags", response_model=TakeOut, responses=ERRORS, tags=["Tags"], summary="Tag a take")
+def tag_take(request: Request, take_id: str, body: TagsIn) -> TakeOut:
+    services = _services(request)
+    if services.store.get_take(take_id) is None:
+        raise HTTPException(404, detail=("not_found", "No such take"))
+    services.store.set_item_tags("take", take_id, body.tags)
+    services.bus.publish("tags.changed", {"kind": "take", "id": take_id})
+    return _take_out(services.store.get_take(take_id))
+
+
+@router.put("/projects/{project_id}/tags", response_model=ProjectSummaryOut, responses=ERRORS, tags=["Tags"], summary="Tag a project")
+def tag_project(request: Request, project_id: str, body: TagsIn) -> ProjectSummaryOut:
+    services = _services(request)
+    if services.store.get_project(project_id) is None:
+        raise HTTPException(404, detail=("not_found", "No such project"))
+    services.store.set_item_tags("project", project_id, body.tags)
+    services.bus.publish("tags.changed", {"kind": "project", "id": project_id})
+    p = services.store.get_project(project_id)
+    return ProjectSummaryOut(**p, item_count=len(services.store.project_items(project_id)))
+
+
+@router.get("/tags", response_model=list[TagCountOut], tags=["Tags"], summary="All tags")
+def list_tags(request: Request) -> list[TagCountOut]:
+    """Every tag used on voices, takes or projects, most used first."""
+    counts = _services(request).store.tag_counts()
+    rows = [TagCountOut(tag=t, voices=c["voice"], takes=c["take"], projects=c["project"], total=sum(c.values())) for t, c in counts.items()]
+    return sorted(rows, key=lambda r: (-r.total, r.tag))
+
+
+@router.get("/tags/{tag}", response_model=CollectionOut, tags=["Tags"], summary="Everything with a tag")
+def collection(request: Request, tag: str) -> CollectionOut:
+    """A collection: the voices, takes and projects that share a tag."""
+    services = _services(request)
+    tag = tag.lower()
+    voices = [TaggedVoiceOut(engine=e, voice=v) for (e, v), m in services.store.voice_meta().items() if tag in m.tags]
+    takes = [_take_out(t) for t in services.store.list_takes(500, tag=tag)]
+    ids = set(services.store.tagged("project", tag))
+    projects = [ProjectSummaryOut(**p) for p in services.store.list_projects() if p["id"] in ids]
+    return CollectionOut(tag=tag, voices=voices, takes=takes, projects=projects)
+
+
+@router.post("/tags/{tag}/rename", status_code=204, responses=ERRORS, tags=["Tags"], summary="Rename a tag everywhere")
+def rename_tag(request: Request, tag: str, body: TagRenameIn) -> None:
+    """Renames the tag on every voice, take and project. Renaming onto an existing tag merges them."""
+    services = _services(request)
+    new = clean_tags([body.to])
+    if not new:
+        raise HTTPException(400, detail=("invalid_request", "Give the tag a name"))
+    services.store.rename_tag(tag.lower(), new[0])
+    services.bus.publish("tags.changed", {"tag": new[0]})
+    services.bus.publish("voices.changed", {})
+
+
+@router.delete("/tags/{tag}", status_code=204, tags=["Tags"], summary="Remove a tag everywhere")
+def delete_tag(request: Request, tag: str) -> None:
+    """Removes the tag from every voice, take and project. The items themselves are kept."""
+    services = _services(request)
+    services.store.delete_tag(tag.lower())
+    services.bus.publish("tags.changed", {"tag": tag})
+    services.bus.publish("voices.changed", {})
 
 
 # --- API keys -----------------------------------------------------------------

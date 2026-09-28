@@ -13,6 +13,7 @@ import { voxd } from '@/lib/voxd/client'
 import { useExportHistory, useProject, useProjects } from '@/lib/voxd/queries'
 import type { ExportRecord } from '@/lib/voxd/types'
 import { cn } from '@/lib/cn'
+import { TagButton, TagChips } from '@/components/tags'
 
 const KIND = {
   take: { icon: AudioLines, label: 'Takes' },
@@ -90,6 +91,7 @@ function ProjectView({ id, onBack }: { id: string; onBack: () => void }) {
             />
           ))}
         </div>
+        <TagButton tags={project.tags ?? []} onChange={(tags) => void voxd.tagProject(id, tags).catch((e: Error) => toast.error(e.message))} label="Project tags" />
         <Button
           variant="ghost"
           size="sm"
@@ -101,6 +103,7 @@ function ProjectView({ id, onBack }: { id: string; onBack: () => void }) {
         </Button>
       </div>
 
+      {!!project.tags?.length && <TagChips tags={project.tags} className="-mt-3" />}
       {groups.length ? (
         groups.map(([kind, list]) => {
           const Icon = KIND[kind].icon
@@ -204,6 +207,7 @@ export function ProjectsPage() {
             <div className="relative mt-6 text-[12px] opacity-85">
               {p.item_count} item{p.item_count === 1 ? '' : 's'} · {timeAgo(p.updated_at)}
             </div>
+            {!!p.tags?.length && <div className="relative mt-1 truncate text-[11px] opacity-80">{p.tags.map((t) => `#${t}`).join(' ')}</div>}
           </button>
         ))}
       </div>

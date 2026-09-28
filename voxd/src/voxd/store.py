@@ -224,6 +224,15 @@ MIGRATIONS: list[str] = [
     );
     CREATE INDEX ratings_language ON ratings(language, at);
     """,
+    """
+    CREATE TABLE item_tags (
+        kind     TEXT NOT NULL,
+        item_id  TEXT NOT NULL,
+        tag      TEXT NOT NULL,
+        PRIMARY KEY (kind, item_id, tag)
+    );
+    CREATE INDEX item_tags_tag ON item_tags(tag);
+    """,
 ]
 
 ACTIVE = ("queued", "running")
@@ -238,6 +247,7 @@ class Take:
     duration_s: float
     starred: bool
     created_at: float
+    tags: list[str] = field(default_factory=list)
 
     def public(self) -> dict:
         return asdict(self)
@@ -387,7 +397,7 @@ class Store:
         return take
 
     def get_take(self, take_id: str) -> Take | None:
-        row = self._db.execute("SELECT * FROM takes WHERE id = ?", (take_id,)).fetchone()
+        row = self._db.execute(f"SELECT takes.*, {_TAGS.format(kind='take', alias='takes')} FROM takes WHERE id = ?", (take_id,)).fetchone()
         return _take(row) if row else None
 
     def list_takes(
@@ -399,6 +409,7 @@ class Store:
         voice: str | None = None,
         starred: bool | None = None,
         before: float | None = None,
+        tag: str | None = None,
     ) -> list[Take]:
         where, args = [], []
         if query:
@@ -416,7 +427,10 @@ class Store:
         if before is not None:
             where.append("created_at < ?")
             args.append(before)
-        sql = "SELECT * FROM takes" + (" WHERE " + " AND ".join(where) if where else "") + " ORDER BY created_at DESC LIMIT ?"
+        if tag:
+            where.append("id IN (SELECT item_id FROM item_tags WHERE kind = 'take' AND tag = ?)")
+            args.append(tag)
+        sql = f"SELECT takes.*, {_TAGS.format(kind='take', alias='takes')} FROM takes" + (" WHERE " + " AND ".join(where) if where else "") + " ORDER BY created_at DESC LIMIT ?"
         return [_take(r) for r in self._db.execute(sql, (*args, limit))]
 
     def delete_takes(self, ids: list[str]) -> list[str]:
@@ -427,6 +441,7 @@ class Store:
         with self._lock:
             found = [r[0] for r in self._db.execute(f"SELECT id FROM takes WHERE id IN ({marks})", ids)]
             self._db.execute(f"DELETE FROM takes WHERE id IN ({marks})", ids)
+            self._db.execute(f"DELETE FROM item_tags WHERE kind = 'take' AND item_id IN ({marks})", ids)
         return found
 
     def expired_takes(self, older_than: float) -> list[str]:
@@ -752,14 +767,15 @@ class Store:
 
     def list_projects(self) -> list[dict]:
         rows = self._db.execute(
-            "SELECT p.*, (SELECT COUNT(*) FROM project_items i WHERE i.project_id = p.id) AS item_count "
-            "FROM projects p ORDER BY p.updated_at DESC"
+            "SELECT p.*, (SELECT COUNT(*) FROM project_items i WHERE i.project_id = p.id) AS item_count, "
+            + _TAGS.format(kind="project", alias="p")
+            + " FROM projects p ORDER BY p.updated_at DESC"
         )
-        return [dict(r) for r in rows]
+        return [{**dict(r), "tags": split_tags(r["tags"])} for r in rows]
 
     def get_project(self, project_id: str) -> dict | None:
-        row = self._db.execute("SELECT * FROM projects WHERE id = ?", (project_id,)).fetchone()
-        return dict(row) if row else None
+        row = self._db.execute(f"SELECT p.*, {_TAGS.format(kind='project', alias='p')} FROM projects p WHERE id = ?", (project_id,)).fetchone()
+        return {**dict(row), "tags": split_tags(row["tags"])} if row else None
 
     def update_project(self, project_id: str, **fields: Any) -> dict | None:
         fields["updated_at"] = time.time()
@@ -770,6 +786,7 @@ class Store:
 
     def delete_project(self, project_id: str) -> bool:
         with self._lock:
+            self._db.execute("DELETE FROM item_tags WHERE kind = 'project' AND item_id = ?", (project_id,))
             return self._db.execute("DELETE FROM projects WHERE id = ?", (project_id,)).rowcount > 0
 
     def add_project_item(self, project_id: str, kind: str, item_id: str) -> None:
@@ -818,6 +835,42 @@ class Store:
         if (table, column) not in allowed:
             raise ValueError(f"{table}.{column} is not an allowed lookup")
         return {r[0] for r in self._db.execute(f"SELECT {column} FROM {table}") if r[0]}
+
+    # --- tags & collections --------------------------------------------------------
+
+    def set_item_tags(self, kind: str, item_id: str, tags: list[str]) -> list[str]:
+        tags = clean_tags(tags)
+        with self._lock:
+            self._db.execute("DELETE FROM item_tags WHERE kind = ? AND item_id = ?", (kind, item_id))
+            self._db.executemany("INSERT INTO item_tags VALUES (?,?,?)", [(kind, item_id, t) for t in tags])
+        return sorted(tags)
+
+    def tag_counts(self) -> dict[str, dict[str, int]]:
+        counts: dict[str, dict[str, int]] = {}
+        for kind, tag, n in self._db.execute("SELECT kind, tag, COUNT(*) FROM item_tags GROUP BY kind, tag"):
+            counts.setdefault(tag, {"voice": 0, "take": 0, "project": 0})[kind] = n
+        for meta in self.voice_meta().values():
+            for tag in meta.tags:
+                counts.setdefault(tag, {"voice": 0, "take": 0, "project": 0})["voice"] += 1
+        return counts
+
+    def tagged(self, kind: str, tag: str) -> list[str]:
+        return [r[0] for r in self._db.execute("SELECT item_id FROM item_tags WHERE kind = ? AND tag = ?", (kind, tag))]
+
+    def rename_tag(self, old: str, new: str) -> None:
+        with self._lock:
+            self._db.execute("UPDATE OR IGNORE item_tags SET tag = ? WHERE tag = ?", (new, old))
+            self._db.execute("DELETE FROM item_tags WHERE tag = ?", (old,))  # rows that already had `new`
+        for (engine, voice), meta in self.voice_meta().items():
+            if old in meta.tags:
+                self.set_voice_meta(engine, voice, None, clean_tags([new if t == old else t for t in meta.tags]))
+
+    def delete_tag(self, tag: str) -> None:
+        with self._lock:
+            self._db.execute("DELETE FROM item_tags WHERE tag = ?", (tag,))
+        for (engine, voice), meta in self.voice_meta().items():
+            if tag in meta.tags:
+                self.set_voice_meta(engine, voice, None, [t for t in meta.tags if t != tag])
 
     # --- blind comparisons ------------------------------------------------------
 
@@ -913,8 +966,27 @@ class Store:
         self._db.close()
 
 
+_TAGS = "(SELECT group_concat(tag, char(31)) FROM item_tags t WHERE t.kind = '{kind}' AND t.item_id = {alias}.id) AS tags"
+
+
+def split_tags(value: str | None) -> list[str]:
+    return sorted(value.split("\x1f")) if value else []
+
+
+def clean_tags(tags: list[str]) -> list[str]:
+    """Lower-case, trimmed, at most 24 characters each and 12 per item, no duplicates."""
+    out: list[str] = []
+    for t in tags:
+        t = " ".join(t.strip().lower().split())[:24]
+        if t and t not in out:
+            out.append(t)
+    return out[:12]
+
+
 def _take(row: sqlite3.Row) -> Take:
-    return Take(**{**dict(row), "starred": bool(row["starred"])})
+    d = dict(row)
+    d["tags"] = split_tags(d.get("tags"))
+    return Take(**{**d, "starred": bool(row["starred"])})
 
 
 def _job(row: sqlite3.Row) -> Job:
