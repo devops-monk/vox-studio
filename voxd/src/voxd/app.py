@@ -24,11 +24,12 @@ from .engines.whisper import WhisperEngine
 from .events import EventBus
 from .jobs import JobContext, JobManager
 from .lifecycle import Lifecycle, Phase, on_hard_exit
-from .models import CATALOG, TRANSLATION_MODELS, ModelSpec, ModelStore
+from .models import CATALOG, DEMUCS_MODEL, SPEAKER_MODEL, TRANSLATION_MODELS, ModelSpec, ModelStore
 from .runtimes import PACKS, RuntimeManager
 from .design import TraitStore
 from .history import sweeper
 from .media import Media
+from .separation import Separator
 from .batch import Watcher, speech_item, transcribe_item
 from .books import export_book as book_export, render_book as book_render
 from .dubbing import prepare as dub_prepare, render as dub_render, retranslate as dub_retranslate
@@ -74,6 +75,7 @@ class Services:
     custom: CustomVoices
     traits: TraitStore
     media: Media = None  # type: ignore[assignment]
+    separator: Separator = None  # type: ignore[assignment]
     watcher: Watcher = None  # type: ignore[assignment]
     store: Store = None  # type: ignore[assignment]  # opened in lifespan
     jobs: JobManager = None  # type: ignore[assignment]
@@ -99,7 +101,7 @@ def analyze_voices(services: Services, ctx: JobContext, _spec: dict) -> dict:
 
 
 def create_app(
-    settings: Settings, registry: Registry | None = None, catalog: tuple[ModelSpec, ...] = CATALOG + TRANSLATION_MODELS
+    settings: Settings, registry: Registry | None = None, catalog: tuple[ModelSpec, ...] = CATALOG + TRANSLATION_MODELS + (SPEAKER_MODEL, DEMUCS_MODEL)
 ) -> FastAPI:
     settings.ensure_dirs()
     models = ModelStore(settings.models_dir, catalog, settings.model_mirror)
@@ -117,6 +119,7 @@ def create_app(
     services = Services(
         settings, Lifecycle(), registry, EventBus(), models, runtimes, custom, TraitStore(settings.data_dir / "voice-traits.json"), Media(runtimes)
     )
+    services.separator = Separator(runtimes, models)
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
@@ -159,6 +162,7 @@ def create_app(
         cleanup.cancel()
         watching.cancel()
         services.media.stop()
+        services.separator.stop()
         for engine_id in ("chatterbox", "kokoro", "whisper"):
             if engine := services.registry.raw(engine_id):
                 engine.unload()

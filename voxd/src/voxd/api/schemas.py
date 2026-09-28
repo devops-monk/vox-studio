@@ -306,7 +306,7 @@ class DubSummaryOut(BaseModel):
 
 
 class DubOut(DubSummaryOut):
-    mix: str = Field(description="`replace` (dub only) or `duck` (original quietly underneath)")
+    mix: str = Field(description="`replace` (dub only), `duck` (original quietly underneath) or `keep` (original music and effects, voice removed — needs Demucs)")
     segments: list[DubSegmentOut]
     cast: dict[str, DubVoice | None] = Field(description="Voice for each speaker (null until one is chosen)")
     audio_url: str | None = None
@@ -325,7 +325,7 @@ class DubSegmentPatch(BaseModel):
 
 class DubPatch(BaseModel):
     title: str | None = Field(None, min_length=1, max_length=120)
-    mix: str | None = Field(None, pattern="^(replace|duck)$")
+    mix: str | None = Field(None, pattern="^(replace|duck|keep)$")
     cast: dict[str, DubVoice] | None = None
     segments: list[DubSegmentPatch] | None = None
 
@@ -727,4 +727,5 @@ class ImportUrlIn(BaseModel):
     target_language: str | None = Field(None, description="Dub into this language (required for `dub`)")
     source_language: str | None = None
     language: str | None = Field(None, description="Transcribe: spoken language; omit to detect")
+    speakers: str = Field("auto", pattern="^(auto|[1-8])$", description="Dub: `auto`, or the number of speakers (1 turns detection off)")
     title: str | None = Field(None, max_length=120)

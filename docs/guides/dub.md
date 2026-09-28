@@ -48,3 +48,22 @@ Pick a different language in the menu at the top right. Every line is translated
 Instead of a file, paste a **direct link to a video or audio file** under the drop area and click **Start dubbing**. VoxStudio downloads it (up to 2 GB), then prepares the dub as usual. Progress shows in the button and in Activity.
 
 Only links that point straight at a media file work, for example `…/clip.mp4`. Links to web pages such as a video site's watch page are refused. Links to your own computer or local network are refused too.
+
+## Speakers
+VoxStudio listens for **who says each line** and gives every speaker their own voice. It picks a different voice per speaker, alternating female and male where it can.
+- In **New dub**, **Speakers** is set to **Detect automatically**. If you know the number, choose it (for example, **2 speakers**) for the most reliable split. **One speaker** turns detection off.
+- In the editor, every line shows its speaker (S1, S2, …). Change it if a line was assigned to the wrong person.
+- In **Cast**, choose the voice for each speaker.
+
+Detection uses a small model (30 MB) that's downloaded the first time. If it can't be downloaded, the dub still works, with one speaker.
+
+## Soundtrack
+Choose what plays under the new voices:
+
+| Option | Result |
+|---|---|
+| **Keep music & effects** | The original soundtrack **without the original voices**. Music, ambience and sound effects stay; only the speech changes. |
+| **Original, quietly** | The whole original audio, turned down under the dub |
+| **Voices only** | Just the new speech |
+
+**Keep music & effects** uses **Demucs**, an optional download in **Models** (about 1 GB including its engine). The first render separates the soundtrack, which takes about a minute per minute of audio. Later renders of the same dub reuse it.

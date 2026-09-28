@@ -1,3 +1,4 @@
+import { useNavigate } from '@tanstack/react-router'
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { AlertTriangle, AudioLines, Download, Film, Languages, Loader2, Play, Plus, Trash2, Upload, Wand2, X, Link2 } from 'lucide-react'
 import { toast } from 'sonner'
@@ -10,13 +11,14 @@ import { voxd } from '@/lib/voxd/client'
 import { useDub, useDubLanguages, useDubs, useEngines, useJob, useModels, useVoices } from '@/lib/voxd/queries'
 import type { Dub, DubLine } from '@/lib/voxd/types'
 import { cn } from '@/lib/cn'
+import { formatBytes } from '@/lib/format'
 import { useImportLink } from '@/lib/voxd/use-import'
 import { AddToProject } from '@/components/add-to-project'
 import { useFocus } from '@/lib/store/focus'
 import { DownloadBar, ModelActions, ModelArt } from '@/features/models/model-parts'
 
 const clock = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`
-const SPEAKERS = ['S1', 'S2', 'S3', 'S4']
+const SPEAKERS = ['S1', 'S2', 'S3', 'S4', 'S5', 'S6', 'S7', 'S8']
 const STATUS: Record<string, { label: string; tone: string }> = {
   preparing: { label: 'Preparing', tone: 'bg-[#ffd60a]/20 text-[#b38f00] dark:text-[#ffd60a]' },
   ready: { label: 'Ready to render', tone: 'bg-[color-mix(in_srgb,var(--accent)_16%,transparent)] text-[var(--accent)]' },
@@ -42,10 +44,11 @@ function NewDub({ onCreated, onCancel }: { onCreated: (id: string) => void; onCa
   const chosen = languages.find((l) => l.code === target)
 
   const [link, setLink] = useState('')
+  const [speakers, setSpeakers] = useState('auto')
   const importing = useImportLink()
   const startFromLink = async () => {
     try {
-      const result = await importing.run({ url: link.trim(), then: 'dub', target_language: target })
+      const result = await importing.run({ url: link.trim(), then: 'dub', target_language: target, speakers })
       onCreated(result.dub_id)
     } catch (e) {
       toast.error('Couldn’t import that link', { description: (e as Error).message })
@@ -56,7 +59,7 @@ function NewDub({ onCreated, onCancel }: { onCreated: (id: string) => void; onCa
     if (!file) return
     setBusy(true)
     try {
-      const dub = await voxd.createDub(file, target)
+      const dub = await voxd.createDub(file, target, undefined, speakers)
       onCreated(dub.id)
     } catch (e) {
       toast.error('Couldn’t start the dub', { description: (e as Error).message })
@@ -109,6 +112,21 @@ function NewDub({ onCreated, onCancel }: { onCreated: (id: string) => void; onCa
           />
         </label>
       )}
+      <label className="flex items-center justify-between gap-4">
+        <span>
+          <span className="block text-[13px] font-medium">Speakers</span>
+          <span className="block text-[11px] text-text-3">Who says each line, so every person gets their own voice</span>
+        </span>
+        <select value={speakers} onChange={(e) => setSpeakers(e.target.value)} aria-label="Speakers" className="h-8 w-56 rounded-[8px] border-[0.5px] border-hairline bg-fill-control px-2 text-[13px] outline-none">
+          <option value="auto">Detect automatically</option>
+          <option value="1">One speaker</option>
+          {[2, 3, 4, 5, 6].map((n) => (
+            <option key={n} value={String(n)}>
+              {n} speakers
+            </option>
+          ))}
+        </select>
+      </label>
       <label className="flex items-center justify-between gap-4">
         <span className="text-[13px] font-medium">Dub into</span>
         <select value={target} onChange={(e) => setTarget(e.target.value)} className="h-8 w-56 rounded-[8px] border-[0.5px] border-hairline bg-fill-control px-2 text-[13px] outline-none">
@@ -232,7 +250,7 @@ function LineRow({ dub, line, index, onSeek, active }: { dub: Dub; line: DubLine
   return (
     <li
       className={cn(
-        'group grid grid-cols-[52px_40px_1fr_auto] items-start gap-2 rounded-[10px] px-2 py-2 transition-colors',
+        'group grid grid-cols-[52px_48px_1fr_auto] items-start gap-2 rounded-[10px] px-2 py-2 transition-colors',
         active ? 'bg-[color-mix(in_srgb,var(--accent)_10%,transparent)]' : 'hover:bg-fill-hover',
       )}
     >
@@ -296,6 +314,8 @@ async function exportDub(dub: Dub, what: 'video' | 'audio' | 'srt' | 'vtt') {
 }
 
 function Editor({ id, onDeleted }: { id: string; onDeleted: () => void }) {
+  const demucs = useModels().data?.find((m) => m.id === 'demucs-htdemucs')
+  const navigate = useNavigate()
   const dub = useDub(id).data
   const languages = useDubLanguages().data ?? []
   const job = useJob(dub?.job_id ?? null).data
@@ -412,19 +432,50 @@ function Editor({ id, onDeleted }: { id: string; onDeleted: () => void }) {
             </div>
           </GlassPanel>
 
-          <GlassPanel className="space-y-3 p-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-[13px] font-semibold">Cast</h3>
-              <SegmentedControl
-                aria-label="Mix"
-                value={dub.mix}
-                onChange={(mix) => void voxd.patchDub(dub.id, { mix })}
-                options={[
-                  { value: 'duck', label: 'Keep original quietly' },
-                  { value: 'replace', label: 'Replace' },
-                ]}
-              />
+          <GlassPanel className="space-y-2.5 p-4">
+            <h3 className="text-[13px] font-semibold">Soundtrack</h3>
+            <div role="radiogroup" aria-label="Soundtrack" className="grid grid-cols-3 gap-2">
+              {(
+                [
+                  ['keep', 'Keep music & effects', 'Only the voices change'],
+                  ['duck', 'Original, quietly', 'Original audio underneath'],
+                  ['replace', 'Voices only', 'Just the new speech'],
+                ] as const
+              ).map(([value, label, hint]) => {
+                const off = value === 'keep' && demucs?.status !== 'installed'
+                return (
+                  <button
+                    key={value}
+                    type="button"
+                    role="radio"
+                    aria-checked={dub.mix === value}
+                    disabled={off || busy}
+                    onClick={() => void voxd.patchDub(dub.id, { mix: value }).catch((e: Error) => toast.error(e.message))}
+                    className={cn(
+                      'rounded-[var(--radius-md)] p-2.5 text-left transition-colors disabled:opacity-50',
+                      dub.mix === value ? 'bg-accent/12 shadow-[0_0_0_1.5px_var(--accent)]' : 'bg-fill-control enabled:hover:bg-fill-hover',
+                    )}
+                  >
+                    <span className="block text-[12px] font-medium">{label}</span>
+                    <span className="block text-[10px] text-text-3">{hint}</span>
+                  </button>
+                )
+              })}
             </div>
+            {demucs && demucs.status !== 'installed' && (
+              <p className="text-[11px] text-text-3">
+                To keep the original music and effects, download{' '}
+                <button type="button" onClick={() => void navigate({ to: '/models' })} className="font-medium text-accent hover:underline">
+                  Demucs in Models
+                </button>{' '}
+                ({formatBytes(demucs.size_bytes + demucs.runtime_bytes)}). It separates the voices from everything else.
+              </p>
+            )}
+            {dub.mix === 'keep' && demucs?.status === 'installed' && <p className="text-[11px] text-text-3">The first render separates the soundtrack (about a minute per minute of audio); later renders reuse it.</p>}
+          </GlassPanel>
+
+          <GlassPanel className="space-y-3 p-4">
+            <h3 className="text-[13px] font-semibold">Cast</h3>
             {lang && !lang.has_voice && <p className="text-[12px] text-[#ff9f0a]">No installed voice speaks {lang.name}. Download Kokoro from Models.</p>}
             {speakers.map((sp) => (
               <div key={sp} className="flex items-center gap-3">
@@ -435,7 +486,7 @@ function Editor({ id, onDeleted }: { id: string; onDeleted: () => void }) {
                 </div>
               </div>
             ))}
-            <p className="text-[11px] text-text-3">Assign lines to speakers S1–S4 in the list; each speaker gets its own voice.</p>
+            <p className="text-[11px] text-text-3">Speakers were detected automatically. Reassign any line in the list; each speaker gets its own voice.</p>
           </GlassPanel>
 
           <div className="flex justify-end">

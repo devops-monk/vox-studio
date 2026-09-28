@@ -177,8 +177,8 @@ Work goes one milestone at a time. Tick `[x]` only after the item is verified in
 - [x] Dub page: new-dub sheet, project list, player with Original/Dubbed switch, cast per speaker (S1–S4) filtered to voices for the language, editable auto-growing lines with preview and fit badges, target-language switch, exports
 - [x] Verified end to end with a real Spanish clip → English MP4 (Whisper confirms the dubbed speech)
 - [x] Docs: dubbing reference and guide
-- [ ] Follow-up: automatic speaker detection (diarization)
-- [ ] Follow-up: keep background music and effects via Demucs (optional runtime pack)
+- [x] Follow-up: automatic speaker detection: CAM++ speaker embeddings (Apache-2.0, ONNX, 30 MB, auto-downloaded) computed in the media worker with numpy log-mel features; average-linkage clustering (auto threshold or a fixed count); short lines join the nearest speaker; distinct default voices per speaker; never fails a dub. Verified on a 3-speaker conversation: speakers matched exactly
+- [x] Follow-up: keep background music and effects via Demucs (optional runtime pack): `separation` runtime pack plus pinned htdemucs weights in Models; chunked separation with crossfades and progress, CPU/MPS/CUDA with CPU fallback; `mix: keep`; the separated track is cached per dub. Verified: background correlates 0.99 with the original music, 0.035 with the speech, and Whisper finds no words in it
 - [x] Follow-up: import from a URL: `POST /v1/imports/url` (direct media links; local and private networks refused, also after redirects; web pages rejected with a clear message) in Dub and Transcribe; verified with a real Wikimedia file, then its transcript
 
 ### M10 — Stories & Audiobooks ✅

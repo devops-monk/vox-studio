@@ -87,3 +87,10 @@ Rules:
 - The link must be http(s) and point at media: `audio/*` or `video/*`, Ogg/MP4/Matroska, or a generic type with a media file extension. Web pages fail with a clear error.
 - Hosts that resolve to loopback, private, link-local or reserved addresses are refused, including after redirects: `400 invalid_url`.
 - Also: `400 unsupported_language`, and `400 engine_unavailable` (needs Whisper).
+
+## Speakers and soundtrack
+- `POST /v1/dubs` accepts `speakers`: `auto` (the default) detects who says each line, and `1`–`8` sets the number of speakers (`1` turns detection off). `POST /v1/imports/url` takes the same field.
+  - Detected speakers are `S1`, `S2`, … in order of appearance, and each gets a distinct default voice in `cast`.
+  - Detection uses a CAM++ speaker-embedding model, downloaded on first use (30 MB, SHA-256 pinned).
+  - If detection fails, for example when offline, the dub continues with one speaker.
+- `mix` can be `keep`, `duck` or `replace`. `keep` mixes the dub over the original soundtrack with its voices removed. This needs the `demucs-htdemucs` model from `/v1/models`; without it, `PATCH` returns `400 engine_unavailable`. The separated track is cached per dub.

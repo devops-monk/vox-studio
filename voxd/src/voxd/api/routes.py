@@ -919,6 +919,7 @@ async def create_dub(
     target_language: str = Form(description="Dub into: en, es, fr, de, it, pt, hi, ja or zh"),
     source_language: str | None = Form(None, description="Spoken language; omit to detect"),
     title: str | None = Form(None, max_length=120),
+    speakers: str = Form("auto", pattern="^(auto|[1-8])$", description="`auto` detects who speaks each line; `1`–`8` sets the number of speakers (`1` turns detection off)"),
 ) -> DubOut:
     """Uploads the file and starts preparing it (transcribe + translate). Watch `job_id`, then review and render."""
     services = _services(request)
@@ -943,7 +944,8 @@ async def create_dub(
                 shutil.rmtree(folder, ignore_errors=True)
                 raise HTTPException(400, detail=("file_too_large", "Files up to 2 GB are supported"))
             out.write(chunk)
-    d = dubbing.start_dub(services, dub_id, dest.name, title or Path(file.filename or "Dub").stem[:120] or "Dub", target_language, source_language)
+    d = dubbing.start_dub(services, dub_id, dest.name, title or Path(file.filename or "Dub").stem[:120] or "Dub", target_language, source_language,
+                          speakers if speakers == "auto" else int(speakers))
     return _dub_out(services, d)
 
 
@@ -968,6 +970,8 @@ def patch_dub(request: Request, dub_id: str, body: DubPatch) -> DubOut:
     if body.title is not None:
         fields["title"] = body.title.strip()
     if body.mix is not None:
+        if body.mix == "keep" and (reason := services.separator.unavailable_reason()):
+            raise HTTPException(400, detail=("engine_unavailable", reason))
         fields["mix"] = body.mix
     if body.cast is not None:
         cast = {**d.cast, **{k: v.model_dump() for k, v in body.cast.items()}}

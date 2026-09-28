@@ -42,7 +42,7 @@ function ModelCard({ model, index }: { model: Model; index: number }) {
           <p className="text-[13px] text-text-1">{model.tagline}</p>
           <p className="text-[12px] leading-relaxed text-text-2">{model.description}</p>
           <div className="flex flex-wrap items-center gap-1.5 pt-1">
-            <Pill>{model.kind === 'clone' ? 'Voice cloning' : `${model.voice_count} voices`}</Pill>
+            <Pill>{KIND_LABEL[model.kind] ?? `${model.voice_count} voices`}</Pill>
             <Pill>{formatBytes(model.size_bytes)}{model.runtime_bytes ? ` + ${formatBytes(model.runtime_bytes)} engine` : ''}</Pill>
             <a href={model.license_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded-full bg-fill-control px-2 py-0.5 text-[11px] font-medium text-text-2 hover:text-text-1">
               {model.license} <ExternalLink size={10} />
@@ -60,6 +60,8 @@ function ModelCard({ model, index }: { model: Model; index: number }) {
     </GlassPanel>
   )
 }
+
+const KIND_LABEL: Record<string, string> = { clone: 'Voice cloning', asr: 'Speech to text', separation: 'For dubbing' }
 
 export function ModelsPage() {
   const models = useModels()

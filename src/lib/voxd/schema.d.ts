@@ -2024,6 +2024,12 @@ export interface components {
             source_language?: string | null;
             /** Title */
             title?: string | null;
+            /**
+             * Speakers
+             * @description `auto` detects who speaks each line; `1`–`8` sets the number of speakers (`1` turns detection off)
+             * @default auto
+             */
+            speakers: string;
         };
         /** Body_create_transcription_v1_audio_transcriptions_post */
         Body_create_transcription_v1_audio_transcriptions_post: {
@@ -2806,6 +2812,12 @@ export interface components {
              * @description Transcribe: spoken language; omit to detect
              */
             language?: string | null;
+            /**
+             * Speakers
+             * @description Dub: `auto`, or the number of speakers (1 turns detection off)
+             * @default auto
+             */
+            speakers: string;
             /** Title */
             title?: string | null;
         };

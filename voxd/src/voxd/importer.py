@@ -111,7 +111,8 @@ def import_job(services: Services, ctx: JobContext, spec: dict[str, Any]) -> dic
         folder = dubbing.dub_dir(services, dub_id)
         source = folder / f"source{path.suffix}"
         path.rename(source)
-        dubbing.start_dub(services, dub_id, source.name, title, spec["target_language"], spec.get("source_language"))
+        wanted = spec.get("speakers") or "auto"
+        dubbing.start_dub(services, dub_id, source.name, title, spec["target_language"], spec.get("source_language"), wanted if wanted == "auto" else int(wanted))
         return {"dub_id": dub_id, "title": title}
     transcript_id = uuid.uuid4().hex
     job = services.jobs.submit("transcribe", f"Transcribing {title}", {"audio": path.name, "language": spec.get("language"), "model": None, "title": title, "transcript_id": transcript_id})

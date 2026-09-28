@@ -245,6 +245,47 @@ def translation_model_id(src: str, dst: str) -> str:
     return f"translate-{src}-{dst}"
 
 
+DEMUCS_MODEL = ModelSpec(
+    id="demucs-htdemucs",
+    engine="separation",
+    name="Demucs",
+    tagline="Keep the music and sound effects when you dub",
+    description=(
+        "Meta's Hybrid Transformer Demucs splits a soundtrack into voice and everything else, so a dub can replace "
+        "only the speech and keep the original music, ambience and effects. Runs on the CPU or an Apple GPU; "
+        "about a minute per minute of audio on a recent Mac."
+    ),
+    license="MIT",
+    license_url="https://github.com/facebookresearch/demucs/blob/main/LICENSE",
+    homepage="https://github.com/facebookresearch/demucs",
+    files=(ModelFile("htdemucs.th", "https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/955717e8-8726e21a.th", 84_141_911,
+                     "8726e21a993978c7ba086d3872e7608d7d5bfca646ca4aca459ffda844faa8b4"),),
+    languages=("multilingual",),
+    min_ram_gb=4,
+    voice_count=0,
+    runtime="separation",
+    kind="separation",
+)
+
+_CAMPPLUS = "https://github.com/k2-fsa/sherpa-onnx/releases/download/speaker-recongition-models/3dspeaker_speech_campplus_sv_en_voxceleb_16k.onnx"
+SPEAKER_MODEL = ModelSpec(
+    id="speakers-campplus",
+    engine="speakers",
+    name="Speaker detection",
+    tagline="Tells voices apart",
+    description="CAM++ speaker-embedding model from 3D-Speaker (VoxCeleb), run with ONNX Runtime.",
+    license="Apache-2.0",
+    license_url="https://github.com/modelscope/3D-Speaker/blob/main/LICENSE",
+    homepage="https://github.com/modelscope/3D-Speaker",
+    files=(ModelFile("campplus.onnx", _CAMPPLUS, 29_596_978, "357a834f702b80161e5b981182c038e18553c1f2ca752ed6cec2052365d4129b"),),
+    languages=("multilingual",),
+    min_ram_gb=1,
+    voice_count=0,
+    runtime="whisper",
+    kind="speakers",
+    hidden=True,
+)
+
 TRANSLATION_MODELS: tuple[ModelSpec, ...] = tuple(
     ModelSpec(
         id=translation_model_id(src, dst),
@@ -271,7 +312,7 @@ TRANSLATION_MODELS: tuple[ModelSpec, ...] = tuple(
 @dataclass
 class ModelStore:
     root: Path
-    catalog: tuple[ModelSpec, ...] = CATALOG + TRANSLATION_MODELS
+    catalog: tuple[ModelSpec, ...] = CATALOG + TRANSLATION_MODELS + (SPEAKER_MODEL, DEMUCS_MODEL)
     mirror: str = ""
     _by_id: dict[str, ModelSpec] = field(init=False)
 

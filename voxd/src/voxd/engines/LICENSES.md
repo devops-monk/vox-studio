@@ -16,5 +16,7 @@ Add a row here before merging a new engine.
 | `whisper` | `faster-whisper` + CTranslate2 + PyAV (FFmpeg, LGPL build) in an isolated runtime | MIT / MIT / BSD (LGPL FFmpeg libs) | https://github.com/SYSTRAN/faster-whisper |
 | (dubbing) | Argos Translate packages, 9 languages via English (downloaded on request, SHA-256 pinned) | MIT / CC0 (Argos); trained on OPUS corpora | https://github.com/argosopentech/argos-translate |
 | (dubbing) | SentencePiece (in the Whisper runtime) | Apache-2.0 | https://github.com/google/sentencepiece |
+| (dubbing) | CAM++ speaker-embedding model from 3D-Speaker (VoxCeleb, ONNX export by sherpa-onnx; downloaded on first use, SHA-256 pinned) | Apache-2.0 | https://github.com/modelscope/3D-Speaker |
+| (dubbing) | Hybrid Transformer Demucs weights (`htdemucs`, SHA-256 pinned) + `demucs` 4.0.1 and PyTorch in an isolated runtime, on request | MIT / BSD-3 | https://github.com/facebookresearch/demucs |
 
 > **Note on GPL components:** `phonemizer` and the espeak-ng library are installed into voxd's runtime by `uv` on the user's machine; they are not part of VoxStudio's source or app bundle. If a future release starts **bundling** the Python runtime (M16 packaging), review this — either ship those components' source per GPL-3.0 or switch to a permissively-licensed phonemizer.

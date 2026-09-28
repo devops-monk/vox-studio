@@ -9,6 +9,7 @@ Pipeline (two jobs):
 
 from __future__ import annotations
 
+import logging
 import time
 import uuid
 import wave
@@ -19,6 +20,8 @@ import numpy as np
 
 from .engines.base import EngineError
 from .models import TRANSLATION_LANGUAGES, translation_model_id
+from . import speakers
+from .jobs import JobCancelled
 from .pronounce import pronouncer
 from .store import Dub
 from .transcripts import to_srt, to_vtt
@@ -45,8 +48,10 @@ DEFAULT_VOICES: dict[str, list[tuple[str, str]]] = {
     "zh": [("kokoro", "zf_xiaobei"), ("system", "Tingting")],
 }
 
+log = logging.getLogger("voxd.dubbing")
 
-def start_dub(services: Services, dub_id: str, source_file: str, title: str, target: str, source_lang: str | None) -> Dub:
+
+def start_dub(services: Services, dub_id: str, source_file: str, title: str, target: str, source_lang: str | None, speakers: str | int = "auto") -> Dub:
     """Record a new dub whose source is already in its folder, and start preparing it."""
     now = time.time()
     d = Dub(
@@ -55,7 +60,7 @@ def start_dub(services: Services, dub_id: str, source_file: str, title: str, tar
         created_at=now, updated_at=now,
     )
     services.store.add_dub(d)
-    services.jobs.submit("dub.prepare", f"Preparing {d.title}", {"dub_id": dub_id, "source_lang": source_lang})
+    services.jobs.submit("dub.prepare", f"Preparing {d.title}", {"dub_id": dub_id, "source_lang": source_lang, "speakers": speakers})
     return d
 
 
@@ -81,6 +86,29 @@ def default_voice(services: Services, lang: str) -> dict[str, str] | None:
             if v.language.split("-")[0] == lang:
                 return {"engine": info.id, "voice": v.id}
     return None
+
+
+def default_cast(services: Services, lang: str, speakers: list[str]) -> dict[str, dict[str, str] | None]:
+    """A different voice for each speaker where possible: the usual default first, then other voices
+    in the language, alternating female and male when the engine says which is which."""
+    first = default_voice(services, lang)
+    pool: list[tuple[str, str, str | None]] = []
+    for info in services.registry.info():
+        if info.available and "tts" in info.capabilities and info.id != "chatterbox":
+            pool += [(info.id, v.id, v.gender) for v in services.registry.get(info.id).voices() if v.language.split("-")[0] == lang]
+    pool.sort(key=lambda p: p[0] != "kokoro")  # natural voices first
+    chosen: list[dict[str, str] | None] = [first]
+    used = {(first["engine"], first["voice"])} if first else set()
+    for i in range(1, len(speakers)):
+        prev_gender = next((g for e, v, g in pool if chosen[-1] and (e, v) == (chosen[-1]["engine"], chosen[-1]["voice"])), None)
+        fresh = [p for p in pool if (p[0], p[1]) not in used]
+        pick = next((p for p in fresh if prev_gender and p[2] and p[2] != prev_gender), fresh[0] if fresh else None)
+        if pick:
+            used.add((pick[0], pick[1]))
+            chosen.append({"engine": pick[0], "voice": pick[1]})
+        else:
+            chosen.append(first)
+    return dict(zip(speakers, chosen))
 
 
 # ------------------------------------------------------------------ translation
@@ -153,13 +181,26 @@ def prepare(services: Services, ctx: JobContext, spec: dict[str, Any]) -> dict[s
         if not segments:
             raise EngineError("No speech was found in this file")
 
-        packages = ensure_translation(services, ctx, src, dub.target_lang, (0.6, 0.85))
+        wanted = spec.get("speakers", "auto")
+        if wanted != 1 and len(segments) > 1:
+            try:
+                count = speakers.detect(services, ctx, speech, segments, None if wanted == "auto" else int(wanted), (0.6, 0.66))
+                log.info("dub %s: %d speaker(s)", dub.id, count)
+            except JobCancelled:
+                raise
+            except Exception as exc:  # speaker detection is a nicety (e.g. offline): never fail the dub over it
+                log.warning("speaker detection failed for %s: %s", dub.id, exc)
+                for seg in segments:
+                    seg["speaker"] = "S1"
+
+        packages = ensure_translation(services, ctx, src, dub.target_lang, (0.66, 0.85))
         ctx.progress(0.88, f"Translating into {LANGUAGES[dub.target_lang]}")
         texts = translate(services, [s["text"] for s in segments], packages) if packages else [s["text"] for s in segments]
         for seg, text in zip(segments, texts):
             seg["translation"] = text
 
-        cast = {"S1": default_voice(services, dub.target_lang)}  # None when no voice speaks the language yet
+        # None for a speaker when no voice speaks the language yet.
+        cast = default_cast(services, dub.target_lang, sorted({s["speaker"] for s in segments}, key=lambda x: int(x[1:])))
         services.store.update_dub(
             dub.id, status="ready", source_lang=src, has_video=info["has_video"], duration_s=info["duration"] or result["duration"],
             segments=segments, cast=cast, error=None,
@@ -242,13 +283,28 @@ def render(services: Services, ctx: JobContext, spec: dict[str, Any]) -> dict[st
 
         ctx.progress(0.82, "Mixing")
         stereo = np.stack([track, track], axis=1)
-        if dub.mix == "duck":
+        if dub.mix in ("duck", "keep"):
             original = folder / "original-44k.wav"
             services.media.call("extract", path=str(folder / dub.source_file), out=str(original), rate=MIX_RATE, channels=2)
-            with wave.open(str(original), "rb") as w:
+            under, gain = original, DUCK_GAIN
+            if dub.mix == "keep":
+                # The original soundtrack without its voices (cached: separation takes a while).
+                background = folder / "background-44k.wav"
+                if not background.exists():
+                    ctx.progress(0.82, "Separating the music and effects")
+
+                    def sep_progress(x: float) -> None:
+                        ctx.check()
+                        ctx.progress(0.82 + 0.08 * x, f"Separating the music and effects… {int(x * 100)}%")
+
+                    tmp = folder / ".background-44k.wav"
+                    services.separator.separate(original, tmp, sep_progress)
+                    tmp.rename(background)
+                under, gain = background, 1.0
+            with wave.open(str(under), "rb") as w:
                 bg = np.frombuffer(w.readframes(w.getnframes()), dtype="<i2").astype(np.float32).reshape(-1, 2) / 32768.0
             n = min(len(bg), len(stereo))
-            stereo[:n] += bg[:n] * DUCK_GAIN
+            stereo[:n] += bg[:n] * gain
         stereo = stereo[: int(total * MIX_RATE)]
         peak = float(np.max(np.abs(stereo))) if len(stereo) else 0.0
         if peak > 0.98:  # never clip
@@ -262,7 +318,7 @@ def render(services: Services, ctx: JobContext, spec: dict[str, Any]) -> dict[st
 
         output: dict[str, Any] = {"audio": "dub.wav", "rendered_at": time.time()}
         if dub.has_video:
-            ctx.progress(0.9, "Writing the video")
+            ctx.progress(0.92, "Writing the video")
             services.media.call("mux", video=str(folder / dub.source_file), audio=str(out_wav), out=str(folder / "dub.mp4"))
             output["video"] = "dub.mp4"
         for f in scratch.glob("*.wav"):

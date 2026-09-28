@@ -57,6 +57,8 @@ class FakeMedia:
             return {}
         if op == "translate":
             return {"texts": [f"EN({t})" for t in p["texts"]]}
+        if op == "embed":  # two clearly different voices
+            return {"embeddings": [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]][: len(p["spans"])]}
         raise AssertionError(op)
 
 
@@ -74,8 +76,8 @@ def ctx(tmp_path):
         yield c, media, tmp_path
 
 
-def create(client, target="en"):
-    res = client.post("/v1/dubs", data={"target_language": target}, files={"file": ("clip.mp4", b"video bytes", "video/mp4")})
+def create(client, target="en", speakers="1"):
+    res = client.post("/v1/dubs", data={"target_language": target, "speakers": speakers}, files={"file": ("clip.mp4", b"video bytes", "video/mp4")})
     assert res.status_code == 201, res.text
     return res.json()
 
@@ -171,3 +173,59 @@ def test_languages_endpoint(ctx):
     langs = {l["code"]: l for l in client.get("/v1/dubs/languages").json()}
     assert set(langs) == {"en", "es", "fr", "de", "it", "pt", "hi", "ja", "zh"}
     assert langs["en"]["has_voice"] is True and langs["ja"]["has_voice"] is False
+
+
+def test_speaker_detection_gives_each_speaker_a_voice(ctx, monkeypatch):
+    from voxd import speakers
+
+    monkeypatch.setattr(speakers, "MIN_RELIABLE_S", 0.5)  # the fake lines are short
+    client, media, tmp = ctx
+    model = tmp / "models" / "speakers-campplus"
+    model.mkdir(parents=True)
+    (model / "installed.json").write_text("{}")
+    dub = create(client, speakers="auto")
+    assert wait_for(client, dub["job_id"])["status"] == "succeeded"
+    d = client.get(f"/v1/dubs/{dub['id']}").json()
+    assert [s["speaker"] for s in d["segments"]] == ["S1", "S2"] and "embed" in media.calls
+    assert set(d["cast"]) == {"S1", "S2"}
+
+
+def test_speaker_detection_failure_falls_back_to_one_speaker(ctx):
+    client, media, tmp = ctx  # the speaker model isn't installed and can't be fetched here
+    client.app.state.services.models.download = lambda *a, **k: (_ for _ in ()).throw(RuntimeError("offline"))
+    dub = create(client, speakers="auto")
+    assert wait_for(client, dub["job_id"])["status"] == "succeeded"
+    assert {s["speaker"] for s in client.get(f"/v1/dubs/{dub['id']}").json()["segments"]} == {"S1"}
+
+
+class FakeSeparator:
+    def __init__(self, ready=True):
+        self.ready, self.calls = ready, 0
+
+    def unavailable_reason(self):
+        return None if self.ready else "Keeping the background needs Demucs — download it from Models"
+
+    def separate(self, path, out, on_progress=None):
+        self.calls += 1
+        shutil.copyfile(path, out)
+        if on_progress:
+            on_progress(1.0)
+
+    def stop(self):
+        pass
+
+
+def test_keep_background_mix(ctx):
+    client, media, tmp = ctx
+    services = client.app.state.services
+    services.separator = FakeSeparator(ready=False)
+    dub = create(client)
+    wait_for(client, dub["job_id"])
+    assert client.patch(f"/v1/dubs/{dub['id']}", json={"mix": "keep"}).json()["error"] == "engine_unavailable"
+    services.separator = sep = FakeSeparator()
+    assert client.patch(f"/v1/dubs/{dub['id']}", json={"mix": "keep"}).json()["mix"] == "keep"
+    for _ in range(2):
+        job = client.post(f"/v1/dubs/{dub['id']}/render").json()
+        assert wait_for(client, job["id"])["status"] == "succeeded"
+    assert sep.calls == 1  # the separated soundtrack is reused
+    assert (tmp / "dubs" / dub["id"] / "background-44k.wav").exists()

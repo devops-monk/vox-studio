@@ -179,6 +179,72 @@ def encode(path, out, fmt):
     return {"bytes": os.path.getsize(out)}
 
 
+# ---------------------------------------------------------------- speaker embeddings
+
+_EMBEDDERS = {}
+_MEL = {}
+
+
+def _mel_banks(n_fft, rate, n_mels=80, low=20.0):
+    import numpy as np
+
+    key = (n_fft, rate, n_mels)
+    if key not in _MEL:
+        high = rate / 2
+        mel = lambda f: 1127.0 * np.log(1 + f / 700.0)  # noqa: E731 — Kaldi's mel scale
+        edges = np.linspace(mel(low), mel(high), n_mels + 2)
+        freqs = mel(np.arange(n_fft // 2 + 1) * rate / n_fft)
+        banks = np.zeros((n_mels, n_fft // 2 + 1), dtype=np.float32)
+        for m in range(n_mels):
+            left, centre, right = edges[m], edges[m + 1], edges[m + 2]
+            up = (freqs - left) / (centre - left)
+            down = (right - freqs) / (right - centre)
+            banks[m] = np.maximum(0, np.minimum(up, down))
+        _MEL[key] = banks
+    return _MEL[key]
+
+
+def fbank(samples, rate=16000):
+    """Kaldi-style 80-dim log-mel filterbank: 25 ms Povey windows every 10 ms, pre-emphasis 0.97."""
+    import numpy as np
+
+    frame, shift, n_fft = int(0.025 * rate), int(0.010 * rate), 512
+    if len(samples) < frame:
+        samples = np.pad(samples, (0, frame - len(samples)))
+    n = 1 + (len(samples) - frame) // shift
+    idx = np.arange(frame)[None, :] + shift * np.arange(n)[:, None]
+    frames = samples[idx].astype(np.float32)
+    frames -= frames.mean(axis=1, keepdims=True)  # remove DC
+    frames[:, 1:] -= 0.97 * frames[:, :-1]
+    frames[:, 0] -= 0.97 * frames[:, 0]
+    frames *= (0.5 - 0.5 * np.cos(2 * np.pi * np.arange(frame) / (frame - 1))) ** 0.85  # Povey window
+    power = np.abs(np.fft.rfft(frames, n=n_fft)) ** 2
+    feats = np.log(np.maximum(power @ _mel_banks(n_fft, rate).T, 1.1920929e-07))
+    return feats - feats.mean(axis=0, keepdims=True)  # global-mean normalisation
+
+
+def embed(path, spans, model):
+    """One L2-normalised speaker embedding per [start, end] span of a 16 kHz mono WAV."""
+    import numpy as np
+    import onnxruntime as ort
+
+    if model not in _EMBEDDERS:
+        _EMBEDDERS[model] = ort.InferenceSession(model, providers=["CPUExecutionProvider"])
+    session = _EMBEDDERS[model]
+    with wave.open(path, "rb") as w:
+        rate = w.getframerate()
+        audio = np.frombuffer(w.readframes(w.getnframes()), dtype="<i2").astype(np.float32) / 32768.0
+    out = []
+    for start, end in spans:
+        clip = audio[int(start * rate) : int(end * rate)]
+        if len(clip) < int(0.3 * rate):  # too short to say anything about the speaker
+            out.append(None)
+            continue
+        vec = session.run(None, {"x": fbank(clip, rate)[None].astype(np.float32)})[0][0]
+        out.append((vec / (np.linalg.norm(vec) + 1e-9)).round(5).tolist())
+    return out
+
+
 def _levels(samples):
     """(peak dBFS, RMS dBFS) of float samples."""
     import numpy as np
@@ -308,6 +374,8 @@ def main():
             elif op == "mux":
                 mux(req["video"], req["audio"], req["out"], progress if req.get("progress") else None)
                 result = {}
+            elif op == "embed":
+                result = {"embeddings": embed(req["path"], req["spans"], req["model"])}
             elif op == "encode":
                 result = encode(req["path"], req["out"], req["format"])
             elif op == "clean":

@@ -114,8 +114,8 @@ export const voxd = {
   dubLanguages: () => call(api().GET('/v1/dubs/languages')),
   dubs: () => call(api().GET('/v1/dubs')),
   dub: (id: string) => call(api().GET('/v1/dubs/{dub_id}', { params: { path: { dub_id: id } } })),
-  createDub: (file: File, target: string, source?: string) =>
-    upload<import('./types').Dub>('/v1/dubs', { file, target_language: target, ...(source ? { source_language: source } : {}) }, 'file'),
+  createDub: (file: File, target: string, source?: string, speakers = 'auto') =>
+    upload<import('./types').Dub>('/v1/dubs', { file, target_language: target, speakers, ...(source ? { source_language: source } : {}) }, 'file'),
   patchDub: (id: string, body: import('./schema').components['schemas']['DubPatch']) =>
     call(api().PATCH('/v1/dubs/{dub_id}', { params: { path: { dub_id: id } }, body })),
   retranslateDub: (id: string, target?: string) =>
@@ -241,7 +241,8 @@ export const voxd = {
   collection: (tag: string) => call(api().GET('/v1/tags/{tag}', { params: { path: { tag } } })),
   renameTag: (tag: string, to: string) => noContent(api().POST('/v1/tags/{tag}/rename', { params: { path: { tag } }, body: { to } })),
   deleteTag: (tag: string) => noContent(api().DELETE('/v1/tags/{tag}', { params: { path: { tag } } })),
-  importUrl: (body: import('./schema').components['schemas']['ImportUrlIn']) => call(api().POST('/v1/imports/url', { body })),
+  importUrl: (body: Omit<import('./schema').components['schemas']['ImportUrlIn'], 'speakers'> & { speakers?: string }) =>
+    call(api().POST('/v1/imports/url', { body: { speakers: 'auto', ...body } })),
   starTake: (id: string, starred: boolean) => call(api().PUT('/v1/takes/{take_id}/star', { params: { path: { take_id: id } }, body: { starred } })),
   exportTake: (id: string, path: string, overwrite = false) =>
     noContent(api().POST('/v1/takes/{take_id}/export', { params: { path: { take_id: id } }, body: { path, overwrite } })),

@@ -55,6 +55,15 @@ PACKS: dict[str, RuntimePack] = {
         check_import="chatterbox.tts",
         approx_bytes=1_300_000_000,
     ),
+    "separation": RuntimePack(
+        id="separation",
+        name="Background separation runtime (Demucs, PyTorch)",
+        python="3.11",
+        requirements=("demucs==4.0.1",),
+        excludes=(),
+        check_import="demucs.apply, demucs.states",
+        approx_bytes=900_000_000,
+    ),
     "whisper": RuntimePack(
         id="whisper",
         name="Whisper runtime (CTranslate2)",
