@@ -514,7 +514,7 @@ export function Logs() {
               size="sm"
               variant="ghost"
               onClick={() =>
-                void import('@tauri-apps/api/core').then(({ invoke }) => invoke<string | null>('log_path')).then((p) => p && revealInFinder(p))
+                void import('@tauri-apps/api/core').then(({ invoke }) => invoke<string | null>('log_path')).then((p) => void (p && revealInFinder(p)))
               }
             >
               <FolderOpen size={12} /> Show log file
