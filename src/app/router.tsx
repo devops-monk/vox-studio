@@ -12,6 +12,7 @@ import { DesignPage } from '@/features/design/design-page'
 import { HistoryPage } from '@/features/history/history-page'
 import { TranscribePage } from '@/features/transcribe/transcribe-page'
 import { DubPage } from '@/features/dub/dub-page'
+import { AudiobookPage, StoriesPage } from '@/features/longform/longform-page'
 
 const rootRoute = createRootRoute({ component: AppShell })
 
@@ -27,6 +28,8 @@ const pages: Record<string, () => React.ReactNode> = {
   '/history': HistoryPage,
   '/transcribe': TranscribePage,
   '/dub': DubPage,
+  '/stories': StoriesPage,
+  '/audiobook': AudiobookPage,
 }
 
 const routes = ALL_NAV_ITEMS.map((item) =>

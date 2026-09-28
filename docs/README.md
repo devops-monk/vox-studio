@@ -14,7 +14,7 @@ VoxStudio is a private voice studio that runs entirely on your computer. These d
 | [History](guides/history.md) | Find, replay, star, save and clean up takes |
 | [Design a voice](guides/design.md) | Describe a voice in words and fine-tune it by ear |
 | [Dub a video](guides/dub.md) | Translate and re-voice a video |
-| Stories & audiobooks *(M10)* | Long-form, multi-voice narration |
+| [Stories & audiobooks](guides/stories-audiobooks.md) | Import books, cast characters, narrate, read along, export M4B |
 | [Transcribe](guides/transcribe.md) | Files and live speech to text; fix and export |
 | [Dictation](guides/dictation.md) | Type with your voice in any app |
 
@@ -34,6 +34,7 @@ VoxStudio is a private voice studio that runs entirely on your computer. These d
 | [Models](api/reference/models.md) | `GET /v1/models`, download, remove, mirrors |
 | [Voices](api/reference/voices.md) | `GET /v1/voices`, library, favorites and tags |
 | [Custom voices](api/reference/custom-voices.md) | Create, rename or delete voices; export and import `.voxvoice` |
+| [Stories & audiobooks](api/reference/books.md) | Import EPUB/DOCX/TXT/MD, cast, resumable render, timings, M4B/MP3 |
 | [Dubbing](api/reference/dubbing.md) | Prepare, edit, cast, render and export dubs |
 | [Transcription](api/reference/transcription.md) | File jobs, transcripts, exports, `WS /v1/transcribe/live` |
 | [Voice design](api/reference/design.md) | Analyze, candidates from a description, designed voices |

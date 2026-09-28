@@ -118,6 +118,22 @@ MIGRATIONS: list[str] = [
     );
     CREATE INDEX dubs_created ON dubs(created_at DESC);
     """,
+    """
+    CREATE TABLE books (
+        id          TEXT PRIMARY KEY,
+        title       TEXT NOT NULL,
+        author      TEXT NOT NULL,
+        kind        TEXT NOT NULL,
+        language    TEXT NOT NULL,
+        speed       REAL NOT NULL,
+        chapters    TEXT NOT NULL,
+        cast_json   TEXT NOT NULL,
+        characters  TEXT NOT NULL,
+        exports     TEXT NOT NULL,
+        created_at  REAL NOT NULL,
+        updated_at  REAL NOT NULL
+    );
+    """,
 ]
 
 ACTIVE = ("queued", "running")
@@ -230,6 +246,25 @@ class Dub:
 
 
 _DUB_JSON = {"segments": "segments", "cast": "cast_json", "output": "output"}
+
+
+@dataclass
+class Book:
+    id: str
+    title: str
+    author: str
+    kind: str  # audiobook (one narrator) | story (narrator + character voices)
+    language: str
+    speed: float
+    chapters: list[dict]  # {id, title, text, render?: {file, duration_s, timings, fingerprint}}
+    cast: dict  # {narrator: {engine, voice}, characters: {name: {engine, voice} | None}}
+    characters: list[dict]  # detected: {name, lines}
+    exports: dict  # {m4b?: file, mp3?: file}
+    created_at: float
+    updated_at: float
+
+
+_BOOK_JSON = {"chapters": "chapters", "cast": "cast_json", "characters": "characters", "exports": "exports"}
 
 
 @dataclass
@@ -509,6 +544,40 @@ class Store:
                 self._db.execute("DELETE FROM dubs WHERE id = ?", (dub_id,))
         return d
 
+    # --- books --------------------------------------------------------------
+
+    def add_book(self, b: Book) -> None:
+        with self._lock:
+            self._db.execute(
+                "INSERT INTO books VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+                (b.id, b.title, b.author, b.kind, b.language, b.speed, json.dumps(b.chapters), json.dumps(b.cast),
+                 json.dumps(b.characters), json.dumps(b.exports), b.created_at, b.updated_at),
+            )
+
+    def get_book(self, book_id: str) -> Book | None:
+        row = self._db.execute("SELECT * FROM books WHERE id = ?", (book_id,)).fetchone()
+        return _book(row) if row else None
+
+    def list_books(self, kind: str | None = None) -> list[Book]:
+        sql, args = "SELECT * FROM books", ()
+        if kind:
+            sql, args = sql + " WHERE kind = ?", (kind,)
+        return [_book(r) for r in self._db.execute(sql + " ORDER BY updated_at DESC", args)]
+
+    def update_book(self, book_id: str, **fields: Any) -> Book | None:
+        fields["updated_at"] = time.time()
+        cols, vals = [], []
+        for key, value in fields.items():
+            cols.append(f"{_BOOK_JSON.get(key, key)} = ?")
+            vals.append(json.dumps(value) if key in _BOOK_JSON else value)
+        with self._lock:
+            self._db.execute(f"UPDATE books SET {', '.join(cols)} WHERE id = ?", (*vals, book_id))
+        return self.get_book(book_id)
+
+    def delete_book(self, book_id: str) -> bool:
+        with self._lock:
+            return self._db.execute("DELETE FROM books WHERE id = ?", (book_id,)).rowcount > 0
+
     # --- favorites & tags (any voice) ----------------------------------------
 
     def voice_meta(self) -> dict[tuple[str, str], VoiceMeta]:
@@ -563,4 +632,13 @@ def _dub(row: sqlite3.Row) -> Dub:
         duration_s=d["duration_s"], source_lang=d["source_lang"], target_lang=d["target_lang"], mix=d["mix"],
         segments=json.loads(d["segments"]), cast=json.loads(d["cast_json"]), output=json.loads(d["output"]),
         error=d["error"], created_at=d["created_at"], updated_at=d["updated_at"],
+    )
+
+
+def _book(row: sqlite3.Row) -> Book:
+    d = dict(row)
+    return Book(
+        id=d["id"], title=d["title"], author=d["author"], kind=d["kind"], language=d["language"], speed=d["speed"],
+        chapters=json.loads(d["chapters"]), cast=json.loads(d["cast_json"]), characters=json.loads(d["characters"]),
+        exports=json.loads(d["exports"]), created_at=d["created_at"], updated_at=d["updated_at"],
     )

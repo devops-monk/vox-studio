@@ -16,6 +16,7 @@ type Message =
   | { type: 'takes.deleted'; data: { ids: string[] } }
   | { type: 'transcripts.changed'; data: { id: string } }
   | { type: 'dubs.changed'; data: { id: string } }
+  | { type: 'books.changed'; data: { id: string } }
 
 /** Whether live events are flowing; queries fall back to polling while they aren't. */
 export const useLive = create<{ connected: boolean }>(() => ({ connected: false }))
@@ -73,6 +74,10 @@ function apply(message: Message) {
         return [job, ...rest].sort((a, b) => b.created_at - a.created_at)
       })
       // A download that stopped (cancelled/failed) changes the model's status too.
+      if (job.kind.startsWith('book.') && job.status !== 'running' && job.status !== 'queued') {
+        void queryClient.invalidateQueries({ queryKey: ['book'] })
+        void queryClient.invalidateQueries({ queryKey: ['books'] })
+      }
       if (job.kind.startsWith('dub.') && job.status !== 'running' && job.status !== 'queued') {
         void queryClient.invalidateQueries({ queryKey: ['dub'] })
         void queryClient.invalidateQueries({ queryKey: ['dubs'] })
@@ -90,6 +95,11 @@ function apply(message: Message) {
     case 'take.updated':
     case 'takes.deleted':
       void queryClient.invalidateQueries({ queryKey: ['takes'] })
+      break
+    case 'books.changed':
+      void queryClient.invalidateQueries({ queryKey: ['books'] })
+      void queryClient.invalidateQueries({ queryKey: ['book', message.data.id] })
+      void queryClient.invalidateQueries({ queryKey: ['timings', message.data.id] })
       break
     case 'dubs.changed':
       void queryClient.invalidateQueries({ queryKey: ['dubs'] })

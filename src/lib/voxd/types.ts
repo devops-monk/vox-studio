@@ -25,6 +25,16 @@ export type Dub = Schemas['DubOut']
 export type DubSummary = Schemas['DubSummaryOut']
 export type DubLine = Schemas['DubSegmentOut']
 export type DubLanguage = Schemas['DubLanguageOut']
+export type Book = Schemas['BookOut']
+export type BookSummary = Schemas['BookSummaryOut']
+export type Chapter = Schemas['ChapterOut']
+export interface Timing {
+  start: number
+  end: number
+  from: number
+  to: number
+  speaker: string | null
+}
 
 export type JobStatus = 'queued' | 'running' | 'succeeded' | 'failed' | 'cancelled'
 export const isActive = (job: Job) => job.status === 'queued' || job.status === 'running'

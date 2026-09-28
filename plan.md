@@ -181,10 +181,14 @@ Work goes one milestone at a time. Tick `[x]` only after the item is verified in
 - [ ] Follow-up: keep background music and effects via Demucs (optional runtime pack)
 - [ ] Follow-up: import from a URL
 
-### M10 — Stories & Audiobooks
-- [ ] Import txt/md/docx/epub, detect chapters and characters
-- [ ] Assign a cast, render chapters, run long renders as resumable jobs
-- [ ] Player with synced text highlighting, export m4b/mp3
+### M10 — Stories & Audiobooks ✅
+- [x] Import EPUB (spine, metadata, cover and TOC pages skipped), DOCX (heading styles), Markdown (headings), text (“Chapter …” lines) or pasted text — standard library only
+- [x] Dialogue detection and attribution (“…,” said Ann / Ann whispered, “…”); character list with line counts
+- [x] Resumable chapter rendering with per-chapter fingerprints (stale detection), narrator plus character voices, pace, paragraph pauses, sentence timings with speaker
+- [x] Export M4B (AAC, chapter markers, title/author) or MP3 via PyAV; download or save
+- [x] Stories and Audiobook pages: cover library with progress, import card (file or paste), book view with chapters, read-along reader (serif, sentence highlight with auto-scroll, click to seek, dialogue coloured by character), cast panel, player bar
+- [x] Verified: a real story rendered with system voices, and an M4B export read back with correct chapters
+- [x] Docs: books reference and guide
 
 ### M11 — Batch & Watch folders
 - [ ] Queue many texts or files, plus watch folders that auto-process new files

@@ -21,7 +21,8 @@ from ..voices import export_bundle, read_bundle
 from ..design import apply_sliders, design, parse_description, parse_recipe
 from ..transcripts import EXPORTS, LiveSession, save_live, to_text, uploads_dir
 from ..store import Transcript
-from .. import dubbing
+from .. import books, dubbing
+from ..store import Book
 from ..store import Dub
 from ..history import RETENTION_CHOICES, RETENTION_KEY, delete_takes, sweep, usage_bytes
 from ..store import DesignedVoice
@@ -38,6 +39,13 @@ from .schemas import (
     DesignStatusOut,
     DesignTargetOut,
     DeletedOut,
+    BookExportIn,
+    BookOut,
+    BookPatch,
+    BookRenderIn,
+    BookSummaryOut,
+    ChapterOut,
+    TimingsOut,
     DubLanguageOut,
     DubOut,
     DubPatch,
@@ -997,6 +1005,208 @@ def delete_dub(request: Request, dub_id: str) -> Response:
     services.store.delete_dub(dub_id)
     shutil.rmtree(dubbing.dub_dir(services, dub_id), ignore_errors=True)
     services.bus.publish("dubs.changed", {"id": dub_id})
+    return Response(status_code=204)
+
+
+# --- Stories & audiobooks ---------------------------------------------------------
+
+BOOK_JOBS = ("book.render", "book.export")
+
+
+def _book_job(services, book_id: str):
+    for kind in BOOK_JOBS:
+        if job := services.jobs.active(kind, lambda i: i.get("book_id") == book_id):
+            return job
+    return None
+
+
+def _words(text: str) -> int:
+    return len(text.split())
+
+
+def _chapter_out(b: Book, c: dict) -> ChapterOut:
+    render = c.get("render")
+    fresh = render and render.get("fingerprint") == books.chapter_fingerprint(c, b.kind, b.cast, b.speed)
+    return ChapterOut(
+        id=c["id"], title=c["title"], text=c["text"], words=_words(c["text"]),
+        status="rendered" if fresh else "stale" if render else "not_rendered",
+        duration_s=render["duration_s"] if render else None,
+        audio_url=f"/v1/books/{b.id}/chapters/{c['id']}/audio" if render else None,
+    )
+
+
+def _book_out(services, b: Book) -> BookOut:
+    job = _book_job(services, b.id)
+    return BookOut(
+        id=b.id, title=b.title, author=b.author, kind=b.kind, language=b.language, speed=b.speed,
+        chapters=[_chapter_out(b, c) for c in b.chapters], cast=b.cast, characters=b.characters,
+        exports={fmt: f"/v1/books/{b.id}/export/{fmt}" for fmt in b.exports}, job_id=job.id if job else None,
+        created_at=b.created_at, updated_at=b.updated_at,
+    )
+
+
+def _get_book(services, book_id: str) -> Book:
+    b = services.store.get_book(book_id)
+    if b is None:
+        raise HTTPException(404, detail=("not_found", "No such book"))
+    return b
+
+
+@router.post("/books", response_model=BookOut, status_code=201, responses=ERRORS, tags=["Books"], summary="Import a book or story")
+async def create_book(
+    request: Request,
+    file: UploadFile | None = File(None, description=".txt, .md, .docx or .epub (max 50 MB)"),
+    text: str | None = Form(None, max_length=2_000_000, description="Or paste text directly"),
+    title: str | None = Form(None, max_length=200),
+    kind: str = Form("audiobook", pattern="^(audiobook|story)$"),
+    language: str = Form("en", max_length=8),
+) -> BookOut:
+    """Splits the document into chapters (headings / “Chapter …” lines / EPUB spine) and finds speaking
+    characters. A default narrator voice for `language` is chosen."""
+    services = _services(request)
+    try:
+        if file is not None:
+            imported = books.import_document(file.filename or "book.txt", await file.read())
+        elif text and text.strip():
+            imported = books.import_document("pasted.txt", text.encode())
+        else:
+            raise EngineError("Upload a file or paste some text")
+    except EngineError as exc:
+        raise HTTPException(400, detail=("invalid_document", str(exc))) from exc
+    chapters = [{"id": uuid.uuid4().hex[:8], **c} for c in imported.chapters]
+    characters = books.find_characters(chapters)
+    narrator = dubbing.default_voice(services, language)
+    now = time.time()
+    b = Book(
+        id=uuid.uuid4().hex, title=title or imported.title, author=imported.author, kind=kind, language=language, speed=1.0,
+        chapters=chapters, cast={"narrator": narrator, "characters": {c["name"]: None for c in characters}},
+        characters=characters, exports={}, created_at=now, updated_at=now,
+    )
+    services.store.add_book(b)
+    services.bus.publish("books.changed", {"id": b.id})
+    return _book_out(services, b)
+
+
+@router.get("/books", response_model=list[BookSummaryOut], tags=["Books"], summary="List books and stories")
+def list_books(request: Request, kind: str | None = Query(None, pattern="^(audiobook|story)$")) -> list[BookSummaryOut]:
+    out = []
+    for b in _services(request).store.list_books(kind):
+        out.append(BookSummaryOut(
+            id=b.id, title=b.title, author=b.author, kind=b.kind, chapters=len(b.chapters),
+            rendered=sum(1 for c in b.chapters if c.get("render")), words=sum(_words(c["text"]) for c in b.chapters), updated_at=b.updated_at,
+        ))
+    return out
+
+
+@router.get("/books/{book_id}", response_model=BookOut, responses=ERRORS, tags=["Books"], summary="Get a book")
+def get_book(request: Request, book_id: str) -> BookOut:
+    services = _services(request)
+    return _book_out(services, _get_book(services, book_id))
+
+
+@router.patch("/books/{book_id}", response_model=BookOut, responses=ERRORS, tags=["Books"], summary="Edit a book")
+def patch_book(request: Request, book_id: str, body: BookPatch) -> BookOut:
+    """Chapters whose text, voices or pace change show as `stale` until rendered again."""
+    services = _services(request)
+    b = _get_book(services, book_id)
+    fields: dict = {k: v for k, v in body.model_dump(exclude={"cast", "chapters"}).items() if v is not None}
+    if body.cast is not None:
+        cast = {**b.cast}
+        if "narrator" in body.cast:
+            cast["narrator"] = body.cast["narrator"]
+        if "characters" in body.cast:
+            cast["characters"] = {**(b.cast.get("characters") or {}), **body.cast["characters"]}
+        fields["cast"] = cast
+    if body.chapters is not None:
+        edits = {c.id: c for c in body.chapters}
+        chapters = []
+        for c in b.chapters:
+            e = edits.get(c["id"])
+            if e:
+                c = {**c, **{k: v for k, v in e.model_dump().items() if v is not None and k != "id"}}
+            chapters.append(c)
+        fields["chapters"] = chapters
+        fields["characters"] = books.find_characters(chapters)
+        known = (fields.get("cast") or b.cast).get("characters") or {}
+        new_cast = {**(fields.get("cast") or b.cast)}
+        new_cast["characters"] = {**{c["name"]: None for c in fields["characters"]}, **known}
+        fields["cast"] = new_cast
+    updated = services.store.update_book(book_id, **fields) if fields else b
+    services.bus.publish("books.changed", {"id": book_id})
+    return _book_out(services, updated)
+
+
+@router.delete("/books/{book_id}", status_code=204, responses=ERRORS, tags=["Books"], summary="Delete a book")
+def delete_book(request: Request, book_id: str) -> Response:
+    services = _services(request)
+    _get_book(services, book_id)
+    if job := _book_job(services, book_id):
+        services.jobs.cancel(job.id)
+    services.store.delete_book(book_id)
+    shutil.rmtree(books.book_dir(services, book_id), ignore_errors=True)
+    services.bus.publish("books.changed", {"id": book_id})
+    return Response(status_code=204)
+
+
+@router.post("/books/{book_id}/render", response_model=JobOut, status_code=202, responses=ERRORS, tags=["Books"], summary="Render chapters")
+def render_book(request: Request, book_id: str, body: BookRenderIn) -> JobOut:
+    """Renders the chapters (default: all) that aren't already rendered and unchanged. Safe to run again after an interruption — it resumes."""
+    services = _services(request)
+    b = _get_book(services, book_id)
+    if _book_job(services, book_id):
+        raise HTTPException(409, detail=("busy", "This book is already rendering"))
+    if not (b.cast.get("narrator") or {}).get("voice"):
+        raise HTTPException(400, detail=("missing_voice", "Choose a narrator voice first"))
+    return _job_out(services.jobs.submit("book.render", f"Narrating {b.title}", {"book_id": book_id, "chapters": body.chapters}))
+
+
+@router.get("/books/{book_id}/chapters/{chapter_id}/audio", response_class=FileResponse, responses=ERRORS, tags=["Books"], summary="Chapter audio")
+def chapter_audio(request: Request, book_id: str, chapter_id: str) -> FileResponse:
+    services = _services(request)
+    c = next((c for c in _get_book(services, book_id).chapters if c["id"] == chapter_id), None)
+    if not c or not c.get("render"):
+        raise HTTPException(404, detail=("not_found", "This chapter hasn't been rendered"))
+    return FileResponse(books.book_dir(services, book_id) / c["render"]["file"], media_type="audio/wav")
+
+
+@router.get("/books/{book_id}/chapters/{chapter_id}/timings", response_model=TimingsOut, responses=ERRORS, tags=["Books"], summary="Sentence timings for highlighting")
+def chapter_timings(request: Request, book_id: str, chapter_id: str) -> TimingsOut:
+    c = next((c for c in _get_book(_services(request), book_id).chapters if c["id"] == chapter_id), None)
+    if not c or not c.get("render"):
+        raise HTTPException(404, detail=("not_found", "This chapter hasn't been rendered"))
+    return TimingsOut(duration_s=c["render"]["duration_s"], timings=c["render"]["timings"])
+
+
+@router.post("/books/{book_id}/export", response_model=JobOut, status_code=202, responses=ERRORS, tags=["Books"], summary="Export the whole book")
+def export_book(request: Request, book_id: str, body: BookExportIn) -> JobOut:
+    """M4B includes chapter markers (Apple Books, most audiobook players). Every chapter must be rendered."""
+    services = _services(request)
+    b = _get_book(services, book_id)
+    if any(not c.get("render") for c in b.chapters):
+        raise HTTPException(409, detail=("not_rendered", "Render every chapter first"))
+    if _book_job(services, book_id):
+        raise HTTPException(409, detail=("busy", "Wait for the current step to finish"))
+    return _job_out(services.jobs.submit("book.export", f"Exporting {b.title} ({body.format.upper()})", {"book_id": book_id, "format": body.format}))
+
+
+@router.get("/books/{book_id}/export/{fmt}", response_class=FileResponse, responses=ERRORS, tags=["Books"], summary="Download an export")
+def download_book(request: Request, book_id: str, fmt: str) -> FileResponse:
+    services = _services(request)
+    b = _get_book(services, book_id)
+    if fmt not in b.exports:
+        raise HTTPException(404, detail=("not_found", "Not exported yet"))
+    safe = "".join(c if c.isalnum() or c in " -_" else "_" for c in b.title).strip() or "book"
+    return FileResponse(books.book_dir(services, book_id) / b.exports[fmt], filename=f"{safe}.{fmt}")
+
+
+@router.post("/books/{book_id}/save", status_code=204, responses=ERRORS, tags=["Books"], summary="Save an export to a file")
+def save_book(request: Request, book_id: str, body: ExportPathIn, format: str = Query(pattern="^(m4b|mp3)$")) -> Response:
+    services = _services(request)
+    b = _get_book(services, book_id)
+    if format not in b.exports:
+        raise HTTPException(409, detail=("not_exported", "Export the book first"))
+    dest = _destination(body.path, f".{format}", body.overwrite)
+    shutil.copyfile(books.book_dir(services, book_id) / b.exports[format], dest)
     return Response(status_code=204)
 
 

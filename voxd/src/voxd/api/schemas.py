@@ -343,3 +343,68 @@ class DubSaveIn(BaseModel):
 class PreviewOut(BaseModel):
     audio_url: str
     duration_s: float
+
+
+class ChapterOut(BaseModel):
+    id: str
+    title: str
+    text: str
+    words: int
+    status: str = Field(description="`not_rendered`, `rendered` or `stale` (edited since rendering)")
+    duration_s: float | None = None
+    audio_url: str | None = None
+
+
+class BookSummaryOut(BaseModel):
+    id: str
+    title: str
+    author: str
+    kind: str = Field(description="`audiobook` (one narrator) or `story` (narrator plus character voices)")
+    chapters: int
+    rendered: int
+    words: int
+    updated_at: float
+
+
+class BookOut(BaseModel):
+    id: str
+    title: str
+    author: str
+    kind: str
+    language: str
+    speed: float
+    chapters: list[ChapterOut]
+    cast: dict = Field(description="`{narrator: {engine, voice}, characters: {Name: {engine, voice} | null}}`")
+    characters: list[dict] = Field(description="Speaking characters found in the text: `{name, lines}`")
+    exports: dict[str, str] = Field(description="Finished exports: format → download URL")
+    job_id: str | None = None
+    created_at: float
+    updated_at: float
+
+
+class ChapterPatch(BaseModel):
+    id: str
+    title: str | None = Field(None, max_length=120)
+    text: str | None = Field(None, max_length=500_000)
+
+
+class BookPatch(BaseModel):
+    title: str | None = Field(None, min_length=1, max_length=200)
+    author: str | None = Field(None, max_length=200)
+    kind: str | None = Field(None, pattern="^(audiobook|story)$")
+    speed: float | None = Field(None, ge=0.7, le=1.4)
+    cast: dict | None = Field(None, description="Partial cast update: narrator and/or characters")
+    chapters: list[ChapterPatch] | None = None
+
+
+class BookRenderIn(BaseModel):
+    chapters: list[str] | None = Field(None, description="Chapter ids; default all")
+
+
+class BookExportIn(BaseModel):
+    format: str = Field(pattern="^(m4b|mp3)$")
+
+
+class TimingsOut(BaseModel):
+    duration_s: float
+    timings: list[dict] = Field(description="`{start, end, from, to, speaker}`: seconds, character offsets into the chapter text, and the character speaking (null for narration)")

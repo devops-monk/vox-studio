@@ -129,6 +129,31 @@ export const voxd = {
   dubSubtitlesUrl: (id: string, format: 'srt' | 'vtt') => withToken(`/v1/dubs/${id}/subtitles`) + `${useVoxd.getState().state.token ? '&' : '?'}format=${format}`,
   mediaUrl: (path: string) => withToken(path),
 
+  books: (kind?: 'audiobook' | 'story') => call(api().GET('/v1/books', { params: { query: kind ? { kind } : {} } })),
+  book: (id: string) => call(api().GET('/v1/books/{book_id}', { params: { path: { book_id: id } } })),
+  importBook: (input: { file?: File; text?: string; kind: string; title?: string; language?: string }) =>
+    upload<import('./types').Book>(
+      '/v1/books',
+      {
+        ...(input.file ? { file: input.file } : {}),
+        ...(input.text ? { text: input.text } : {}),
+        kind: input.kind,
+        language: input.language ?? 'en',
+        ...(input.title ? { title: input.title } : {}),
+      },
+      'file',
+    ),
+  patchBook: (id: string, body: import('./schema').components['schemas']['BookPatch']) =>
+    call(api().PATCH('/v1/books/{book_id}', { params: { path: { book_id: id } }, body })),
+  deleteBook: (id: string) => noContent(api().DELETE('/v1/books/{book_id}', { params: { path: { book_id: id } } })),
+  renderBook: (id: string, chapters?: string[]) =>
+    call(api().POST('/v1/books/{book_id}/render', { params: { path: { book_id: id } }, body: { chapters: chapters ?? null } })),
+  chapterTimings: (id: string, chapter: string) =>
+    call(api().GET('/v1/books/{book_id}/chapters/{chapter_id}/timings', { params: { path: { book_id: id, chapter_id: chapter } } })),
+  exportBook: (id: string, format: 'm4b' | 'mp3') => call(api().POST('/v1/books/{book_id}/export', { params: { path: { book_id: id } }, body: { format } })),
+  saveBook: (id: string, format: 'm4b' | 'mp3', path: string) =>
+    noContent(api().POST('/v1/books/{book_id}/save', { params: { path: { book_id: id }, query: { format } }, body: { path, overwrite: true } })),
+
   starTake: (id: string, starred: boolean) => call(api().PUT('/v1/takes/{take_id}/star', { params: { path: { take_id: id } }, body: { starred } })),
   exportTake: (id: string, path: string, overwrite = false) =>
     noContent(api().POST('/v1/takes/{take_id}/export', { params: { path: { take_id: id } }, body: { path, overwrite } })),

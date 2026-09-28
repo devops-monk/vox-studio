@@ -28,6 +28,7 @@ from .runtimes import PACKS, RuntimeManager
 from .design import TraitStore
 from .history import sweeper
 from .media import Media
+from .books import export_book as book_export, render_book as book_render
 from .dubbing import prepare as dub_prepare, render as dub_render, retranslate as dub_retranslate
 from .speech import render_long
 from .transcripts import transcribe_file
@@ -122,6 +123,8 @@ def create_app(
         services.jobs.register("dub.prepare", partial(dub_prepare, services), lane="asr")
         services.jobs.register("dub.render", partial(dub_render, services))
         services.jobs.register("dub.translate", partial(dub_retranslate, services), lane="asr")
+        services.jobs.register("book.render", partial(book_render, services))
+        services.jobs.register("book.export", partial(book_export, services), lane="media")
         services.jobs.start()
         cleanup = asyncio.create_task(sweeper(services), name="retention")
         services.lifecycle.set(Phase.LOADING_ENGINES, "Checking engines")

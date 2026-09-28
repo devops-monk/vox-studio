@@ -250,3 +250,20 @@ export function useDub(id: string | null) {
     refetchInterval: (q) => (!live && q.state.data?.job_id ? POLL_MS : false),
   })
 }
+
+export const useBooks = (kind?: 'audiobook' | 'story') => useQuery({ queryKey: ['books', kind ?? 'all'], queryFn: () => voxd.books(kind), enabled: useReady() })
+export function useBook(id: string | null) {
+  const live = useLive((s) => s.connected)
+  return useQuery({
+    queryKey: ['book', id],
+    queryFn: () => voxd.book(id!),
+    enabled: useReady() && !!id,
+    refetchInterval: (q) => (!live && q.state.data?.job_id ? POLL_MS : false),
+  })
+}
+export const useChapterTimings = (bookId: string, chapterId: string | null, enabled: boolean) =>
+  useQuery({
+    queryKey: ['timings', bookId, chapterId],
+    queryFn: () => voxd.chapterTimings(bookId, chapterId!),
+    enabled: useReady() && !!chapterId && enabled,
+  })

@@ -94,6 +94,46 @@ def mux(video_path, audio_wav, out, progress=None):
             dst.mux(packet)
 
 
+def encode_book(wavs, titles, out, fmt, title="", author=""):
+    """Concatenate chapter WAVs into one M4B (AAC with chapter markers) or MP3."""
+    import av
+    import numpy as np
+    from fractions import Fraction
+
+    container = av.open(out, "w", format="ipod" if fmt == "m4b" else "mp3")
+    if title:
+        container.metadata["title"] = title
+        container.metadata["album"] = title
+    if author:
+        container.metadata["artist"] = author
+    rate = None
+    stream = None
+    chapters, pts = [], 0
+    for i, (path, chapter_title) in enumerate(zip(wavs, titles)):
+        with wave.open(path, "rb") as w:
+            if rate is None:
+                rate = w.getframerate()
+                stream = container.add_stream("aac" if fmt == "m4b" else "libmp3lame", rate=rate)
+                stream.layout = "mono"
+                stream.bit_rate = 96_000 if fmt == "m4b" else 128_000
+            samples = np.frombuffer(w.readframes(w.getnframes()), dtype="<i2").astype(np.float32)[None, :] / 32768.0
+        start = pts
+        step = 1152 if fmt == "mp3" else 1024
+        for j in range(0, samples.shape[1], step):
+            frame = av.AudioFrame.from_ndarray(np.ascontiguousarray(samples[:, j : j + step]), format="fltp", layout="mono")
+            frame.sample_rate = rate
+            frame.pts = pts
+            pts += frame.samples
+            for packet in stream.encode(frame):
+                container.mux(packet)
+        chapters.append({"id": i + 1, "start": start, "end": pts, "time_base": Fraction(1, rate), "metadata": {"title": chapter_title}})
+    for packet in stream.encode(None):
+        container.mux(packet)
+    if fmt == "m4b":
+        container.set_chapters(chapters)
+    container.close()
+
+
 _translators = {}
 
 
@@ -142,6 +182,9 @@ def main():
                 result = {}
             elif op == "mux":
                 mux(req["video"], req["audio"], req["out"], progress if req.get("progress") else None)
+                result = {}
+            elif op == "encode_book":
+                encode_book(req["wavs"], req["titles"], req["out"], req["format"], req.get("title", ""), req.get("author", ""))
                 result = {}
             elif op == "translate":
                 result = {"texts": translate(req["package"], req["texts"])}

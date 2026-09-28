@@ -23,6 +23,7 @@ Every message is JSON: `{"type": "...", "data": {...}}`.
 | `design.ready` | `{"voices": 28}` | Voice analysis for design finished |
 | `transcripts.changed` | `{"id": …}` | A transcript was created, edited or deleted |
 | `dubs.changed` | `{"id": …}` | A dub's status or content changed |
+| `books.changed` | `{"id": …}` | A book was imported, edited, narrated or exported |
 | `take.created` | a [take object](takes.md#take-object), without `audio_url` | Whenever a new take is saved, by any client |
 
 More event types will be added over time. Ignore any `type` you don't recognize.
