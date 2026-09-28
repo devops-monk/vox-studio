@@ -5574,6 +5574,430 @@
           }
         }
       }
+    },
+    "/v1/tools/clean": {
+      "post": {
+        "tags": [
+          "Tools"
+        ],
+        "summary": "Clean up a recording",
+        "description": "Runs in the background; on success `result.take_id` is the cleaned take, plus before/after levels.",
+        "operationId": "clean_audio_v1_tools_clean_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_clean_audio_v1_tools_clean_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobOut"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/tools/convert": {
+      "post": {
+        "tags": [
+          "Tools"
+        ],
+        "summary": "Convert a recording to another voice",
+        "description": "Keeps the words, timing and delivery of the recording and swaps the voice (speech-to-speech).\nNeeds the Chatterbox engine. The result carries the same inaudible AI watermark as other Chatterbox audio.",
+        "operationId": "convert_voice_v1_tools_convert_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_convert_voice_v1_tools_convert_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobOut"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/pronunciations": {
+      "get": {
+        "tags": [
+          "Pronunciations"
+        ],
+        "summary": "List pronunciations",
+        "operationId": "list_pronunciations_v1_pronunciations_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PronunciationOut"
+                  },
+                  "type": "array",
+                  "title": "Response List Pronunciations V1 Pronunciations Get"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Pronunciations"
+        ],
+        "summary": "Add a pronunciation",
+        "description": "From now on every engine says `say` wherever `term` appears as a whole word.",
+        "operationId": "add_pronunciation_v1_pronunciations_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PronunciationIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PronunciationOut"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/pronunciations/{pid}": {
+      "patch": {
+        "tags": [
+          "Pronunciations"
+        ],
+        "summary": "Edit a pronunciation",
+        "operationId": "patch_pronunciation_v1_pronunciations__pid__patch",
+        "parameters": [
+          {
+            "name": "pid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Pid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PronunciationPatch"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PronunciationOut"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Pronunciations"
+        ],
+        "summary": "Remove a pronunciation",
+        "operationId": "delete_pronunciation_v1_pronunciations__pid__delete",
+        "parameters": [
+          {
+            "name": "pid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Pid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/pronunciations/preview": {
+      "post": {
+        "tags": [
+          "Pronunciations"
+        ],
+        "summary": "See what an engine will be asked to say",
+        "operationId": "preview_pronunciations_v1_pronunciations_preview_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PronunciationPreviewIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PronunciationPreviewOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -5854,6 +6278,102 @@
           "text"
         ],
         "title": "BatchSpeechItem"
+      },
+      "Body_clean_audio_v1_tools_clean_post": {
+        "properties": {
+          "file": {
+            "anyOf": [
+              {
+                "type": "string",
+                "contentMediaType": "application/octet-stream"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File",
+            "description": "Audio or video to clean (send this or `take_id`)"
+          },
+          "take_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Take Id",
+            "description": "Clean an existing take instead of a file"
+          },
+          "denoise": {
+            "type": "boolean",
+            "title": "Denoise",
+            "description": "Remove steady background noise (hiss, hum, fans) and low rumble",
+            "default": true
+          },
+          "trim": {
+            "type": "boolean",
+            "title": "Trim",
+            "description": "Shorten silences longer than 0.6 s and cut dead air at both ends",
+            "default": false
+          },
+          "normalize": {
+            "type": "boolean",
+            "title": "Normalize",
+            "description": "Even out loudness to `loudness`",
+            "default": true
+          },
+          "loudness": {
+            "type": "number",
+            "maximum": -10.0,
+            "minimum": -30.0,
+            "title": "Loudness",
+            "description": "Target in LUFS: \u221216 podcasts and voice-over, \u221214 streaming, \u221223 broadcast",
+            "default": -16.0
+          }
+        },
+        "type": "object",
+        "title": "Body_clean_audio_v1_tools_clean_post"
+      },
+      "Body_convert_voice_v1_tools_convert_post": {
+        "properties": {
+          "voice": {
+            "type": "string",
+            "title": "Voice",
+            "description": "Target voice: one of your voices (`cv_\u2026`) or `default`"
+          },
+          "file": {
+            "anyOf": [
+              {
+                "type": "string",
+                "contentMediaType": "application/octet-stream"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File",
+            "description": "A recording of speech, up to 15 minutes (send this or `take_id`)"
+          },
+          "take_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Take Id",
+            "description": "Convert an existing take instead of a file"
+          }
+        },
+        "type": "object",
+        "required": [
+          "voice"
+        ],
+        "title": "Body_convert_voice_v1_tools_convert_post"
       },
       "Body_create_book_v1_books_post": {
         "properties": {
@@ -8035,6 +8555,140 @@
           "updated_at"
         ],
         "title": "ProjectSummaryOut"
+      },
+      "PronunciationIn": {
+        "properties": {
+          "term": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Term",
+            "description": "Word or phrase as written, e.g. `SQL` or `Nguyen`"
+          },
+          "say": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Say",
+            "description": "How to say it, spelled the way it sounds, e.g. `sequel` or `Win`"
+          },
+          "case_sensitive": {
+            "type": "boolean",
+            "title": "Case Sensitive",
+            "description": "Match `term` only with this exact capitalization",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "term",
+          "say"
+        ],
+        "title": "PronunciationIn"
+      },
+      "PronunciationOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "term": {
+            "type": "string",
+            "title": "Term"
+          },
+          "say": {
+            "type": "string",
+            "title": "Say"
+          },
+          "case_sensitive": {
+            "type": "boolean",
+            "title": "Case Sensitive"
+          },
+          "created_at": {
+            "type": "number",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "term",
+          "say",
+          "case_sensitive",
+          "created_at"
+        ],
+        "title": "PronunciationOut"
+      },
+      "PronunciationPatch": {
+        "properties": {
+          "term": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Term"
+          },
+          "say": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Say"
+          },
+          "case_sensitive": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Case Sensitive"
+          }
+        },
+        "type": "object",
+        "title": "PronunciationPatch"
+      },
+      "PronunciationPreviewIn": {
+        "properties": {
+          "text": {
+            "type": "string",
+            "maxLength": 10000,
+            "title": "Text"
+          }
+        },
+        "type": "object",
+        "required": [
+          "text"
+        ],
+        "title": "PronunciationPreviewIn"
+      },
+      "PronunciationPreviewOut": {
+        "properties": {
+          "text": {
+            "type": "string",
+            "title": "Text",
+            "description": "The text with every pronunciation applied"
+          }
+        },
+        "type": "object",
+        "required": [
+          "text"
+        ],
+        "title": "PronunciationPreviewOut"
       },
       "SegmentOut": {
         "properties": {

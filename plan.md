@@ -206,8 +206,14 @@ Work goes one milestone at a time. Tick `[x]` only after the item is verified in
 - [x] Deep links: Open from a project jumps to that dub, transcript or book
 - [x] Docs: projects reference and guide
 
-### M13 — Tools
-- [ ] Voice conversion, loudness normalize, noise clean, pronunciation dictionary
+### M13 — Tools ✅
+- [x] Clean up (media worker, PyAV filter graph): high-pass and FFT denoise, pause tightening, EBU R128 loudness to −16/−14/−23 LUFS with a −1.5 dB true-peak ceiling; before/after peak, RMS and length reported
+- [x] Voice conversion (speech-to-speech) with Chatterbox S3Gen into the default voice or any custom voice; input up to 15 min, split at quiet points every ~20 s with per-section progress; watermark kept
+- [x] Both run as jobs from an uploaded file or an existing take; results saved as takes (`tools` or `chatterbox-vc`)
+- [x] Pronunciation dictionary: whole-word rules, longest first, optionally case-sensitive; applied to Studio, speech jobs, batches, watch folders, dubs and books without changing the stored text; live preview endpoint
+- [x] Tools page: tool tiles; file drop or a recent take; before/after waveforms with level meters; voice chips; inline-editable pronunciation list with a “Try it” preview
+- [x] Verified: a 9.9 s noisy clip went to 7.5 s at −16.9 dB RMS; a converted clip transcribes back to the original words
+- [x] Docs: tools guide and tools & pronunciations reference
 
 ### M14 — Integrations & Developer
 - [ ] **API keys:** create, name and revoke long-lived keys in Settings → Developer, so scripts can use the app-managed voxd

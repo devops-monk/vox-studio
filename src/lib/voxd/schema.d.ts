@@ -1267,6 +1267,103 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/tools/clean": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Clean up a recording
+         * @description Runs in the background; on success `result.take_id` is the cleaned take, plus before/after levels.
+         */
+        post: operations["clean_audio_v1_tools_clean_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/tools/convert": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Convert a recording to another voice
+         * @description Keeps the words, timing and delivery of the recording and swaps the voice (speech-to-speech).
+         *     Needs the Chatterbox engine. The result carries the same inaudible AI watermark as other Chatterbox audio.
+         */
+        post: operations["convert_voice_v1_tools_convert_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/pronunciations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List pronunciations */
+        get: operations["list_pronunciations_v1_pronunciations_get"];
+        put?: never;
+        /**
+         * Add a pronunciation
+         * @description From now on every engine says `say` wherever `term` appears as a whole word.
+         */
+        post: operations["add_pronunciation_v1_pronunciations_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/pronunciations/{pid}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove a pronunciation */
+        delete: operations["delete_pronunciation_v1_pronunciations__pid__delete"];
+        options?: never;
+        head?: never;
+        /** Edit a pronunciation */
+        patch: operations["patch_pronunciation_v1_pronunciations__pid__patch"];
+        trace?: never;
+    };
+    "/v1/pronunciations/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** See what an engine will be asked to say */
+        post: operations["preview_pronunciations_v1_pronunciations_preview_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1361,6 +1458,61 @@ export interface components {
             name: string;
             /** Text */
             text: string;
+        };
+        /** Body_clean_audio_v1_tools_clean_post */
+        Body_clean_audio_v1_tools_clean_post: {
+            /**
+             * File
+             * @description Audio or video to clean (send this or `take_id`)
+             */
+            file?: string | null;
+            /**
+             * Take Id
+             * @description Clean an existing take instead of a file
+             */
+            take_id?: string | null;
+            /**
+             * Denoise
+             * @description Remove steady background noise (hiss, hum, fans) and low rumble
+             * @default true
+             */
+            denoise: boolean;
+            /**
+             * Trim
+             * @description Shorten silences longer than 0.6 s and cut dead air at both ends
+             * @default false
+             */
+            trim: boolean;
+            /**
+             * Normalize
+             * @description Even out loudness to `loudness`
+             * @default true
+             */
+            normalize: boolean;
+            /**
+             * Loudness
+             * @description Target in LUFS: −16 podcasts and voice-over, −14 streaming, −23 broadcast
+             * @default -16
+             */
+            loudness: number;
+        };
+        /** Body_convert_voice_v1_tools_convert_post */
+        Body_convert_voice_v1_tools_convert_post: {
+            /**
+             * Voice
+             * @description Target voice: one of your voices (`cv_…`) or `default`
+             */
+            voice: string;
+            /**
+             * File
+             * @description A recording of speech, up to 15 minutes (send this or `take_id`)
+             */
+            file?: string | null;
+            /**
+             * Take Id
+             * @description Convert an existing take instead of a file
+             */
+            take_id?: string | null;
         };
         /** Body_create_book_v1_books_post */
         Body_create_book_v1_books_post: {
@@ -2273,6 +2425,60 @@ export interface components {
             created_at: number;
             /** Updated At */
             updated_at: number;
+        };
+        /** PronunciationIn */
+        PronunciationIn: {
+            /**
+             * Term
+             * @description Word or phrase as written, e.g. `SQL` or `Nguyen`
+             */
+            term: string;
+            /**
+             * Say
+             * @description How to say it, spelled the way it sounds, e.g. `sequel` or `Win`
+             */
+            say: string;
+            /**
+             * Case Sensitive
+             * @description Match `term` only with this exact capitalization
+             * @default false
+             */
+            case_sensitive: boolean;
+        };
+        /** PronunciationOut */
+        PronunciationOut: {
+            /** Id */
+            id: string;
+            /** Term */
+            term: string;
+            /** Say */
+            say: string;
+            /** Case Sensitive */
+            case_sensitive: boolean;
+            /** Created At */
+            created_at: number;
+        };
+        /** PronunciationPatch */
+        PronunciationPatch: {
+            /** Term */
+            term?: string | null;
+            /** Say */
+            say?: string | null;
+            /** Case Sensitive */
+            case_sensitive?: boolean | null;
+        };
+        /** PronunciationPreviewIn */
+        PronunciationPreviewIn: {
+            /** Text */
+            text: string;
+        };
+        /** PronunciationPreviewOut */
+        PronunciationPreviewOut: {
+            /**
+             * Text
+             * @description The text with every pronunciation applied
+             */
+            text: string;
         };
         /** SegmentOut */
         SegmentOut: {
@@ -7014,6 +7220,357 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    clean_audio_v1_tools_clean_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_clean_audio_v1_tools_clean_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    convert_voice_v1_tools_convert_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_convert_voice_v1_tools_convert_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_pronunciations_v1_pronunciations_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PronunciationOut"][];
+                };
+            };
+        };
+    };
+    add_pronunciation_v1_pronunciations_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PronunciationIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PronunciationOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_pronunciation_v1_pronunciations__pid__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    patch_pronunciation_v1_pronunciations__pid__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PronunciationPatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PronunciationOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    preview_pronunciations_v1_pronunciations_preview_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PronunciationPreviewIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PronunciationPreviewOut"];
                 };
             };
             /** @description Validation Error */

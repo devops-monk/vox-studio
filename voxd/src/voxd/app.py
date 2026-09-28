@@ -31,6 +31,8 @@ from .media import Media
 from .batch import Watcher, speech_item, transcribe_item
 from .books import export_book as book_export, render_book as book_render
 from .dubbing import prepare as dub_prepare, render as dub_render, retranslate as dub_retranslate
+from .pronounce import pronouncer
+from . import tools
 from .speech import render_long
 from .transcripts import transcribe_file
 from .voices import CustomVoices
@@ -116,6 +118,7 @@ def create_app(
     async def lifespan(app: FastAPI):
         services.bus.bind(asyncio.get_running_loop())
         services.store = Store(settings.db_path)
+        pronouncer.bind(services.store)
         custom.store = services.store
         services.jobs = JobManager(services.store, services.bus)
         services.jobs.register("speech", partial(render_long, services))
@@ -129,6 +132,8 @@ def create_app(
         services.jobs.register("book.export", partial(book_export, services), lane="media")
         services.jobs.register("batch.speech", partial(speech_item, services))
         services.jobs.register("batch.transcribe", partial(transcribe_item, services), lane="asr")
+        services.jobs.register("tools.clean", partial(tools.clean_job, services), lane="media")
+        services.jobs.register("tools.convert", partial(tools.convert_job, services))
         services.jobs.start()
         cleanup = asyncio.create_task(sweeper(services), name="retention")
         services.watcher = Watcher(services)

@@ -134,6 +134,86 @@ def encode_book(wavs, titles, out, fmt, title="", author=""):
     container.close()
 
 
+def _levels(samples):
+    """(peak dBFS, RMS dBFS) of float samples."""
+    import numpy as np
+
+    if samples.size == 0:
+        return -120.0, -120.0
+    peak = float(np.max(np.abs(samples)))
+    rms = float(np.sqrt(np.mean(samples.astype(np.float64) ** 2)))
+    to_db = lambda x: round(20 * np.log10(max(x, 1e-6)), 1)  # noqa: E731
+    return to_db(peak), to_db(rms)
+
+
+def clean(path, out, denoise=True, normalize=None, trim=False, highpass=True):
+    """Filter any audio/video file's sound to a WAV: speech high-pass, FFT noise reduction,
+    silence trimming and EBU R128 loudness normalisation (``normalize`` = target LUFS)."""
+    import av
+    import numpy as np
+
+    chain = []
+    if highpass:
+        chain.append(("highpass", "f=70"))
+    if denoise:
+        chain.append(("afftdn", "nr=14:nf=-35:tn=1"))
+    if trim:
+        chain.append(("silenceremove", "start_periods=1:start_threshold=-38dB:start_silence=0.15:stop_periods=-1:stop_threshold=-38dB:stop_silence=0.6"))
+    if normalize is not None:
+        chain.append(("loudnorm", f"I={float(normalize)}:TP=-1.5:LRA=11"))
+
+    with av.open(path) as src:
+        stream = next(s for s in src.streams if s.type == "audio")
+        rate = stream.codec_context.sample_rate or 48000
+        channels = min(2, stream.codec_context.channels or 1)
+        layout = "mono" if channels == 1 else "stereo"
+        # Normalise everything to float planar first so the filter chain sees one format.
+        chain = [("aresample", str(rate)), ("aformat", f"sample_fmts=fltp:channel_layouts={layout}")] + chain
+        chain += [("aresample", str(rate)), ("aformat", f"sample_fmts=s16:channel_layouts={layout}:sample_rates={rate}")]
+        graph = av.filter.Graph()
+        node = graph.add_abuffer(template=stream)
+        head = node
+        for name, args in chain:
+            f = graph.add(name, args)
+            node.link_to(f)
+            node = f
+        sink = graph.add("abuffersink")
+        node.link_to(sink)
+        graph.configure()
+
+        before, after = [], []
+
+        def drain():
+            while True:
+                try:
+                    frame = sink.pull()
+                except (av.error.BlockingIOError, av.error.EOFError, BlockingIOError, EOFError):
+                    return
+                after.append(frame.to_ndarray().reshape(-1, channels) if frame.format.is_packed else frame.to_ndarray().T)
+
+        for frame in src.decode(stream):
+            arr = frame.to_ndarray()
+            before.append(arr.astype(np.float32).ravel() / (32768.0 if arr.dtype == np.int16 else 1.0))
+            head.push(frame)
+            drain()
+        head.push(None)
+        drain()
+
+    pcm = np.concatenate(after) if after else np.zeros((0, channels), dtype=np.int16)
+    with wave.open(out, "wb") as w:
+        w.setnchannels(channels)
+        w.setsampwidth(2)
+        w.setframerate(rate)
+        w.writeframes(pcm.astype("<i2").tobytes())
+    src_levels = _levels(np.concatenate(before) if before else np.zeros(0))
+    out_levels = _levels(pcm.astype(np.float32).ravel() / 32768.0)
+    return {
+        "duration_in": round(sum(len(b) for b in before) / channels / rate, 2),
+        "duration_out": round(len(pcm) / rate, 2),
+        "peak_in": src_levels[0], "rms_in": src_levels[1], "peak_out": out_levels[0], "rms_out": out_levels[1],
+    }
+
+
 _translators = {}
 
 
@@ -183,6 +263,8 @@ def main():
             elif op == "mux":
                 mux(req["video"], req["audio"], req["out"], progress if req.get("progress") else None)
                 result = {}
+            elif op == "clean":
+                result = clean(req["path"], req["out"], req.get("denoise", True), req.get("normalize"), req.get("trim", False), req.get("highpass", True))
             elif op == "encode_book":
                 encode_book(req["wavs"], req["titles"], req["out"], req["format"], req.get("title", ""), req.get("author", ""))
                 result = {}

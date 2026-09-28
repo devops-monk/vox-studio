@@ -19,6 +19,8 @@ from ..runtimes import PACKS
 from ..store import CustomVoice
 from ..voices import export_bundle, read_bundle
 from ..design import apply_sliders, design, parse_description, parse_recipe
+from ..pronounce import pronouncer
+from .. import tools
 from ..transcripts import EXPORTS, LiveSession, save_live, to_text, uploads_dir
 from ..store import Transcript
 from .. import batch as batching, books, dubbing
@@ -29,6 +31,11 @@ from ..store import DesignedVoice
 from ..speech import resolve_engine, save_take
 from ..store import Job, Take
 from .schemas import (
+    PronunciationIn,
+    PronunciationOut,
+    PronunciationPatch,
+    PronunciationPreviewIn,
+    PronunciationPreviewOut,
     ClearedOut,
     CustomVoiceOut,
     CustomVoicePatch,
@@ -223,7 +230,7 @@ async def speech(request: Request, body: SpeechIn) -> TakeOut:
     take_id = uuid.uuid4().hex
     out = services.settings.takes_dir / f"{take_id}.wav"
     try:
-        await asyncio.to_thread(engine.synthesize, body.text, body.voice, body.speed, out, body.emotion)
+        await asyncio.to_thread(engine.synthesize, pronouncer.apply(body.text), body.voice, body.speed, out, body.emotion)
     except EngineError as exc:
         out.unlink(missing_ok=True)
         raise HTTPException(400, detail=("synthesis_failed", str(exc))) from exc
@@ -1562,6 +1569,132 @@ async def job_events(request: Request, job_id: str, after: int = Query(0, ge=0, 
             await asyncio.sleep(0.2)
 
     return StreamingResponse(stream(), media_type="text/event-stream", headers={"Cache-Control": "no-cache"})
+
+
+# --- Tools --------------------------------------------------------------------
+
+
+async def _tool_source(services, file: UploadFile | None, take_id: str | None) -> tuple[str, str]:
+    """Stage the input of a tool job: an uploaded file or a copy of a take. Returns (upload name, title)."""
+    if (file is None) == (take_id is None):
+        raise HTTPException(400, detail=("invalid_request", "Send either `file` or `take_id`"))
+    if take_id:
+        try:
+            return tools.stage_take(services, take_id)
+        except EngineError as exc:
+            raise HTTPException(404, detail=("not_found", str(exc))) from exc
+    suffix = Path(file.filename or "audio").suffix.lower()[:8] or ".bin"
+    name = f"{uuid.uuid4().hex}{suffix}"
+    dest = uploads_dir(services) / name
+    size = 0
+    with dest.open("wb") as out:
+        while chunk := await file.read(1 << 20):
+            size += len(chunk)
+            if size > MAX_UPLOAD:
+                out.close()
+                dest.unlink(missing_ok=True)
+                raise HTTPException(400, detail=("file_too_large", "Files up to 2 GB are supported"))
+            out.write(chunk)
+    return name, Path(file.filename or "Recording").stem[:120] or "Recording"
+
+
+@router.post("/tools/clean", response_model=JobOut, status_code=202, responses=ERRORS, tags=["Tools"], summary="Clean up a recording")
+async def clean_audio(
+    request: Request,
+    file: UploadFile | None = File(None, description="Audio or video to clean (send this or `take_id`)"),
+    take_id: str | None = Form(None, description="Clean an existing take instead of a file"),
+    denoise: bool = Form(True, description="Remove steady background noise (hiss, hum, fans) and low rumble"),
+    trim: bool = Form(False, description="Shorten silences longer than 0.6 s and cut dead air at both ends"),
+    normalize: bool = Form(True, description="Even out loudness to `loudness`"),
+    loudness: float = Form(-16.0, ge=-30, le=-10, description="Target in LUFS: −16 podcasts and voice-over, −14 streaming, −23 broadcast"),
+) -> JobOut:
+    """Runs in the background; on success `result.take_id` is the cleaned take, plus before/after levels."""
+    services = _services(request)
+    if not services.media.available():
+        raise HTTPException(400, detail=("engine_unavailable", "Audio tools need the Whisper engine — download a Whisper model from Models"))
+    if not (denoise or trim or normalize):
+        raise HTTPException(400, detail=("invalid_request", "Choose at least one of denoise, trim or normalize"))
+    audio, title = await _tool_source(services, file, take_id)
+    spec = {"audio": audio, "title": f"Cleaned · {title}", "denoise": denoise, "trim": trim, "normalize": loudness if normalize else None}
+    return _job_out(services.jobs.submit("tools.clean", f"Cleaning {title}", spec))
+
+
+@router.post("/tools/convert", response_model=JobOut, status_code=202, responses=ERRORS, tags=["Tools"], summary="Convert a recording to another voice")
+async def convert_voice(
+    request: Request,
+    voice: str = Form(description="Target voice: one of your voices (`cv_…`) or `default`"),
+    file: UploadFile | None = File(None, description="A recording of speech, up to 15 minutes (send this or `take_id`)"),
+    take_id: str | None = Form(None, description="Convert an existing take instead of a file"),
+) -> JobOut:
+    """Keeps the words, timing and delivery of the recording and swaps the voice (speech-to-speech).
+    Needs the Chatterbox engine. The result carries the same inaudible AI watermark as other Chatterbox audio."""
+    services = _services(request)
+    try:
+        reason = services.registry.get("chatterbox").probe()
+    except EngineError:
+        reason = "Voice conversion needs the Chatterbox engine"
+    if reason:
+        raise HTTPException(400, detail=("engine_unavailable", reason))
+    if not services.media.available():
+        raise HTTPException(400, detail=("engine_unavailable", "Voice conversion also needs the Whisper engine to read media — download a Whisper model"))
+    if voice != "default" and services.store.get_custom_voice(voice) is None:
+        raise HTTPException(404, detail=("not_found", f"Unknown voice: {voice}"))
+    audio, title = await _tool_source(services, file, take_id)
+    return _job_out(services.jobs.submit("tools.convert", f"Converting {title}", {"audio": audio, "voice": voice, "title": f"Converted · {title}"}))
+
+
+# --- Pronunciations -----------------------------------------------------------
+
+
+def _pron_out(services, pid: str) -> PronunciationOut:
+    for p in services.store.list_pronunciations():
+        if p["id"] == pid:
+            return PronunciationOut(**p)
+    raise HTTPException(404, detail=("not_found", "No such pronunciation"))
+
+
+@router.get("/pronunciations", response_model=list[PronunciationOut], tags=["Pronunciations"], summary="List pronunciations")
+def list_pronunciations(request: Request) -> list[PronunciationOut]:
+    return [PronunciationOut(**p) for p in _services(request).store.list_pronunciations()]
+
+
+@router.post("/pronunciations", response_model=PronunciationOut, status_code=201, responses=ERRORS, tags=["Pronunciations"], summary="Add a pronunciation")
+def add_pronunciation(request: Request, body: PronunciationIn) -> PronunciationOut:
+    """From now on every engine says `say` wherever `term` appears as a whole word."""
+    services = _services(request)
+    if any(p["term"].lower() == body.term.strip().lower() for p in services.store.list_pronunciations()):
+        raise HTTPException(409, detail=("conflict", f"“{body.term.strip()}” already has a pronunciation"))
+    pid = f"pr_{uuid.uuid4().hex[:12]}"
+    services.store.add_pronunciation({"id": pid, "term": body.term.strip(), "say": body.say.strip(), "case_sensitive": body.case_sensitive, "created_at": time.time()})
+    pronouncer.invalidate()
+    services.bus.publish("pronunciations.changed", {})
+    return _pron_out(services, pid)
+
+
+@router.patch("/pronunciations/{pid}", response_model=PronunciationOut, responses=ERRORS, tags=["Pronunciations"], summary="Edit a pronunciation")
+def patch_pronunciation(request: Request, pid: str, body: PronunciationPatch) -> PronunciationOut:
+    services = _services(request)
+    _pron_out(services, pid)
+    fields = {k: (v.strip() if isinstance(v, str) else v) for k, v in body.model_dump(exclude_none=True).items()}
+    if fields:
+        services.store.update_pronunciation(pid, **fields)
+        pronouncer.invalidate()
+        services.bus.publish("pronunciations.changed", {})
+    return _pron_out(services, pid)
+
+
+@router.delete("/pronunciations/{pid}", status_code=204, responses=ERRORS, tags=["Pronunciations"], summary="Remove a pronunciation")
+def delete_pronunciation(request: Request, pid: str) -> None:
+    services = _services(request)
+    if not services.store.delete_pronunciation(pid):
+        raise HTTPException(404, detail=("not_found", "No such pronunciation"))
+    pronouncer.invalidate()
+    services.bus.publish("pronunciations.changed", {})
+
+
+@router.post("/pronunciations/preview", response_model=PronunciationPreviewOut, tags=["Pronunciations"], summary="See what an engine will be asked to say")
+def preview_pronunciations(body: PronunciationPreviewIn) -> PronunciationPreviewOut:
+    return PronunciationPreviewOut(text=pronouncer.apply(body.text))
 
 
 # --- Live events --------------------------------------------------------------

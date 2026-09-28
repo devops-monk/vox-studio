@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from .engines.base import Engine, EngineError, wav_duration
+from .pronounce import pronouncer
 
 if TYPE_CHECKING:
     from .app import Services
@@ -78,7 +79,7 @@ def render_long(services: Services, ctx: JobContext, spec: dict[str, Any]) -> di
             ctx.check()
             ctx.progress(i / len(chunks), f"Speaking part {i + 1} of {len(chunks)}")
             part = scratch / f"{i:05d}.wav"
-            engine.synthesize(chunk, spec["voice"], spec.get("speed", 1.0), part, spec.get("emotion"))
+            engine.synthesize(pronouncer.apply(chunk), spec["voice"], spec.get("speed", 1.0), part, spec.get("emotion"))
             parts.append(part)
         ctx.check()
         ctx.progress(0.99, "Finishing")

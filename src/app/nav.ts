@@ -64,7 +64,7 @@ export const NAV: NavSection[] = [
     title: 'More',
     items: [
       { path: '/models', label: 'Models', icon: Boxes, description: 'Download and manage voice models.', milestone: 'M3', keywords: ['download', 'kokoro', 'engines'] },
-      { path: '/tools', label: 'Tools', icon: Wrench, description: 'Convert, normalize, clean and fix pronunciation.', milestone: 'M13', keywords: ['convert', 'pronunciation'] },
+      { path: '/tools', label: 'Tools', icon: Wrench, description: 'Clean up recordings, change a voice, fix pronunciation.', milestone: 'M13', keywords: ['convert', 'pronunciation', 'denoise', 'normalize', 'loudness', 'speech to speech'] },
       { path: '/integrations', label: 'Integrations', icon: Plug, description: 'OpenAI-compatible API and MCP for AI agents.', milestone: 'M14', keywords: ['mcp', 'api'] },
     ],
   },

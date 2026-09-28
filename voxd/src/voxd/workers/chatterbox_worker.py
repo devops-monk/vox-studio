@@ -55,6 +55,21 @@ def write_wav(path, samples, rate):
         w.writeframes(pcm.tobytes())
 
 
+def split_quiet(audio, rate, target_s=20.0, window_s=5.0):
+    """Cut long audio into ~20 s spans at the quietest 50 ms nearby, so no word is split."""
+    import numpy as np
+
+    spans, start, hop = [], 0, int(rate * 0.05)
+    while len(audio) - start > rate * (target_s + window_s):
+        lo, hi = start + int(rate * (target_s - window_s)), start + int(rate * (target_s + window_s))
+        frames = audio[lo:hi][: (hi - lo) // hop * hop].reshape(-1, hop)
+        cut = lo + int(np.argmin((frames**2).mean(axis=1))) * hop + hop // 2
+        spans.append((start, cut))
+        start = cut
+    spans.append((start, len(audio)))
+    return spans
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--model-dir", required=True)
@@ -78,6 +93,34 @@ def main():
         try:
             if req["op"] == "ping":
                 send({"id": req["id"], "ok": True})
+                continue
+            if req["op"] == "convert":
+                # Speech-to-speech: keep the words and timing of `src`, speak them in the target voice.
+                import librosa
+                import torch
+                from chatterbox.models.s3gen import S3GEN_SR
+                from chatterbox.models.s3tokenizer import S3_SR
+
+                s3 = model.s3gen
+                if req.get("ref"):
+                    ref_wav, _ = librosa.load(req["ref"], sr=S3GEN_SR)
+                    ref_dict = s3.embed_ref(ref_wav[: getattr(model, "DEC_COND_LEN", 10 * S3GEN_SR)], S3GEN_SR, device=model.device)
+                else:
+                    ref_dict = default_conds.gen
+                import numpy as np
+
+                audio_16, _ = librosa.load(req["src"], sr=S3_SR)
+                pieces = []
+                spans = split_quiet(audio_16, S3_SR)
+                with torch.inference_mode():
+                    for n, (a, b) in enumerate(spans):
+                        tokens, _ = s3.tokenizer(torch.from_numpy(audio_16[a:b]).float().to(model.device)[None,])
+                        wav, _ = s3.inference(speech_tokens=tokens, ref_dict=ref_dict)
+                        pieces.append(wav.squeeze(0).detach().cpu().numpy())
+                        send({"id": req["id"], "progress": (n + 1) / len(spans)})
+                samples = model.watermarker.apply_watermark(np.concatenate(pieces), sample_rate=model.sr)
+                write_wav(req["out"], samples, model.sr)
+                send({"id": req["id"], "ok": True, "sample_rate": model.sr})
                 continue
             if req["op"] != "synthesize":
                 raise ValueError(f"unknown op {req['op']}")

@@ -20,6 +20,7 @@ type Message =
   | { type: 'batches.changed'; data: { id: string } }
   | { type: 'watch.changed'; data: { id: string } }
   | { type: 'projects.changed'; data: { id: string } }
+  | { type: 'pronunciations.changed'; data: Record<string, never> }
 
 /** Whether live events are flowing; queries fall back to polling while they aren't. */
 export const useLive = create<{ connected: boolean }>(() => ({ connected: false }))
@@ -126,6 +127,9 @@ function apply(message: Message) {
     case 'transcripts.changed':
       void queryClient.invalidateQueries({ queryKey: ['transcripts'] })
       void queryClient.invalidateQueries({ queryKey: ['transcript', message.data.id] })
+      break
+    case 'pronunciations.changed':
+      void queryClient.invalidateQueries({ queryKey: ['pronunciations'] })
       break
     case 'design.ready':
       void queryClient.invalidateQueries({ queryKey: ['design-status'] })

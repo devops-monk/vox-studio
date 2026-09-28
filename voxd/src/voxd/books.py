@@ -23,6 +23,7 @@ from xml.etree import ElementTree as ET
 import numpy as np
 
 from .engines.base import EngineError
+from .pronounce import pronouncer
 from .speech import split_text
 
 if TYPE_CHECKING:
@@ -311,7 +312,7 @@ def render_chapter(services: Services, ctx: JobContext, book: Any, chapter: dict
         if not voice.get("engine") or not voice.get("voice"):
             raise EngineError("Choose a narrator voice first")
         out = scratch / f"{uuid.uuid4().hex}.wav"
-        services.registry.get(voice["engine"]).synthesize(sentence, voice["voice"], book.speed, out)
+        services.registry.get(voice["engine"]).synthesize(pronouncer.apply(sentence), voice["voice"], book.speed, out)
         audio = _to_rate(out)
         out.unlink(missing_ok=True)
         timings.append(

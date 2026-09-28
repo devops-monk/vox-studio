@@ -191,6 +191,15 @@ MIGRATIONS: list[str] = [
     );
     CREATE INDEX exports_at ON exports(at DESC);
     """,
+    """
+    CREATE TABLE pronunciations (
+        id              TEXT PRIMARY KEY,
+        term            TEXT NOT NULL,
+        say             TEXT NOT NULL,
+        case_sensitive  INTEGER NOT NULL DEFAULT 0,
+        created_at      REAL NOT NULL
+    );
+    """,
 ]
 
 ACTIVE = ("queued", "running")
@@ -776,6 +785,27 @@ class Store:
         marks = " OR ".join("(kind = ? AND item_id = ?)" for _ in items)
         rows = self._db.execute(f"SELECT * FROM exports WHERE {marks} ORDER BY at DESC LIMIT ?", (*[x for pair in items for x in pair], limit))
         return [dict(r) for r in rows]
+
+    # --- pronunciations ---------------------------------------------------------
+
+    def list_pronunciations(self) -> list[dict]:
+        rows = self._db.execute("SELECT * FROM pronunciations ORDER BY lower(term)")
+        return [{**dict(r), "case_sensitive": bool(r["case_sensitive"])} for r in rows]
+
+    def add_pronunciation(self, p: dict) -> None:
+        with self._lock:
+            self._db.execute("INSERT INTO pronunciations VALUES (?,?,?,?,?)", (p["id"], p["term"], p["say"], int(p["case_sensitive"]), p["created_at"]))
+
+    def update_pronunciation(self, pid: str, **fields: Any) -> None:
+        if "case_sensitive" in fields:
+            fields["case_sensitive"] = int(fields["case_sensitive"])
+        cols = ", ".join(f"{k} = ?" for k in fields)
+        with self._lock:
+            self._db.execute(f"UPDATE pronunciations SET {cols} WHERE id = ?", (*fields.values(), pid))
+
+    def delete_pronunciation(self, pid: str) -> bool:
+        with self._lock:
+            return self._db.execute("DELETE FROM pronunciations WHERE id = ?", (pid,)).rowcount > 0
 
     # --- favorites & tags (any voice) ----------------------------------------
 

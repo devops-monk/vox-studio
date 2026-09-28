@@ -99,3 +99,12 @@ class ChatterboxEngine(Engine):
         self._get_worker().call(
             "synthesize", text=text, out=str(out), ref=ref, exaggeration=exaggeration, cfg_weight=cfg_weight, speed=speed
         )
+
+    def convert(self, src: Path, voice_id: str, out: Path, on_progress=None) -> None:
+        """Re-voice a recording (speech-to-speech) in a custom voice or the default voice."""
+        ref = None
+        if voice_id != DEFAULT_VOICE:
+            if self._custom.store.get_custom_voice(voice_id) is None:
+                raise EngineError(f"Unknown voice: {voice_id}")
+            ref = str(self._custom.path(voice_id))
+        self._get_worker().call("convert", on_progress=on_progress, src=str(src), ref=ref, out=str(out))

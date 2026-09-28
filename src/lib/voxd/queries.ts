@@ -284,3 +284,4 @@ export const useProject = (id: string | null) => useQuery({ queryKey: ['project'
 export const useMembership = (kind: string, id: string, enabled: boolean) =>
   useQuery({ queryKey: ['membership', kind, id], queryFn: () => voxd.membership(kind, id), enabled: useReady() && enabled })
 export const useExportHistory = () => useQuery({ queryKey: ['exports'], queryFn: voxd.exportHistory, enabled: useReady() })
+export const usePronunciations = () => useQuery({ queryKey: ['pronunciations'], queryFn: voxd.pronunciations, enabled: useReady() })

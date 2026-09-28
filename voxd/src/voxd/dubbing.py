@@ -19,6 +19,7 @@ import numpy as np
 
 from .engines.base import EngineError
 from .models import TRANSLATION_LANGUAGES, translation_model_id
+from .pronounce import pronouncer
 from .store import Dub
 from .transcripts import to_srt, to_vtt
 
@@ -190,7 +191,7 @@ def speak(services: Services, cast: dict, seg: dict, speed: float, out: Path) ->
     if not voice.get("engine") or not voice.get("voice"):
         raise EngineError(f"Choose a voice for {seg['speaker']}")
     engine = services.registry.get(voice["engine"])
-    engine.synthesize(seg["translation"], voice["voice"], speed, out)
+    engine.synthesize(pronouncer.apply(seg["translation"]), voice["voice"], speed, out)
     return read_wav(out)
 
 

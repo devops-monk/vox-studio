@@ -532,3 +532,31 @@ class ExportRecordOut(BaseModel):
 class ProjectOut(ProjectSummaryOut):
     items: list[ProjectItemOut]
     exports: list[ExportRecordOut]
+
+
+class PronunciationIn(BaseModel):
+    term: str = Field(min_length=1, max_length=100, description="Word or phrase as written, e.g. `SQL` or `Nguyen`")
+    say: str = Field(min_length=1, max_length=200, description="How to say it, spelled the way it sounds, e.g. `sequel` or `Win`")
+    case_sensitive: bool = Field(False, description="Match `term` only with this exact capitalization")
+
+
+class PronunciationPatch(BaseModel):
+    term: str | None = Field(None, min_length=1, max_length=100)
+    say: str | None = Field(None, min_length=1, max_length=200)
+    case_sensitive: bool | None = None
+
+
+class PronunciationOut(BaseModel):
+    id: str
+    term: str
+    say: str
+    case_sensitive: bool
+    created_at: float
+
+
+class PronunciationPreviewIn(BaseModel):
+    text: str = Field(max_length=10_000)
+
+
+class PronunciationPreviewOut(BaseModel):
+    text: str = Field(description="The text with every pronunciation applied")

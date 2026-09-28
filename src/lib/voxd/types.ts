@@ -62,3 +62,4 @@ export interface VoxdState {
   token: string
   restarts: number
 }
+export type Pronunciation = Schemas['PronunciationOut']

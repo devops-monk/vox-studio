@@ -177,6 +177,21 @@ export const voxd = {
   membership: (kind: string, id: string) => call(api().GET('/v1/projects/membership', { params: { query: { kind, id } } })),
   exportHistory: () => call(api().GET('/v1/exports')),
 
+  cleanAudio: (source: File | string, opts: { denoise: boolean; trim: boolean; normalize: boolean; loudness: number }) =>
+    upload<import('./types').Job>(
+      '/v1/tools/clean',
+      { ...(typeof source === 'string' ? { take_id: source } : { file: source }), denoise: String(opts.denoise), trim: String(opts.trim), normalize: String(opts.normalize), loudness: String(opts.loudness) },
+      'file',
+    ),
+  convertVoice: (source: File | string, voice: string) =>
+    upload<import('./types').Job>('/v1/tools/convert', { ...(typeof source === 'string' ? { take_id: source } : { file: source }), voice }, 'file'),
+  pronunciations: () => call(api().GET('/v1/pronunciations')),
+  addPronunciation: (body: { term: string; say: string; case_sensitive?: boolean }) => call(api().POST('/v1/pronunciations', { body: { case_sensitive: false, ...body } })),
+  patchPronunciation: (id: string, body: { term?: string; say?: string; case_sensitive?: boolean }) =>
+    call(api().PATCH('/v1/pronunciations/{pid}', { params: { path: { pid: id } }, body })),
+  deletePronunciation: (id: string) => noContent(api().DELETE('/v1/pronunciations/{pid}', { params: { path: { pid: id } } })),
+  previewPronunciation: (text: string) => call(api().POST('/v1/pronunciations/preview', { body: { text } })),
+
   starTake: (id: string, starred: boolean) => call(api().PUT('/v1/takes/{take_id}/star', { params: { path: { take_id: id } }, body: { starred } })),
   exportTake: (id: string, path: string, overwrite = false) =>
     noContent(api().POST('/v1/takes/{take_id}/export', { params: { path: { take_id: id } }, body: { path, overwrite } })),
