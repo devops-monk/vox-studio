@@ -1,51 +1,51 @@
 {
-  "version": "0.1.1",
+  "version": "0.1.2",
   "notes": "",
-  "pub_date": "2026-09-28T20:08:06.011Z",
+  "pub_date": "2026-09-28T20:28:02.853Z",
   "platforms": {
     "darwin-aarch64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTYkk1bW4vZjhrQ1BVdGZ2bmlyZ3FLZzVjalpwSWUxVzZHUVVsTzRTeXlyUUw0TVprSVA0dHFxdlM2RFVLdWl0b0RaTXJxWGNaWnJVYk96b1g3Y2ZaU1IyUW1qSGNYZXd3PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkwNjI1ODY2CWZpbGU6Vm94U3R1ZGlvLmFwcC50YXIuZ3oJdmVyc2lvbjowLjEuMQpTc2ZnaFVVZWJydHFGT1VjU2xxUWNjb0ozOXM0NVZ2RnV3Nnlyd0E5ZHdxUTJ5UGZSUGo0M0VrazR0M3hucitkRkFXdmthc25DbXUzaTdZVlRkQXFBQT09Cg==",
-      "url": "https://github.com/devops-monk/vox-studio/releases/download/v0.1.1/VoxStudio_aarch64.app.tar.gz"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTYkk1bW4vZjhrQ0NMTTBETjAwakJRR3YrRVFsT01XZnoxQlRjTkZNd2pRSUE2N1IzeEk1VE9Pd28yWk5hUXpJbmJPTHAvT1hHSkc1MGR5R0dMMkMrWjNtOTRoMzVpemdnPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkwNjI3MDk0CWZpbGU6Vm94U3R1ZGlvLmFwcC50YXIuZ3oJdmVyc2lvbjowLjEuMgpIQjdTUldremU2eEJleU5JaEFSczZmc3REbEVEWWNQRGZGZ1R0dXlXUlFtNXhJUlJhV0NkU3NzQ1FyUElURGlKVGFDWHBITHJLZ3NSQXVTa1Bla3hEQT09Cg==",
+      "url": "https://github.com/devops-monk/vox-studio/releases/download/v0.1.2/VoxStudio_aarch64.app.tar.gz"
     },
     "darwin-aarch64-app": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTYkk1bW4vZjhrQ1BVdGZ2bmlyZ3FLZzVjalpwSWUxVzZHUVVsTzRTeXlyUUw0TVprSVA0dHFxdlM2RFVLdWl0b0RaTXJxWGNaWnJVYk96b1g3Y2ZaU1IyUW1qSGNYZXd3PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkwNjI1ODY2CWZpbGU6Vm94U3R1ZGlvLmFwcC50YXIuZ3oJdmVyc2lvbjowLjEuMQpTc2ZnaFVVZWJydHFGT1VjU2xxUWNjb0ozOXM0NVZ2RnV3Nnlyd0E5ZHdxUTJ5UGZSUGo0M0VrazR0M3hucitkRkFXdmthc25DbXUzaTdZVlRkQXFBQT09Cg==",
-      "url": "https://github.com/devops-monk/vox-studio/releases/download/v0.1.1/VoxStudio_aarch64.app.tar.gz"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTYkk1bW4vZjhrQ0NMTTBETjAwakJRR3YrRVFsT01XZnoxQlRjTkZNd2pRSUE2N1IzeEk1VE9Pd28yWk5hUXpJbmJPTHAvT1hHSkc1MGR5R0dMMkMrWjNtOTRoMzVpemdnPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkwNjI3MDk0CWZpbGU6Vm94U3R1ZGlvLmFwcC50YXIuZ3oJdmVyc2lvbjowLjEuMgpIQjdTUldremU2eEJleU5JaEFSczZmc3REbEVEWWNQRGZGZ1R0dXlXUlFtNXhJUlJhV0NkU3NzQ1FyUElURGlKVGFDWHBITHJLZ3NSQXVTa1Bla3hEQT09Cg==",
+      "url": "https://github.com/devops-monk/vox-studio/releases/download/v0.1.2/VoxStudio_aarch64.app.tar.gz"
     },
     "darwin-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTYkk1bW4vZjhrQ0VhaitZYmxZZEp3bVpvd1VvVzFGc09Wbjg3U1JJN2ZSRUZkaWJRdDZUNnJGcHorenc2VC95T20wUjRPS1RvM1FZaUVzLzMyU082WUtCL1lkT3ozMndBPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkwNjI1OTE4CWZpbGU6Vm94U3R1ZGlvLmFwcC50YXIuZ3oJdmVyc2lvbjowLjEuMQo5bjNtclF5SFhhODdvOCtVMFVYUHhQM0xYUlZVeXB4dDF0OHRqRjZkMmpDQm9LYW5vdWdSR0tYODcxdXBNSjZEeVRQaGU2clZnemc3RFJQd2dPM1dDUT09Cg==",
-      "url": "https://github.com/devops-monk/vox-studio/releases/download/v0.1.1/VoxStudio_x64.app.tar.gz"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTYkk1bW4vZjhrQ1BlM1dCcXZrdEZya2Z0TVl0NkZYM1h2ajRRWk10Q3ZDN0pJK0lyVDhFM1pDaFZLYTRXSjFtb1JqY3BFbHlNZlljZHQ1TWVyN21pcjJhWFNrajJwYVEwPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkwNjI3MTAwCWZpbGU6Vm94U3R1ZGlvLmFwcC50YXIuZ3oJdmVyc2lvbjowLjEuMgowaDEza0RkcmtidEJIVmlZSjFHZUdWQ0ZkS080RlNIak5Yc0o3M3NlUC9WMEpyNkpYY3BhbmFUZ0JYaXNLQmR5Rmd0ZDN6NDU1K3pzM1k2WlY5Q0dBdz09Cg==",
+      "url": "https://github.com/devops-monk/vox-studio/releases/download/v0.1.2/VoxStudio_x64.app.tar.gz"
     },
     "darwin-x86_64-app": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTYkk1bW4vZjhrQ0VhaitZYmxZZEp3bVpvd1VvVzFGc09Wbjg3U1JJN2ZSRUZkaWJRdDZUNnJGcHorenc2VC95T20wUjRPS1RvM1FZaUVzLzMyU082WUtCL1lkT3ozMndBPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkwNjI1OTE4CWZpbGU6Vm94U3R1ZGlvLmFwcC50YXIuZ3oJdmVyc2lvbjowLjEuMQo5bjNtclF5SFhhODdvOCtVMFVYUHhQM0xYUlZVeXB4dDF0OHRqRjZkMmpDQm9LYW5vdWdSR0tYODcxdXBNSjZEeVRQaGU2clZnemc3RFJQd2dPM1dDUT09Cg==",
-      "url": "https://github.com/devops-monk/vox-studio/releases/download/v0.1.1/VoxStudio_x64.app.tar.gz"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTYkk1bW4vZjhrQ1BlM1dCcXZrdEZya2Z0TVl0NkZYM1h2ajRRWk10Q3ZDN0pJK0lyVDhFM1pDaFZLYTRXSjFtb1JqY3BFbHlNZlljZHQ1TWVyN21pcjJhWFNrajJwYVEwPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkwNjI3MTAwCWZpbGU6Vm94U3R1ZGlvLmFwcC50YXIuZ3oJdmVyc2lvbjowLjEuMgowaDEza0RkcmtidEJIVmlZSjFHZUdWQ0ZkS080RlNIak5Yc0o3M3NlUC9WMEpyNkpYY3BhbmFUZ0JYaXNLQmR5Rmd0ZDN6NDU1K3pzM1k2WlY5Q0dBdz09Cg==",
+      "url": "https://github.com/devops-monk/vox-studio/releases/download/v0.1.2/VoxStudio_x64.app.tar.gz"
     },
     "linux-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTYkk1bW4vZjhrQ0FpdGl4bFZnYXhRWmdhMGtOejU2U0lkUHM5bk9leHpmd2trZWxjYWJjMXVNaWx5U0FLRy9aakJJMXNZanpZRmtVTDZzZU1idHBZYlM5aHE3SkcwK2dRPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkwNjI2MDE2CWZpbGU6Vm94U3R1ZGlvXzAuMS4xX2FtZDY0LkFwcEltYWdlCXZlcnNpb246MC4xLjEKM3NXemp5ODU0ZnBDTzJMN2xwb1NQRWJjWHQyck1iZjdQUGt1OWxPVkh5bk5LV1RmOE5abW8xK0xZQy83eWxRMVRQeXlUME5nS09Id3VKcTJjKzNXQnc9PQo=",
-      "url": "https://github.com/devops-monk/vox-studio/releases/download/v0.1.1/VoxStudio_0.1.1_amd64.AppImage"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTYkk1bW4vZjhrQ0NLUkhKNjNaK3dOVjNxZU5ZR3ZoM2Z4OHlIemt2d04vYTBPYTNrSHlZamNUMW9FbG1jbnUzY0RaQ3k3dGtaeE90Q3MzaHZzN1hqcHV6SVNzdkI5WEFFPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkwNjI3MTE5CWZpbGU6Vm94U3R1ZGlvXzAuMS4yX2FtZDY0LkFwcEltYWdlCXZlcnNpb246MC4xLjIKYWo5UmZXSmxNYWQ0NmhvTXRYQWtpN2RDZFg0L00yZ0hOYzB2RUJvcGgvWEd0SUZYZktBTXFkWFhLYTRGaXRPekJweVM4UnQrNnUzRzVITzlOclhYRHc9PQo=",
+      "url": "https://github.com/devops-monk/vox-studio/releases/download/v0.1.2/VoxStudio_0.1.2_amd64.AppImage"
     },
     "linux-x86_64-appimage": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTYkk1bW4vZjhrQ0FpdGl4bFZnYXhRWmdhMGtOejU2U0lkUHM5bk9leHpmd2trZWxjYWJjMXVNaWx5U0FLRy9aakJJMXNZanpZRmtVTDZzZU1idHBZYlM5aHE3SkcwK2dRPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkwNjI2MDE2CWZpbGU6Vm94U3R1ZGlvXzAuMS4xX2FtZDY0LkFwcEltYWdlCXZlcnNpb246MC4xLjEKM3NXemp5ODU0ZnBDTzJMN2xwb1NQRWJjWHQyck1iZjdQUGt1OWxPVkh5bk5LV1RmOE5abW8xK0xZQy83eWxRMVRQeXlUME5nS09Id3VKcTJjKzNXQnc9PQo=",
-      "url": "https://github.com/devops-monk/vox-studio/releases/download/v0.1.1/VoxStudio_0.1.1_amd64.AppImage"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTYkk1bW4vZjhrQ0NLUkhKNjNaK3dOVjNxZU5ZR3ZoM2Z4OHlIemt2d04vYTBPYTNrSHlZamNUMW9FbG1jbnUzY0RaQ3k3dGtaeE90Q3MzaHZzN1hqcHV6SVNzdkI5WEFFPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkwNjI3MTE5CWZpbGU6Vm94U3R1ZGlvXzAuMS4yX2FtZDY0LkFwcEltYWdlCXZlcnNpb246MC4xLjIKYWo5UmZXSmxNYWQ0NmhvTXRYQWtpN2RDZFg0L00yZ0hOYzB2RUJvcGgvWEd0SUZYZktBTXFkWFhLYTRGaXRPekJweVM4UnQrNnUzRzVITzlOclhYRHc9PQo=",
+      "url": "https://github.com/devops-monk/vox-studio/releases/download/v0.1.2/VoxStudio_0.1.2_amd64.AppImage"
     },
     "linux-x86_64-deb": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTYkk1bW4vZjhrQ0x4NUFFSFE5NVovRW41U3dDdms2Sjk1cjU0TjBiYkVjUk50N0pEblBsSE1JTC9IUWI2R1lFNjRSTlg2a2w0bEc2d2Q2M3R3RDRBdmdqb092OXBHREFjPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkwNjI2MDE2CWZpbGU6Vm94U3R1ZGlvXzAuMS4xX2FtZDY0LmRlYgl2ZXJzaW9uOjAuMS4xCnJ6ZE9ad0xZOHVhYW56VGZHSUtYN2lUMjFkL0c2WEF0dFNyalphOUFBTXhMdlBFMmp1cnBYVFp2YWVwMzJDaHJtUlFVUE1aZmw3aGFBM0xFWm8wbkFBPT0K",
-      "url": "https://github.com/devops-monk/vox-studio/releases/download/v0.1.1/VoxStudio_0.1.1_amd64.deb"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTYkk1bW4vZjhrQ0kvZjRySHNHZzZLWDZ3c3laZFY1SnNrTFV5Z2svWXRXQWltbXVnUy96RDRWSXgxWjYwa0k5Ukdmc09uT3Z6STB4dmlxM2lFR0JiMTVYU1FrL3M0cFFNPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkwNjI3MTE5CWZpbGU6Vm94U3R1ZGlvXzAuMS4yX2FtZDY0LmRlYgl2ZXJzaW9uOjAuMS4yCmtuMW4vYUJSMEk2cklGSjY1OG91SDlmUXgwMTBxNTYyYTQyS29uZHRkUXZtaHlQallmVUI3T09OMTVmM3ZyUWsvcytJQzc3QXI5clZKbythNno0UERRPT0K",
+      "url": "https://github.com/devops-monk/vox-studio/releases/download/v0.1.2/VoxStudio_0.1.2_amd64.deb"
     },
     "linux-x86_64-rpm": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTYkk1bW4vZjhrQ0V6M2IyUFRCL2o1eVRhRHBGUHQrcU5zcUhkQXdTQ3dTS2pIcmd5OEFMYUNHR21zMkxPVmpyMW5EYktGUlo4N0tQdDh2b1l1THNkeUNjQUxRaHNHbmc0PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkwNjI2MDE2CWZpbGU6Vm94U3R1ZGlvLTAuMS4xLTEueDg2XzY0LnJwbQl2ZXJzaW9uOjAuMS4xCkhCUURFTFRLdVVQNis0b2ljWFBRY3FuOUJ2b21QVzVDYUd3TWFHQmJVRDJ6UzcyT0hPOThUUit4UFdwZXg2OFlpM3ZyaGVnd2gyZXF6OFZmZHlOTUR3PT0K",
-      "url": "https://github.com/devops-monk/vox-studio/releases/download/v0.1.1/VoxStudio-0.1.1-1.x86_64.rpm"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTYkk1bW4vZjhrQ0I3MEdlNDl4Qi9vT25yZ2lUUmwxOHNML2NqRlV3REc0MWVSbHdKREFZNDduVFM0QW5Fd2twNGdmTmpXOHE4WG5WdG5QRzUxdXhCRG5pdFdIUW5sOUFRPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkwNjI3MTE5CWZpbGU6Vm94U3R1ZGlvLTAuMS4yLTEueDg2XzY0LnJwbQl2ZXJzaW9uOjAuMS4yCnRLNmxmMGN2Z05zSURySExlY1p1ZXd3WE9MSjh1N1B2WHhHcVhGM1BNK0phaWxHSUNSTDNzUzFIbVNUYXJXajU1MHM3a1N3SlVrQ0U4ZTdMaEd3UUFnPT0K",
+      "url": "https://github.com/devops-monk/vox-studio/releases/download/v0.1.2/VoxStudio-0.1.2-1.x86_64.rpm"
     },
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTYkk1bW4vZjhrQ0VzeC9WTjI4MWw1K29pVUthK3VXeFgrdG9XMkpuU3pyTDNPZ1VBbEt6dll3ckw2bTcvWkNLU0ZxUnk5WWNsRyt5OHN0MXlSNEZyVnYveHUrQUZuaGdJPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkwNjI2MDgwCWZpbGU6Vm94U3R1ZGlvXzAuMS4xX3g2NF9lbi1VUy5tc2kJdmVyc2lvbjowLjEuMQpkaFFqTjBvbS9aVmN6ZDBLQjNyNmlETnRlNXYrSUdGRDArcXE2OHIrODdJNWxtWit0UFhKQjRuNEppRThBYVJvbVhxajJBaU9yaVpPcGswd1YxdUdDZz09Cg==",
-      "url": "https://github.com/devops-monk/vox-studio/releases/download/v0.1.1/VoxStudio_0.1.1_x64_en-US.msi"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTYkk1bW4vZjhrQ0gxbFhTa2h6bW16eGxObWloMUdQVVI1UWFuZEo5dTcxSTJxelVNemIzc2JkUDVwVEgwM2V4UDV6aTh4a2FYL0FpS2RlL1dlZDk3SmRTemZ3RmZna2c4PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkwNjI3Mjc3CWZpbGU6Vm94U3R1ZGlvXzAuMS4yX3g2NF9lbi1VUy5tc2kJdmVyc2lvbjowLjEuMgoxLzAwWlI1V3lLZ3ZkZThKRndaZnBENUcvY0tRZDdoblFFMFNNemxCYWgrQUdPUTZMTlQxcHZzQW9FajFWR3dFcGJRTkFOaXFCUHpvYUNyRnVpc3ZDUT09Cg==",
+      "url": "https://github.com/devops-monk/vox-studio/releases/download/v0.1.2/VoxStudio_0.1.2_x64_en-US.msi"
     },
     "windows-x86_64-msi": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTYkk1bW4vZjhrQ0VzeC9WTjI4MWw1K29pVUthK3VXeFgrdG9XMkpuU3pyTDNPZ1VBbEt6dll3ckw2bTcvWkNLU0ZxUnk5WWNsRyt5OHN0MXlSNEZyVnYveHUrQUZuaGdJPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkwNjI2MDgwCWZpbGU6Vm94U3R1ZGlvXzAuMS4xX3g2NF9lbi1VUy5tc2kJdmVyc2lvbjowLjEuMQpkaFFqTjBvbS9aVmN6ZDBLQjNyNmlETnRlNXYrSUdGRDArcXE2OHIrODdJNWxtWit0UFhKQjRuNEppRThBYVJvbVhxajJBaU9yaVpPcGswd1YxdUdDZz09Cg==",
-      "url": "https://github.com/devops-monk/vox-studio/releases/download/v0.1.1/VoxStudio_0.1.1_x64_en-US.msi"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTYkk1bW4vZjhrQ0gxbFhTa2h6bW16eGxObWloMUdQVVI1UWFuZEo5dTcxSTJxelVNemIzc2JkUDVwVEgwM2V4UDV6aTh4a2FYL0FpS2RlL1dlZDk3SmRTemZ3RmZna2c4PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkwNjI3Mjc3CWZpbGU6Vm94U3R1ZGlvXzAuMS4yX3g2NF9lbi1VUy5tc2kJdmVyc2lvbjowLjEuMgoxLzAwWlI1V3lLZ3ZkZThKRndaZnBENUcvY0tRZDdoblFFMFNNemxCYWgrQUdPUTZMTlQxcHZzQW9FajFWR3dFcGJRTkFOaXFCUHpvYUNyRnVpc3ZDUT09Cg==",
+      "url": "https://github.com/devops-monk/vox-studio/releases/download/v0.1.2/VoxStudio_0.1.2_x64_en-US.msi"
     },
     "windows-x86_64-nsis": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTYkk1bW4vZjhrQ1BBNkRDbU9NVGhtVUZrWndTeXJHN2VSZUVDazdwQ3hRZjgrTHlzbUhiQmNkV3lpZjV0QkNJLyt6Vml1ck9lcmxaRS9EdWFubjF1Y3NNV1M4QytTMkE0PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkwNjI2MDgwCWZpbGU6Vm94U3R1ZGlvXzAuMS4xX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjEuMQo2MDBNVHkwL0dHYVVVckdZbUxQaW9heE5mWmNJdUZYQkpzN1hqek9ENlNULytycGpNcHlmaEZjQXRBVis1WjgrYmJNT1gvR0xLR1FJeTdwMXQvR0dBdz09Cg==",
-      "url": "https://github.com/devops-monk/vox-studio/releases/download/v0.1.1/VoxStudio_0.1.1_x64-setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTYkk1bW4vZjhrQ0NRTzhadXhHVW1UVXNIcXZkdG1INXZtamlsTnNURUJhbXUxK3J4Skh0ZWovQzR2bkpXbUYvaXZLYlRZNDc4UFk0cmk4ZjkrNTZWZkV4V0ZQWTk5K3dNPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkwNjI3Mjc3CWZpbGU6Vm94U3R1ZGlvXzAuMS4yX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjEuMgpGcHZuVlhnNmhpNmtHVTI5VVhMNnBKVTFXTHJpbjJKT2pLYmpaRGF6S0hrOGFHNnlBQXA1Z09PSy9QbUJWUS8yaDJqSEozcUdYbWUrVXpBQ2ZjTzdDdz09Cg==",
+      "url": "https://github.com/devops-monk/vox-studio/releases/download/v0.1.2/VoxStudio_0.1.2_x64-setup.exe"
     }
   }
 }
