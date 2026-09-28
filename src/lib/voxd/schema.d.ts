@@ -1520,6 +1520,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/imports/url": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Dub or transcribe from a link
+         * @description Downloads a direct link to an audio or video file in the background, then starts a dub or a
+         *     transcription. On success the job `result` holds `dub_id`, or `transcript_id` and `transcribe_job_id`.
+         *     Links to this computer or the local network are refused.
+         */
+        post: operations["import_url_v1_imports_url_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/files/read": {
         parameters: {
             query?: never;
@@ -2759,6 +2781,33 @@ export interface components {
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /** ImportUrlIn */
+        ImportUrlIn: {
+            /**
+             * Url
+             * @description A direct http(s) link to an audio or video file
+             */
+            url: string;
+            /**
+             * Then
+             * @enum {string}
+             */
+            then: "dub" | "transcribe";
+            /**
+             * Target Language
+             * @description Dub into this language (required for `dub`)
+             */
+            target_language?: string | null;
+            /** Source Language */
+            source_language?: string | null;
+            /**
+             * Language
+             * @description Transcribe: spoken language; omit to detect
+             */
+            language?: string | null;
+            /** Title */
+            title?: string | null;
         };
         /** JobOut */
         JobOut: {
@@ -8687,6 +8736,66 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["LeaderboardOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    import_url_v1_imports_url_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ImportUrlIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
                 };
             };
             /** @description Validation Error */

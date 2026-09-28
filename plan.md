@@ -179,7 +179,7 @@ Work goes one milestone at a time. Tick `[x]` only after the item is verified in
 - [x] Docs: dubbing reference and guide
 - [ ] Follow-up: automatic speaker detection (diarization)
 - [ ] Follow-up: keep background music and effects via Demucs (optional runtime pack)
-- [ ] Follow-up: import from a URL
+- [x] Follow-up: import from a URL: `POST /v1/imports/url` (direct media links; local and private networks refused, also after redirects; web pages rejected with a clear message) in Dub and Transcribe; verified with a real Wikimedia file, then its transcript
 
 ### M10 — Stories & Audiobooks ✅
 - [x] Import EPUB (spine, metadata, cover and TOC pages skipped), DOCX (heading styles), Markdown (headings), text (“Chapter …” lines) or pasted text — standard library only

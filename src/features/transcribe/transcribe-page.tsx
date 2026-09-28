@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { FileAudio, Loader2, Mic, Pause, Play, Search, Square, Trash2, Upload } from 'lucide-react'
+import { FileAudio, Link2, Loader2, Mic, Pause, Play, Search, Square, Trash2, Upload } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button, GlassPanel, SegmentedControl } from '@/components/glass'
 import { VoiceOrb } from '@/components/voice-orb'
@@ -12,6 +12,7 @@ import { voxd } from '@/lib/voxd/client'
 import { useJob, useModels, usePatchTranscript, useTranscript, useTranscripts } from '@/lib/voxd/queries'
 import type { Segment, Transcript } from '@/lib/voxd/types'
 import { cn } from '@/lib/cn'
+import { useImportLink } from '@/lib/voxd/use-import'
 import { AddToProject } from '@/components/add-to-project'
 import { useFocus } from '@/lib/store/focus'
 import { DownloadBar, ModelActions, ModelArt } from '@/features/models/model-parts'
@@ -56,7 +57,9 @@ function Select({ value, onChange, options, label }: { value: string; onChange: 
 function FilePanel({ language, model, onDone }: { language: string; model: string; onDone: (id: string) => void }) {
   const [jobId, setJobId] = useState<string | null>(null)
   const [dragging, setDragging] = useState(false)
-  const [pending, setPending] = useState<File | null>(null)
+  const [pending, setPending] = useState<{ name: string; size: number | null } | null>(null)
+  const [link, setLink] = useState('')
+  const importing = useImportLink()
   const job = useJob(jobId).data
   const input = useRef<HTMLInputElement>(null)
 
@@ -69,13 +72,27 @@ function FilePanel({ language, model, onDone }: { language: string; model: strin
   }, [job, onDone])
 
   const start = async (file: File) => {
-    setPending(file)
+    setPending({ name: file.name, size: file.size })
     try {
       const j = await voxd.transcribe(file, { language: language || undefined, model: model || undefined })
       setJobId(j.id)
     } catch (e) {
       setPending(null)
       toast.error('Couldn’t start transcription', { description: (e as Error).message })
+    }
+  }
+
+  const fromLink = async () => {
+    const url = link.trim()
+    if (!url) return
+    setPending({ name: decodeURIComponent(url.split(/[?#]/)[0].split('/').pop() || url), size: null })
+    try {
+      const result = await importing.run({ url, then: 'transcribe', language: language || null })
+      setJobId(result.transcribe_job_id)
+      setLink('')
+    } catch (e) {
+      setPending(null)
+      toast.error('Couldn’t import that link', { description: (e as Error).message })
     }
   }
 
@@ -87,9 +104,9 @@ function FilePanel({ language, model, onDone }: { language: string; model: strin
         </span>
         <div className="min-w-0 flex-1 space-y-2">
           <div className="truncate text-[13px] font-medium">
-            {pending.name} <span className="text-text-3">· {formatBytes(pending.size)}</span>
+            {pending.name} {pending.size != null && <span className="text-text-3">· {formatBytes(pending.size)}</span>}
           </div>
-          <DownloadBar progress={job?.progress ?? 0} message={job ? job.message ?? 'Working…' : 'Uploading…'} />
+          <DownloadBar progress={job?.progress ?? 0} message={importing.status ?? (job ? (job.message ?? 'Working…') : 'Uploading…')} />
         </div>
         {jobId && (
           <Button variant="ghost" size="sm" onClick={() => void voxd.cancelJob(jobId)}>
@@ -101,37 +118,59 @@ function FilePanel({ language, model, onDone }: { language: string; model: strin
   }
 
   return (
-    <button
-      type="button"
-      onClick={() => input.current?.click()}
-      onDragOver={(e) => (e.preventDefault(), setDragging(true))}
-      onDragLeave={() => setDragging(false)}
-      onDrop={(e) => {
-        e.preventDefault()
-        setDragging(false)
-        const f = e.dataTransfer.files[0]
-        if (f) void start(f)
-      }}
-      className={cn(
-        'flex w-full flex-col items-center justify-center gap-2 rounded-[var(--radius-lg)] border border-dashed px-6 py-10 text-center transition-colors',
-        dragging ? 'border-[var(--accent)] bg-[color-mix(in_srgb,var(--accent)_8%,transparent)]' : 'border-[var(--hairline-strong)] hover:bg-fill-hover',
-      )}
-    >
-      <Upload size={26} strokeWidth={1.5} className="text-text-3" />
-      <span className="text-[14px] font-medium">Drop an audio or video file</span>
-      <span className="text-[12px] text-text-3">or click to choose · MP3, M4A, WAV, MP4, MOV… up to 2 GB</span>
-      <input
-        ref={input}
-        type="file"
-        accept="audio/*,video/*"
-        hidden
-        onChange={(e) => {
-          const f = e.target.files?.[0]
+    <div className="space-y-2">
+      <button
+        type="button"
+        onClick={() => input.current?.click()}
+        onDragOver={(e) => (e.preventDefault(), setDragging(true))}
+        onDragLeave={() => setDragging(false)}
+        onDrop={(e) => {
+          e.preventDefault()
+          setDragging(false)
+          const f = e.dataTransfer.files[0]
           if (f) void start(f)
-          e.target.value = ''
         }}
-      />
-    </button>
+        className={cn(
+          'flex w-full flex-col items-center justify-center gap-2 rounded-[var(--radius-lg)] border border-dashed px-6 py-10 text-center transition-colors',
+          dragging ? 'border-[var(--accent)] bg-[color-mix(in_srgb,var(--accent)_8%,transparent)]' : 'border-[var(--hairline-strong)] hover:bg-fill-hover',
+        )}
+      >
+        <Upload size={26} strokeWidth={1.5} className="text-text-3" />
+        <span className="text-[14px] font-medium">Drop an audio or video file</span>
+        <span className="text-[12px] text-text-3">or click to choose · MP3, M4A, WAV, MP4, MOV… up to 2 GB</span>
+        <input
+          ref={input}
+          type="file"
+          accept="audio/*,video/*"
+          hidden
+          onChange={(e) => {
+            const f = e.target.files?.[0]
+            if (f) void start(f)
+            e.target.value = ''
+          }}
+        />
+      </button>
+      <form
+        onSubmit={(e) => {
+          e.preventDefault()
+          void fromLink()
+        }}
+        className="flex items-center gap-2 rounded-[var(--radius-md)] bg-fill-control px-3 py-1"
+      >
+        <Link2 size={13} className="shrink-0 text-text-3" />
+        <input
+          value={link}
+          onChange={(e) => setLink(e.target.value)}
+          placeholder="…or paste a direct link to an audio or video file"
+          aria-label="Media link"
+          spellCheck={false}
+          className="h-7 min-w-0 flex-1 bg-transparent text-[13px] outline-none placeholder:text-text-3"
+        />
+        <Button type="submit" size="sm" disabled={!link.trim()}>
+          Transcribe
+        </Button>
+      </form>
+    </div>
   )
 }
 
@@ -209,7 +248,12 @@ function LivePanel({ language, onDone }: { language: string; onDone: (id: string
           </Button>
         )}
       </div>
-      <div ref={scroller} className="max-h-48 min-h-32 flex-1 overflow-y-auto rounded-[var(--radius-md)] bg-[var(--glass-3)] p-4 text-[15px] leading-relaxed" aria-live="polite" aria-label="Live transcript">
+      <div
+        ref={scroller}
+        className="max-h-48 min-h-32 flex-1 overflow-y-auto rounded-[var(--radius-md)] bg-[var(--glass-3)] p-4 text-[15px] leading-relaxed"
+        aria-live="polite"
+        aria-label="Live transcript"
+      >
         {finals.length || partial ? (
           <>
             {finals.join(' ')} <span className="text-text-3">{partial}</span>
@@ -293,8 +337,8 @@ function Viewer({ id, onDeleted }: { id: string; onDeleted: () => void }) {
           className="w-full rounded-[6px] bg-transparent font-[var(--font-display)] text-[20px] font-semibold tracking-[-0.01em] outline-none hover:bg-fill-hover focus:bg-fill-control"
         />
         <div className="flex flex-wrap items-center gap-2 text-[12px] text-text-3">
-          <span>{clock(t.duration_s)}</span>·<span className="uppercase">{t.language}</span>·<span>{t.model.replace('whisper-', 'Whisper ')}</span>·<span>{t.source === 'live' ? 'Live' : 'File'}</span>·
-          <span>{timeAgo(t.created_at)}</span>
+          <span>{clock(t.duration_s)}</span>·<span className="uppercase">{t.language}</span>·<span>{t.model.replace('whisper-', 'Whisper ')}</span>·<span>{t.source === 'live' ? 'Live' : 'File'}</span>
+          ·<span>{timeAgo(t.created_at)}</span>
           <div className="flex-1" />
           {t.has_audio && (
             <Button size="sm" onClick={() => (playing ? stop() : void play(key, voxd.transcriptAudioUrl(t.id)))}>
@@ -312,9 +356,7 @@ function Viewer({ id, onDeleted }: { id: string; onDeleted: () => void }) {
             variant="ghost"
             aria-label="Delete transcript"
             onBlur={() => setConfirmDelete(false)}
-            onClick={() =>
-              confirmDelete ? void voxd.deleteTranscript(t.id).then(() => (toast('Transcript deleted'), onDeleted())) : setConfirmDelete(true)
-            }
+            onClick={() => (confirmDelete ? void voxd.deleteTranscript(t.id).then(() => (toast('Transcript deleted'), onDeleted())) : setConfirmDelete(true))}
             className={cn(confirmDelete && 'bg-[#ff453a]/12 text-[#ff453a]')}
           >
             <Trash2 size={12} /> {confirmDelete && 'Confirm'}
@@ -412,7 +454,12 @@ export function TranscribePage() {
       <aside className="flex min-h-0 flex-col gap-3">
         <label className="flex h-7 items-center gap-2 rounded-[8px] bg-fill-control px-2.5 text-text-3">
           <Search size={13} />
-          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search transcripts" className="min-w-0 flex-1 bg-transparent text-[12px] text-text-1 outline-none placeholder:text-text-3" />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search transcripts"
+            className="min-w-0 flex-1 bg-transparent text-[12px] text-text-1 outline-none placeholder:text-text-3"
+          />
         </label>
         <ul className="-mx-1 min-h-0 flex-1 space-y-1 overflow-y-auto px-1">
           {list.map((t) => (

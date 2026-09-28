@@ -76,3 +76,14 @@ Writes an output to a file: `{"path": "/abs/path/talk.en.mp4", "what": "video" |
 
 ## Tested end to end
 A Spanish clip (macOS voice "Mónica") was dubbed into English with a system voice. Whisper, transcribing the rendered MP4, heard *"Hello everyone and welcome, today we will learn to cook a Spanish tortilla, it is very easy and delicious."* The video stream was copied untouched and the duration was preserved.
+
+## Import from a link: `POST /v1/imports/url`
+```json
+{ "url": "https://example.com/promo.mp4", "then": "dub", "target_language": "es", "title": "Promo" }
+```
+`then` is `dub` (requires `target_language`; `source_language` is optional) or `transcribe` (`language` is optional). The link is downloaded in the background (`202`, a Job in the network lane, up to 2 GB), then the work starts. The job `result` holds `{"dub_id", "title"}` for a dub, or `{"transcript_id", "transcribe_job_id", "title"}` for a transcription; follow `transcribe_job_id` until the transcript is ready.
+
+Rules:
+- The link must be http(s) and point at media: `audio/*` or `video/*`, Ogg/MP4/Matroska, or a generic type with a media file extension. Web pages fail with a clear error.
+- Hosts that resolve to loopback, private, link-local or reserved addresses are refused, including after redirects: `400 invalid_url`.
+- Also: `400 unsupported_language`, and `400 engine_unavailable` (needs Whisper).

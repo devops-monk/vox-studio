@@ -241,6 +241,7 @@ export const voxd = {
   collection: (tag: string) => call(api().GET('/v1/tags/{tag}', { params: { path: { tag } } })),
   renameTag: (tag: string, to: string) => noContent(api().POST('/v1/tags/{tag}/rename', { params: { path: { tag } }, body: { to } })),
   deleteTag: (tag: string) => noContent(api().DELETE('/v1/tags/{tag}', { params: { path: { tag } } })),
+  importUrl: (body: import('./schema').components['schemas']['ImportUrlIn']) => call(api().POST('/v1/imports/url', { body })),
   starTake: (id: string, starred: boolean) => call(api().PUT('/v1/takes/{take_id}/star', { params: { path: { take_id: id } }, body: { starred } })),
   exportTake: (id: string, path: string, overwrite = false) =>
     noContent(api().POST('/v1/takes/{take_id}/export', { params: { path: { take_id: id } }, body: { path, overwrite } })),

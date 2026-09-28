@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { AlertTriangle, AudioLines, Download, Film, Languages, Loader2, Play, Plus, Trash2, Upload, Wand2, X } from 'lucide-react'
+import { AlertTriangle, AudioLines, Download, Film, Languages, Loader2, Play, Plus, Trash2, Upload, Wand2, X, Link2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button, GlassPanel, SegmentedControl } from '@/components/glass'
 import { VoiceAvatar } from '@/components/voice-avatar'
@@ -10,6 +10,7 @@ import { voxd } from '@/lib/voxd/client'
 import { useDub, useDubLanguages, useDubs, useEngines, useJob, useModels, useVoices } from '@/lib/voxd/queries'
 import type { Dub, DubLine } from '@/lib/voxd/types'
 import { cn } from '@/lib/cn'
+import { useImportLink } from '@/lib/voxd/use-import'
 import { AddToProject } from '@/components/add-to-project'
 import { useFocus } from '@/lib/store/focus'
 import { DownloadBar, ModelActions, ModelArt } from '@/features/models/model-parts'
@@ -39,6 +40,17 @@ function NewDub({ onCreated, onCancel }: { onCreated: (id: string) => void; onCa
   const [busy, setBusy] = useState(false)
   const input = useRef<HTMLInputElement>(null)
   const chosen = languages.find((l) => l.code === target)
+
+  const [link, setLink] = useState('')
+  const importing = useImportLink()
+  const startFromLink = async () => {
+    try {
+      const result = await importing.run({ url: link.trim(), then: 'dub', target_language: target })
+      onCreated(result.dub_id)
+    } catch (e) {
+      toast.error('Couldn’t import that link', { description: (e as Error).message })
+    }
+  }
 
   const start = async () => {
     if (!file) return
@@ -84,6 +96,19 @@ function NewDub({ onCreated, onCancel }: { onCreated: (id: string) => void; onCa
         <span className="text-[12px] text-text-3">{file ? `${(file.size / 1e6).toFixed(1)} MB · click to change` : 'MP4, MOV, MKV, WebM, MP3, M4A… up to 2 GB'}</span>
         <input ref={input} type="file" accept="video/*,audio/*" hidden onChange={(e) => (e.target.files?.[0] && setFile(e.target.files[0]), (e.target.value = ''))} />
       </button>
+      {!file && (
+        <label className="flex items-center gap-2 rounded-[var(--radius-md)] bg-fill-control px-3 py-1.5">
+          <Link2 size={13} className="shrink-0 text-text-3" />
+          <input
+            value={link}
+            onChange={(e) => setLink(e.target.value)}
+            placeholder="…or paste a direct link to a video or audio file"
+            aria-label="Media link"
+            spellCheck={false}
+            className="h-7 min-w-0 flex-1 bg-transparent text-[13px] outline-none placeholder:text-text-3"
+          />
+        </label>
+      )}
       <label className="flex items-center justify-between gap-4">
         <span className="text-[13px] font-medium">Dub into</span>
         <select value={target} onChange={(e) => setTarget(e.target.value)} className="h-8 w-56 rounded-[8px] border-[0.5px] border-hairline bg-fill-control px-2 text-[13px] outline-none">
@@ -102,8 +127,8 @@ function NewDub({ onCreated, onCancel }: { onCreated: (id: string) => void; onCa
         </p>
       )}
       <p className="text-[12px] text-text-3">VoxStudio transcribes the speech, translates it, and suggests a voice. You can review and edit every line before rendering.</p>
-      <Button variant="primary" className="w-full justify-center" disabled={!file || busy} onClick={() => void start()}>
-        {busy ? <Loader2 size={14} className="animate-spin" /> : <Wand2 size={14} />} Start dubbing
+      <Button variant="primary" className="w-full justify-center" disabled={(!file && !link.trim()) || busy || importing.busy} onClick={() => void (file ? start() : startFromLink())}>
+        {busy || importing.busy ? <Loader2 size={14} className="animate-spin" /> : <Wand2 size={14} />} {importing.status ?? 'Start dubbing'}
       </Button>
     </GlassPanel>
   )
@@ -159,8 +184,18 @@ function VoiceSelect({ lang, value, onChange }: { lang: string; value: { engine:
 function FitBadge({ line }: { line: DubLine }) {
   const fit = line.fit as { speed: number; overflow_s: number } | null | undefined
   if (!fit) return null
-  if (fit.overflow_s > 0.3) return <span className="rounded-full bg-[#ff453a]/15 px-1.5 text-[10px] font-medium text-[#ff453a]" title="Runs past the next line; shorten the translation">+{fit.overflow_s.toFixed(1)}s long</span>
-  if (fit.speed > 1.12) return <span className="rounded-full bg-[#ff9f0a]/15 px-1.5 text-[10px] font-medium text-[#ff9f0a]" title="Sped up to fit its slot">{fit.speed.toFixed(2)}× faster</span>
+  if (fit.overflow_s > 0.3)
+    return (
+      <span className="rounded-full bg-[#ff453a]/15 px-1.5 text-[10px] font-medium text-[#ff453a]" title="Runs past the next line; shorten the translation">
+        +{fit.overflow_s.toFixed(1)}s long
+      </span>
+    )
+  if (fit.speed > 1.12)
+    return (
+      <span className="rounded-full bg-[#ff9f0a]/15 px-1.5 text-[10px] font-medium text-[#ff9f0a]" title="Sped up to fit its slot">
+        {fit.speed.toFixed(2)}× faster
+      </span>
+    )
   return <span className="rounded-full bg-[#30d158]/12 px-1.5 text-[10px] font-medium text-[#30d158]">fits</span>
 }
 
@@ -179,8 +214,7 @@ function LineRow({ dub, line, index, onSeek, active }: { dub: Dub; line: DubLine
   useEffect(() => setText(line.translation), [line.translation])
   const locked = !!dub.job_id
 
-  const save = (patch: { translation?: string; speaker?: string }) =>
-    voxd.patchDub(dub.id, { segments: [{ id: line.id, ...patch }] }).catch((e: Error) => toast.error(e.message))
+  const save = (patch: { translation?: string; speaker?: string }) => voxd.patchDub(dub.id, { segments: [{ id: line.id, ...patch }] }).catch((e: Error) => toast.error(e.message))
 
   const preview = async () => {
     setPreviewing(true)
@@ -196,7 +230,12 @@ function LineRow({ dub, line, index, onSeek, active }: { dub: Dub; line: DubLine
   }
 
   return (
-    <li className={cn('group grid grid-cols-[52px_40px_1fr_auto] items-start gap-2 rounded-[10px] px-2 py-2 transition-colors', active ? 'bg-[color-mix(in_srgb,var(--accent)_10%,transparent)]' : 'hover:bg-fill-hover')}>
+    <li
+      className={cn(
+        'group grid grid-cols-[52px_40px_1fr_auto] items-start gap-2 rounded-[10px] px-2 py-2 transition-colors',
+        active ? 'bg-[color-mix(in_srgb,var(--accent)_10%,transparent)]' : 'hover:bg-fill-hover',
+      )}
+    >
       <button type="button" onClick={() => onSeek(line.start)} className="pt-1 text-left text-[11px] tabular-nums text-[var(--accent)] hover:underline">
         {clock(line.start)}
       </button>
@@ -280,8 +319,7 @@ function Editor({ id, onDeleted }: { id: string; onDeleted: () => void }) {
     void video.current.play()
   }
 
-  const render = () =>
-    voxd.renderDub(dub.id).catch((e: Error) => toast.error('Couldn’t render', { description: e.message }))
+  const render = () => voxd.renderDub(dub.id).catch((e: Error) => toast.error('Couldn’t render', { description: e.message }))
 
   return (
     <div className="flex min-h-0 flex-col gap-4">
@@ -335,14 +373,7 @@ function Editor({ id, onDeleted }: { id: string; onDeleted: () => void }) {
         <div className="space-y-4">
           <GlassPanel className="overflow-hidden p-0">
             {dub.has_video ? (
-              <video
-                key={src}
-                ref={video}
-                src={src}
-                controls
-                onTimeUpdate={(e) => setTime(e.currentTarget.currentTime)}
-                className="aspect-video w-full bg-black"
-              />
+              <video key={src} ref={video} src={src} controls onTimeUpdate={(e) => setTime(e.currentTarget.currentTime)} className="aspect-video w-full bg-black" />
             ) : (
               <div className="flex aspect-video w-full flex-col items-center justify-center gap-3 bg-[var(--glass-2)]">
                 <AudioLines size={32} className="text-text-3" />
@@ -400,11 +431,7 @@ function Editor({ id, onDeleted }: { id: string; onDeleted: () => void }) {
                 <VoiceAvatar id={sp} name={sp.replace('S', '')} size={26} />
                 <span className="w-10 text-[12px] font-semibold">{sp}</span>
                 <div className="min-w-0 flex-1">
-                  <VoiceSelect
-                    lang={dub.target_lang}
-                    value={dub.cast[sp] ?? null}
-                    onChange={(v) => void voxd.patchDub(dub.id, { cast: { [sp]: v } }).catch((e: Error) => toast.error(e.message))}
-                  />
+                  <VoiceSelect lang={dub.target_lang} value={dub.cast[sp] ?? null} onChange={(v) => void voxd.patchDub(dub.id, { cast: { [sp]: v } }).catch((e: Error) => toast.error(e.message))} />
                 </div>
               </div>
             ))}
@@ -492,7 +519,10 @@ export function DubPage() {
               <button
                 type="button"
                 onClick={() => (setSelected(d.id), setCreating(false))}
-                className={cn('w-full rounded-[10px] p-2.5 text-left transition-colors', selected === d.id && !creating ? 'bg-[color-mix(in_srgb,var(--accent)_14%,transparent)]' : 'hover:bg-fill-hover')}
+                className={cn(
+                  'w-full rounded-[10px] p-2.5 text-left transition-colors',
+                  selected === d.id && !creating ? 'bg-[color-mix(in_srgb,var(--accent)_14%,transparent)]' : 'hover:bg-fill-hover',
+                )}
               >
                 <div className="flex items-center gap-1.5 text-[13px] font-medium">
                   {d.has_video ? <Film size={12} className="shrink-0 text-text-3" /> : <AudioLines size={12} className="shrink-0 text-text-3" />}

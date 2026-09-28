@@ -43,3 +43,8 @@ Click **Render dub**. When it's done:
 
 ## Change language
 Pick a different language in the menu at the top right. Every line is translated again, and the cast switches to a voice for that language. Then render again.
+
+## Start from a link
+Instead of a file, paste a **direct link to a video or audio file** under the drop area and click **Start dubbing**. VoxStudio downloads it (up to 2 GB), then prepares the dub as usual. Progress shows in the button and in Activity.
+
+Only links that point straight at a media file work, for example `…/clip.mp4`. Links to web pages such as a video site's watch page are refused. Links to your own computer or local network are refused too.

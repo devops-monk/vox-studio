@@ -33,3 +33,6 @@ Search the list to find any transcript by title or words.
 
 ## Dictate into any app
 See [Dictation](dictation.md).
+
+## Transcribe from a link
+Paste a direct link to an audio or video file into **…or paste a direct link** under the drop area and click **Transcribe**. VoxStudio downloads it and transcribes it as if you'd dropped the file. Web pages and links to your local network aren't accepted.

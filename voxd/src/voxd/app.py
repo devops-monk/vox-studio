@@ -36,7 +36,7 @@ from .api.mcp import router as mcp_router
 from .api.openai import OpenAIError, router as openai_router
 from .keys import authenticate
 from .pronounce import pronouncer
-from . import tools
+from . import importer, tools
 from .speech import render_long
 from .transcripts import transcribe_file
 from .voices import CustomVoices
@@ -143,6 +143,7 @@ def create_app(
         services.jobs.register("batch.transcribe", partial(transcribe_item, services), lane="asr")
         services.jobs.register("tools.clean", partial(tools.clean_job, services), lane="media")
         services.jobs.register("tools.convert", partial(tools.convert_job, services))
+        services.jobs.register("import.url", partial(importer.import_job, services), lane="network")
         services.jobs.start()
         cleanup = asyncio.create_task(sweeper(services), name="retention")
         services.watcher = Watcher(services)

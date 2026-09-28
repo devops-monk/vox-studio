@@ -6388,6 +6388,78 @@
         }
       }
     },
+    "/v1/imports/url": {
+      "post": {
+        "tags": [
+          "Dubbing"
+        ],
+        "summary": "Dub or transcribe from a link",
+        "description": "Downloads a direct link to an audio or video file in the background, then starts a dub or a\ntranscription. On success the job `result` holds `dub_id`, or `transcript_id` and `transcribe_job_id`.\nLinks to this computer or the local network are refused.",
+        "operationId": "import_url_v1_imports_url_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImportUrlIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobOut"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/files/read": {
       "get": {
         "tags": [
@@ -9502,6 +9574,77 @@
         },
         "type": "object",
         "title": "HTTPValidationError"
+      },
+      "ImportUrlIn": {
+        "properties": {
+          "url": {
+            "type": "string",
+            "maxLength": 2000,
+            "title": "Url",
+            "description": "A direct http(s) link to an audio or video file"
+          },
+          "then": {
+            "type": "string",
+            "enum": [
+              "dub",
+              "transcribe"
+            ],
+            "title": "Then"
+          },
+          "target_language": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Language",
+            "description": "Dub into this language (required for `dub`)"
+          },
+          "source_language": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Language"
+          },
+          "language": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Language",
+            "description": "Transcribe: spoken language; omit to detect"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 120
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          }
+        },
+        "type": "object",
+        "required": [
+          "url",
+          "then"
+        ],
+        "title": "ImportUrlIn"
       },
       "JobOut": {
         "properties": {

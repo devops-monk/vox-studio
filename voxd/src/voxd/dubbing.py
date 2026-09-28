@@ -46,6 +46,19 @@ DEFAULT_VOICES: dict[str, list[tuple[str, str]]] = {
 }
 
 
+def start_dub(services: Services, dub_id: str, source_file: str, title: str, target: str, source_lang: str | None) -> Dub:
+    """Record a new dub whose source is already in its folder, and start preparing it."""
+    now = time.time()
+    d = Dub(
+        id=dub_id, title=title, status="preparing", source_file=source_file, has_video=False, duration_s=0.0,
+        source_lang=source_lang or "", target_lang=target, mix="duck", segments=[], cast={}, output={}, error=None,
+        created_at=now, updated_at=now,
+    )
+    services.store.add_dub(d)
+    services.jobs.submit("dub.prepare", f"Preparing {d.title}", {"dub_id": dub_id, "source_lang": source_lang})
+    return d
+
+
 def dub_dir(services: Services, dub_id: str) -> Path:
     d = services.settings.data_dir / "dubs" / dub_id
     d.mkdir(parents=True, exist_ok=True)

@@ -719,3 +719,12 @@ class CollectionOut(BaseModel):
 
 class TagRenameIn(BaseModel):
     to: str = Field(min_length=1, max_length=24)
+
+
+class ImportUrlIn(BaseModel):
+    url: str = Field(max_length=2000, description="A direct http(s) link to an audio or video file")
+    then: Literal["dub", "transcribe"]
+    target_language: str | None = Field(None, description="Dub into this language (required for `dub`)")
+    source_language: str | None = None
+    language: str | None = Field(None, description="Transcribe: spoken language; omit to detect")
+    title: str | None = Field(None, max_length=120)

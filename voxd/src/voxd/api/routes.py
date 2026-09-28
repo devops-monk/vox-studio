@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import json
 import time
+import urllib.parse
 import uuid
 
 import shutil
@@ -20,7 +21,7 @@ from ..voices import export_bundle, read_bundle
 from ..design import apply_sliders, design, parse_description, parse_recipe
 from ..keys import authenticate, create_key
 from ..pronounce import pronouncer
-from .. import compare, editor, markup, storage, tools
+from .. import compare, editor, importer, markup, storage, tools
 from ..transcripts import EXPORTS, LiveSession, save_live, to_text, uploads_dir
 from ..store import Transcript
 from .. import batch as batching, books, dubbing
@@ -31,6 +32,7 @@ from ..store import DesignedVoice
 from ..speech import render_markup, resolve_engine, save_take
 from ..store import Job, Take, clean_tags
 from .schemas import (
+    ImportUrlIn,
     CollectionOut,
     TagCountOut,
     TaggedVoiceOut,
@@ -941,14 +943,7 @@ async def create_dub(
                 shutil.rmtree(folder, ignore_errors=True)
                 raise HTTPException(400, detail=("file_too_large", "Files up to 2 GB are supported"))
             out.write(chunk)
-    now = time.time()
-    d = Dub(
-        id=dub_id, title=title or Path(file.filename or "Dub").stem[:120] or "Dub", status="preparing", source_file=dest.name,
-        has_video=False, duration_s=0.0, source_lang=source_language or "", target_lang=target_language, mix="duck",
-        segments=[], cast={}, output={}, error=None, created_at=now, updated_at=now,
-    )
-    services.store.add_dub(d)
-    services.jobs.submit("dub.prepare", f"Preparing {d.title}", {"dub_id": dub_id, "source_lang": source_language})
+    d = dubbing.start_dub(services, dub_id, dest.name, title or Path(file.filename or "Dub").stem[:120] or "Dub", target_language, source_language)
     return _dub_out(services, d)
 
 
@@ -1820,6 +1815,24 @@ def clear_ratings(request: Request, language: str | None = Query(None)) -> Delet
     n = services.store.clear_ratings(language.lower() if language else None)
     services.bus.publish("ratings.changed", {"language": language})
     return DeletedCountOut(deleted=n)
+
+
+@router.post("/imports/url", response_model=JobOut, status_code=202, responses=ERRORS, tags=["Dubbing"], summary="Dub or transcribe from a link")
+def import_url(request: Request, body: ImportUrlIn) -> JobOut:
+    """Downloads a direct link to an audio or video file in the background, then starts a dub or a
+    transcription. On success the job `result` holds `dub_id`, or `transcript_id` and `transcribe_job_id`.
+    Links to this computer or the local network are refused."""
+    services = _services(request)
+    try:
+        importer.check_url(body.url)
+    except EngineError as exc:
+        raise HTTPException(400, detail=("invalid_url", str(exc))) from exc
+    if body.then == "dub" and body.target_language not in dubbing.LANGUAGES:
+        raise HTTPException(400, detail=("unsupported_language", "Choose a language to dub into"))
+    if not services.media.available():
+        raise HTTPException(400, detail=("engine_unavailable", "This needs Whisper — download a Whisper model from Models"))
+    host = urllib.parse.urlsplit(body.url).hostname or "link"
+    return _job_out(services.jobs.submit("import.url", f"Importing from {host}", body.model_dump()))
 
 
 # --- Local files (Finder, Open With) -------------------------------------------
