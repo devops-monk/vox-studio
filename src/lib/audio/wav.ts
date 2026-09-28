@@ -59,12 +59,57 @@ export function peaks(samples: Float32Array, buckets: number): number[] {
 export interface ClipQuality {
   duration: number
   peak: number
+  /** Whole-clip RMS (includes pauses). */
   rmsDb: number
+  /** Level while someone is speaking (the loudest 30% of 50 ms frames). */
+  speechDb: number
+  /** Background level (the quietest 20% of frames). */
+  noiseDb: number
+  /** How far the voice stands out from the background. */
+  snrDb: number
+  /** Gain applied by normalizeClip, in dB (0 when none was needed). */
+  boostDb: number
   issues: { level: 'error' | 'warn'; message: string }[]
 }
 
-/** Quick checks that predict a good clone: length, loudness and clipping. */
-export function analyzeClip(samples: Float32Array, rate = CLONE_RATE): ClipQuality {
+const dB = (x: number) => 20 * Math.log10(Math.max(x, 1e-9))
+
+/** Frame-level loudness: speech level, noise floor and their difference. */
+function levels(samples: Float32Array, rate: number) {
+  const size = Math.max(1, Math.round(rate * 0.05))
+  const frames: number[] = []
+  for (let i = 0; i + size <= samples.length; i += size) {
+    let sum = 0
+    for (let j = i; j < i + size; j++) sum += samples[j] * samples[j]
+    frames.push(Math.sqrt(sum / size))
+  }
+  if (!frames.length) return { speechDb: -120, noiseDb: -120 }
+  frames.sort((a, b) => a - b)
+  const mean = (xs: number[]) => Math.sqrt(xs.reduce((s, x) => s + x * x, 0) / Math.max(1, xs.length))
+  const speech = mean(frames.slice(Math.floor(frames.length * 0.7)))
+  const noise = mean(frames.slice(0, Math.max(1, Math.floor(frames.length * 0.2))))
+  return { speechDb: dB(speech), noiseDb: dB(noise) }
+}
+
+const TARGET_SPEECH_DB = -20
+const PEAK_CEILING_DB = -1
+
+/** Raise quiet recordings to a standard speaking level (never past −1 dBFS peaks). */
+export function normalizeClip(samples: Float32Array, rate = CLONE_RATE): { samples: Float32Array; boostDb: number } {
+  let peak = 0
+  for (const s of samples) peak = Math.max(peak, Math.abs(s))
+  const { speechDb } = levels(samples, rate)
+  const gainDb = Math.min(TARGET_SPEECH_DB - speechDb, PEAK_CEILING_DB - dB(peak), 30)
+  if (gainDb <= 0.5) return { samples, boostDb: 0 }
+  const g = 10 ** (gainDb / 20)
+  return { samples: samples.map((s) => s * g), boostDb: gainDb }
+}
+
+/**
+ * Quick checks that predict a good clone. Loudness is judged while speaking and against the
+ * background (quiet-but-clean audio is fine — it's boosted), so pauses don't count against you.
+ */
+export function analyzeClip(samples: Float32Array, rate = CLONE_RATE, boostDb = 0): ClipQuality {
   let peak = 0
   let sum = 0
   let clipped = 0
@@ -75,13 +120,16 @@ export function analyzeClip(samples: Float32Array, rate = CLONE_RATE): ClipQuali
     if (a > 0.99) clipped++
   }
   const duration = samples.length / rate
-  const rmsDb = 20 * Math.log10(Math.sqrt(sum / Math.max(1, samples.length)) || 1e-9)
+  const rmsDb = dB(Math.sqrt(sum / Math.max(1, samples.length)))
+  const { speechDb, noiseDb } = levels(samples, rate)
+  const snrDb = speechDb - noiseDb
   const issues: ClipQuality['issues'] = []
   if (duration < 3) issues.push({ level: 'error', message: 'Too short: record at least 5 seconds, 10–20 is ideal.' })
   else if (duration < 8) issues.push({ level: 'warn', message: 'A bit short: 10–20 seconds gives a closer match.' })
   if (duration > 60) issues.push({ level: 'error', message: 'Too long: keep it under 60 seconds.' })
-  if (rmsDb < -40) issues.push({ level: 'error', message: 'Very quiet: move closer to the microphone.' })
-  else if (rmsDb < -30) issues.push({ level: 'warn', message: 'A little quiet: speak up or move closer.' })
+  if (speechDb - boostDb < -60) issues.push({ level: 'error', message: 'No voice was picked up. Check that the right microphone is selected in System Settings → Sound.' })
+  else if (snrDb < 10) issues.push({ level: 'error', message: 'The background is almost as loud as the voice. Record somewhere quieter, or closer to the microphone.' })
+  else if (snrDb < 18) issues.push({ level: 'warn', message: 'Some background noise: a quieter spot will give a cleaner voice.' })
   if (clipped / samples.length > 0.001) issues.push({ level: 'warn', message: 'Some distortion: move back a little or speak softer.' })
-  return { duration, peak, rmsDb, issues }
+  return { duration, peak, rmsDb, speechDb, noiseDb, snrDb, boostDb, issues }
 }

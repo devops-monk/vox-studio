@@ -5,7 +5,7 @@ import { toast } from 'sonner'
 import { Button, GlassPanel } from '@/components/glass'
 import { VoiceAvatar } from '@/components/voice-avatar'
 import { VoiceOrb } from '@/components/voice-orb'
-import { analyzeClip, CLONE_RATE, decodeToMono, encodeWav, peaks, type ClipQuality } from '@/lib/audio/wav'
+import { analyzeClip, CLONE_RATE, decodeToMono, encodeWav, normalizeClip, peaks, type ClipQuality } from '@/lib/audio/wav'
 import { usePlayer } from '@/lib/audio/player'
 import { usePrefs } from '@/lib/store/prefs'
 import { voxd } from '@/lib/voxd/client'
@@ -30,9 +30,10 @@ interface Clip {
 }
 
 async function toClip(data: ArrayBuffer): Promise<Clip> {
-  const samples = await decodeToMono(data)
+  // Quiet recordings are boosted to a standard level; checks then look at clarity, not volume.
+  const { samples, boostDb } = normalizeClip(await decodeToMono(data))
   const wav = encodeWav(samples, CLONE_RATE)
-  return { samples, wav, url: URL.createObjectURL(wav), quality: analyzeClip(samples), bars: peaks(samples, 80) }
+  return { samples, wav, url: URL.createObjectURL(wav), quality: analyzeClip(samples, CLONE_RATE, boostDb), bars: peaks(samples, 80) }
 }
 
 function Step({ n, title, done, active, children }: { n: number; title: string; done?: boolean; active?: boolean; children?: React.ReactNode }) {
