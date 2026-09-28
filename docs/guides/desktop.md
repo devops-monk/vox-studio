@@ -3,7 +3,12 @@
 ## Install
 **macOS 13.3 or later.** Open the `.dmg` and drag **VoxStudio** to **Applications**.
 
-Builds that aren't signed with an Apple Developer ID show a warning the first time. Control-click the app, choose **Open**, then **Open** again. You only need to do this once.
+Builds that aren't signed with an Apple Developer ID show a warning the first time. Control-click the app, choose **Open**, then **Open** again. On macOS 15, open **System Settings → Privacy & Security** and click **Open Anyway**. You only need to do this once.
+
+If macOS says **“VoxStudio is damaged and can’t be opened”**, you have version 0.1.0, which had an incomplete signature. Install 0.1.1 or later. To open 0.1.0 anyway, run this in Terminal:
+```bash
+xattr -cr /Applications/VoxStudio.app
+```
 
 On first launch, VoxStudio prepares its voice engine (a private Python runtime). This takes a minute or two and needs the internet once. After that, launches take a few seconds and work offline.
 

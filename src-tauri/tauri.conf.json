@@ -54,7 +54,8 @@
     ],
     "macOS": {
       "minimumSystemVersion": "13.3",
-      "entitlements": "Entitlements.plist"
+      "entitlements": "Entitlements.plist",
+      "signingIdentity": "-"
     },
     "shortDescription": "Private AI voice studio",
     "longDescription": "Clone, design and direct voices, dub videos, narrate books and transcribe speech — entirely on your computer.",
