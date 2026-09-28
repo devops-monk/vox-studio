@@ -39,6 +39,13 @@ from .schemas import (
     DesignStatusOut,
     DesignTargetOut,
     DeletedOut,
+    ExportRecordOut,
+    ProjectIn,
+    ProjectItemIn,
+    ProjectItemOut,
+    ProjectOut,
+    ProjectPatch,
+    ProjectSummaryOut,
     BatchIn,
     BatchItemOut,
     BatchOut,
@@ -311,6 +318,8 @@ def export_take(request: Request, take_id: str, body: ExportIn) -> Response:
         raise HTTPException(404, detail=("not_found", "No such take"))
     dest = _destination(body.path, ".wav", body.overwrite)
     shutil.copyfile(services.settings.takes_dir / f"{take_id}.wav", dest)
+    take = services.store.get_take(take_id)
+    services.store.record_export("take", take_id, take.text[:80] if take else "Take", "wav", str(dest), dest.stat().st_size)
     return Response(status_code=204)
 
 
@@ -712,6 +721,7 @@ def save_transcription(request: Request, transcript_id: str, body: ExportPathIn,
     t = _get_transcript(_services(request), transcript_id)
     dest = _destination(body.path, f".{format}", body.overwrite)
     dest.write_text(EXPORTS[format][1](t), encoding="utf-8")
+    _services(request).store.record_export("transcript", transcript_id, t.title, format, str(dest), dest.stat().st_size)
     return Response(status_code=204)
 
 
@@ -999,6 +1009,7 @@ def save_dub(request: Request, dub_id: str, body: DubSaveIn) -> Response:
         if not src:
             raise HTTPException(409, detail=("not_rendered", "Render the dub first"))
         shutil.copyfile(folder / src, dest)
+    services.store.record_export("dub", dub_id, d.title, {"video": "mp4", "audio": "wav"}.get(body.what, body.what), str(dest), dest.stat().st_size)
     return Response(status_code=204)
 
 
@@ -1213,6 +1224,7 @@ def save_book(request: Request, book_id: str, body: ExportPathIn, format: str = 
         raise HTTPException(409, detail=("not_exported", "Export the book first"))
     dest = _destination(body.path, f".{format}", body.overwrite)
     shutil.copyfile(books.book_dir(services, book_id) / b.exports[format], dest)
+    services.store.record_export("book", book_id, b.title, format, str(dest), dest.stat().st_size)
     return Response(status_code=204)
 
 
@@ -1384,6 +1396,109 @@ def delete_watch_folder(request: Request, watch_id: str) -> Response:
         raise HTTPException(404, detail=("not_found", "No such watch folder"))
     services.bus.publish("watch.changed", {"id": watch_id})
     return Response(status_code=204)
+
+
+# --- Projects & export history ------------------------------------------------------
+
+PROJECT_KINDS = ("take", "transcript", "dub", "book")
+
+
+def _resolve_item(services, kind: str, item_id: str) -> dict:
+    """Title and a short description for anything that can live in a project."""
+    s = services.store
+    if kind == "take" and (t := s.get_take(item_id)):
+        return {"title": t.text[:90], "subtitle": f"{t.engine} · {t.duration_s:.1f}s", "created_at": t.created_at}
+    if kind == "transcript" and (t := s.get_transcript(item_id)):
+        return {"title": t.title, "subtitle": f"Transcript · {t.language.upper()} · {t.duration_s:.0f}s", "created_at": t.created_at}
+    if kind == "dub" and (d := s.get_dub(item_id)):
+        return {"title": d.title, "subtitle": f"Dub · {d.source_lang.upper() or '…'} → {d.target_lang.upper()} · {d.status}", "created_at": d.created_at}
+    if kind == "book" and (b := s.get_book(item_id)):
+        return {"title": b.title, "subtitle": f"{'Story' if b.kind == 'story' else 'Audiobook'} · {len(b.chapters)} chapters", "created_at": b.created_at}
+    return {"title": "Deleted item", "subtitle": kind, "created_at": None, "missing": True}
+
+
+def _get_project(services, project_id: str) -> dict:
+    p = services.store.get_project(project_id)
+    if p is None:
+        raise HTTPException(404, detail=("not_found", "No such project"))
+    return p
+
+
+@router.get("/projects", response_model=list[ProjectSummaryOut], tags=["Projects"], summary="List projects")
+def list_projects(request: Request) -> list[ProjectSummaryOut]:
+    return [ProjectSummaryOut(**p) for p in _services(request).store.list_projects()]
+
+
+@router.post("/projects", response_model=ProjectSummaryOut, status_code=201, tags=["Projects"], summary="Create a project")
+def create_project(request: Request, body: ProjectIn) -> ProjectSummaryOut:
+    services = _services(request)
+    now = time.time()
+    p = {"id": uuid.uuid4().hex, "name": body.name.strip(), "color": body.color, "description": body.description.strip(), "created_at": now, "updated_at": now}
+    services.store.add_project(p)
+    services.bus.publish("projects.changed", {"id": p["id"]})
+    return ProjectSummaryOut(**p, item_count=0)
+
+
+@router.get("/projects/membership", response_model=list[str], tags=["Projects"], summary="Which projects contain an item")
+def project_membership(request: Request, kind: str = Query(pattern="^(take|transcript|dub|book)$"), item_id: str = Query(alias="id")) -> list[str]:
+    return _services(request).store.projects_for(kind, item_id)
+
+
+@router.get("/projects/{project_id}", response_model=ProjectOut, responses=ERRORS, tags=["Projects"], summary="Get a project")
+def get_project(request: Request, project_id: str) -> ProjectOut:
+    """Items with titles, plus the export history of everything in the project."""
+    services = _services(request)
+    p = _get_project(services, project_id)
+    raw = services.store.project_items(project_id)
+    items = [ProjectItemOut(kind=i["kind"], id=i["item_id"], added_at=i["added_at"], **_resolve_item(services, i["kind"], i["item_id"])) for i in raw]
+    exports = services.store.list_exports([(i["kind"], i["item_id"]) for i in raw])
+    return ProjectOut(**p, item_count=len(items), items=items, exports=[ExportRecordOut(**e, exists=Path(e["path"]).exists()) for e in exports])
+
+
+@router.patch("/projects/{project_id}", response_model=ProjectSummaryOut, responses=ERRORS, tags=["Projects"], summary="Rename or recolor a project")
+def patch_project(request: Request, project_id: str, body: ProjectPatch) -> ProjectSummaryOut:
+    services = _services(request)
+    _get_project(services, project_id)
+    fields = {k: v.strip() if isinstance(v, str) and k != "color" else v for k, v in body.model_dump(exclude_none=True).items()}
+    p = services.store.update_project(project_id, **fields) if fields else _get_project(services, project_id)
+    services.bus.publish("projects.changed", {"id": project_id})
+    return ProjectSummaryOut(**p, item_count=len(services.store.project_items(project_id)))
+
+
+@router.delete("/projects/{project_id}", status_code=204, responses=ERRORS, tags=["Projects"], summary="Delete a project")
+def delete_project(request: Request, project_id: str) -> Response:
+    """Removes the project only; its takes, transcripts, dubs and books are kept."""
+    services = _services(request)
+    if not services.store.delete_project(project_id):
+        raise HTTPException(404, detail=("not_found", "No such project"))
+    services.bus.publish("projects.changed", {"id": project_id})
+    return Response(status_code=204)
+
+
+@router.post("/projects/{project_id}/items", status_code=204, responses=ERRORS, tags=["Projects"], summary="Add an item")
+def add_project_item(request: Request, project_id: str, body: ProjectItemIn) -> Response:
+    services = _services(request)
+    _get_project(services, project_id)
+    if _resolve_item(services, body.kind, body.id).get("missing"):
+        raise HTTPException(404, detail=("not_found", f"No such {body.kind}"))
+    services.store.add_project_item(project_id, body.kind, body.id)
+    services.bus.publish("projects.changed", {"id": project_id})
+    return Response(status_code=204)
+
+
+@router.delete("/projects/{project_id}/items/{kind}/{item_id}", status_code=204, responses=ERRORS, tags=["Projects"], summary="Remove an item")
+def remove_project_item(request: Request, project_id: str, kind: str, item_id: str) -> Response:
+    services = _services(request)
+    if not services.store.remove_project_item(project_id, kind, item_id):
+        raise HTTPException(404, detail=("not_found", "That item isn't in this project"))
+    services.bus.publish("projects.changed", {"id": project_id})
+    return Response(status_code=204)
+
+
+@router.get("/exports", response_model=list[ExportRecordOut], tags=["Projects"], summary="Export history")
+def export_history(request: Request, limit: int = Query(100, ge=1, le=500)) -> list[ExportRecordOut]:
+    """Every file VoxStudio has saved (takes, transcripts, dubs, books, batch outputs), newest first."""
+    return [ExportRecordOut(**e, exists=Path(e["path"]).exists()) for e in _services(request).store.list_exports(None, limit)]
 
 
 # --- Jobs -------------------------------------------------------------------

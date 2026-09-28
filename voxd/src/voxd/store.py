@@ -6,6 +6,7 @@ import json
 import sqlite3
 import threading
 import time
+import uuid
 from dataclasses import asdict, dataclass, field
 from typing import Any
 from pathlib import Path
@@ -161,6 +162,34 @@ MIGRATIONS: list[str] = [
         at        REAL NOT NULL,
         PRIMARY KEY (watch_id, path)
     );
+    """,
+    """
+    CREATE TABLE projects (
+        id           TEXT PRIMARY KEY,
+        name         TEXT NOT NULL,
+        color        TEXT NOT NULL,
+        description  TEXT NOT NULL,
+        created_at   REAL NOT NULL,
+        updated_at   REAL NOT NULL
+    );
+    CREATE TABLE project_items (
+        project_id  TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+        kind        TEXT NOT NULL,
+        item_id     TEXT NOT NULL,
+        added_at    REAL NOT NULL,
+        PRIMARY KEY (project_id, kind, item_id)
+    );
+    CREATE TABLE exports (
+        id          TEXT PRIMARY KEY,
+        kind        TEXT NOT NULL,
+        item_id     TEXT NOT NULL,
+        title       TEXT NOT NULL,
+        format      TEXT NOT NULL,
+        path        TEXT NOT NULL,
+        bytes       INTEGER NOT NULL,
+        at          REAL NOT NULL
+    );
+    CREATE INDEX exports_at ON exports(at DESC);
     """,
 ]
 
@@ -677,6 +706,75 @@ class Store:
         rows = self._db.execute(
             "SELECT path, state, output, error, at FROM watch_files WHERE watch_id = ? ORDER BY at DESC LIMIT ?", (watch_id, limit)
         )
+        return [dict(r) for r in rows]
+
+    # --- projects -----------------------------------------------------------------
+
+    def add_project(self, p: dict) -> None:
+        with self._lock:
+            self._db.execute(
+                "INSERT INTO projects VALUES (?,?,?,?,?,?)",
+                (p["id"], p["name"], p["color"], p["description"], p["created_at"], p["updated_at"]),
+            )
+
+    def list_projects(self) -> list[dict]:
+        rows = self._db.execute(
+            "SELECT p.*, (SELECT COUNT(*) FROM project_items i WHERE i.project_id = p.id) AS item_count "
+            "FROM projects p ORDER BY p.updated_at DESC"
+        )
+        return [dict(r) for r in rows]
+
+    def get_project(self, project_id: str) -> dict | None:
+        row = self._db.execute("SELECT * FROM projects WHERE id = ?", (project_id,)).fetchone()
+        return dict(row) if row else None
+
+    def update_project(self, project_id: str, **fields: Any) -> dict | None:
+        fields["updated_at"] = time.time()
+        cols = ", ".join(f"{k} = ?" for k in fields)
+        with self._lock:
+            self._db.execute(f"UPDATE projects SET {cols} WHERE id = ?", (*fields.values(), project_id))
+        return self.get_project(project_id)
+
+    def delete_project(self, project_id: str) -> bool:
+        with self._lock:
+            return self._db.execute("DELETE FROM projects WHERE id = ?", (project_id,)).rowcount > 0
+
+    def add_project_item(self, project_id: str, kind: str, item_id: str) -> None:
+        with self._lock:
+            self._db.execute("INSERT OR IGNORE INTO project_items VALUES (?,?,?,?)", (project_id, kind, item_id, time.time()))
+            self._db.execute("UPDATE projects SET updated_at = ? WHERE id = ?", (time.time(), project_id))
+
+    def remove_project_item(self, project_id: str, kind: str, item_id: str) -> bool:
+        with self._lock:
+            return self._db.execute(
+                "DELETE FROM project_items WHERE project_id = ? AND kind = ? AND item_id = ?", (project_id, kind, item_id)
+            ).rowcount > 0
+
+    def project_items(self, project_id: str) -> list[dict]:
+        rows = self._db.execute("SELECT kind, item_id, added_at FROM project_items WHERE project_id = ? ORDER BY added_at DESC", (project_id,))
+        return [dict(r) for r in rows]
+
+    def projects_for(self, kind: str, item_id: str) -> list[str]:
+        rows = self._db.execute("SELECT project_id FROM project_items WHERE kind = ? AND item_id = ?", (kind, item_id))
+        return [r[0] for r in rows]
+
+    # --- export history ----------------------------------------------------------------
+
+    def record_export(self, kind: str, item_id: str, title: str, fmt: str, path: str, size: int) -> None:
+        with self._lock:
+            self._db.execute(
+                "INSERT INTO exports VALUES (?,?,?,?,?,?,?,?)",
+                (uuid.uuid4().hex, kind, item_id, title, fmt, path, size, time.time()),
+            )
+
+    def list_exports(self, items: list[tuple[str, str]] | None = None, limit: int = 100) -> list[dict]:
+        if items is None:
+            rows = self._db.execute("SELECT * FROM exports ORDER BY at DESC LIMIT ?", (limit,))
+            return [dict(r) for r in rows]
+        if not items:
+            return []
+        marks = " OR ".join("(kind = ? AND item_id = ?)" for _ in items)
+        rows = self._db.execute(f"SELECT * FROM exports WHERE {marks} ORDER BY at DESC LIMIT ?", (*[x for pair in items for x in pair], limit))
         return [dict(r) for r in rows]
 
     # --- favorites & tags (any voice) ----------------------------------------

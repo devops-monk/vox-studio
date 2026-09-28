@@ -1,6 +1,7 @@
 import { Download, Pause, Play, Star } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/glass'
+import { AddToProject } from '@/components/add-to-project'
 import { Waveform } from '@/components/waveform'
 import { VoiceAvatar } from '@/components/voice-avatar'
 import { usePlayer } from '@/lib/audio/player'
@@ -55,6 +56,9 @@ export function TakeCard({ take, custom, designed = [] }: { take: Take; custom: 
         >
           <Star size={14} fill={take.starred ? 'currentColor' : 'none'} />
         </Button>
+        <div className="opacity-0 group-hover:opacity-100 focus-within:opacity-100">
+          <AddToProject kind="take" id={take.id} compact />
+        </div>
         <Button variant="ghost" size="icon" aria-label="Save as…" onClick={() => void saveTake(take)} className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100">
           <Download size={14} />
         </Button>

@@ -12,6 +12,8 @@ import { voxd } from '@/lib/voxd/client'
 import { useJob, useModels, usePatchTranscript, useTranscript, useTranscripts } from '@/lib/voxd/queries'
 import type { Segment, Transcript } from '@/lib/voxd/types'
 import { cn } from '@/lib/cn'
+import { AddToProject } from '@/components/add-to-project'
+import { useFocus } from '@/lib/store/focus'
 import { DownloadBar, ModelActions, ModelArt } from '@/features/models/model-parts'
 
 const LANGUAGES: [string, string][] = [
@@ -299,6 +301,7 @@ function Viewer({ id, onDeleted }: { id: string; onDeleted: () => void }) {
               {playing ? <Pause size={11} fill="currentColor" /> : <Play size={11} fill="currentColor" />} {playing ? 'Pause' : 'Play'}
             </Button>
           )}
+          <AddToProject kind="transcript" id={t.id} />
           {FORMATS.map((f) => (
             <Button key={f} size="sm" variant="ghost" onClick={() => void exportAs(t, f)}>
               {f.toUpperCase()}
@@ -368,7 +371,7 @@ export function TranscribePage() {
   const [model, setModel] = useState('')
   const [query, setQuery] = useState('')
   const list = useTranscripts(query.trim() || undefined).data ?? []
-  const [selected, setSelected] = useState<string | null>(null)
+  const [selected, setSelected] = useState<string | null>(() => useFocus.getState().take('transcript'))
 
   useEffect(() => {
     if (!selected && list.length) setSelected(list[0].id)

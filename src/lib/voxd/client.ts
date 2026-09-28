@@ -164,6 +164,19 @@ export const voxd = {
     call(api().PATCH('/v1/watch-folders/{watch_id}', { params: { path: { watch_id: id } }, body: { enabled } })),
   removeWatchFolder: (id: string) => noContent(api().DELETE('/v1/watch-folders/{watch_id}', { params: { path: { watch_id: id } } })),
 
+  projects: () => call(api().GET('/v1/projects')),
+  project: (id: string) => call(api().GET('/v1/projects/{project_id}', { params: { path: { project_id: id } } })),
+  createProject: (name: string, color: string) => call(api().POST('/v1/projects', { body: { name, color, description: '' } })),
+  patchProject: (id: string, body: { name?: string; color?: string; description?: string }) =>
+    call(api().PATCH('/v1/projects/{project_id}', { params: { path: { project_id: id } }, body })),
+  deleteProject: (id: string) => noContent(api().DELETE('/v1/projects/{project_id}', { params: { path: { project_id: id } } })),
+  addToProject: (project: string, kind: string, id: string) =>
+    noContent(api().POST('/v1/projects/{project_id}/items', { params: { path: { project_id: project } }, body: { kind, id } })),
+  removeFromProject: (project: string, kind: string, id: string) =>
+    noContent(api().DELETE('/v1/projects/{project_id}/items/{kind}/{item_id}', { params: { path: { project_id: project, kind, item_id: id } } })),
+  membership: (kind: string, id: string) => call(api().GET('/v1/projects/membership', { params: { query: { kind, id } } })),
+  exportHistory: () => call(api().GET('/v1/exports')),
+
   starTake: (id: string, starred: boolean) => call(api().PUT('/v1/takes/{take_id}/star', { params: { path: { take_id: id } }, body: { starred } })),
   exportTake: (id: string, path: string, overwrite = false) =>
     noContent(api().POST('/v1/takes/{take_id}/export', { params: { path: { take_id: id } }, body: { path, overwrite } })),

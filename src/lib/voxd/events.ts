@@ -19,6 +19,7 @@ type Message =
   | { type: 'books.changed'; data: { id: string } }
   | { type: 'batches.changed'; data: { id: string } }
   | { type: 'watch.changed'; data: { id: string } }
+  | { type: 'projects.changed'; data: { id: string } }
 
 /** Whether live events are flowing; queries fall back to polling while they aren't. */
 export const useLive = create<{ connected: boolean }>(() => ({ connected: false }))
@@ -101,6 +102,11 @@ function apply(message: Message) {
     case 'take.updated':
     case 'takes.deleted':
       void queryClient.invalidateQueries({ queryKey: ['takes'] })
+      break
+    case 'projects.changed':
+      void queryClient.invalidateQueries({ queryKey: ['projects'] })
+      void queryClient.invalidateQueries({ queryKey: ['project', message.data.id] })
+      void queryClient.invalidateQueries({ queryKey: ['membership'] })
       break
     case 'batches.changed':
       void queryClient.invalidateQueries({ queryKey: ['batches'] })

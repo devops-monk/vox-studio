@@ -478,3 +478,57 @@ class WatchFolderOut(BaseModel):
     processed: int
     recent: list[dict] = Field(description="Latest files: `{path, state (queued|done|error), output, error, at}`")
     created_at: float
+
+
+class ProjectIn(BaseModel):
+    name: str = Field(min_length=1, max_length=80)
+    color: str = Field("#0a84ff", pattern="^#[0-9a-fA-F]{6}$")
+    description: str = Field("", max_length=500)
+
+
+class ProjectPatch(BaseModel):
+    name: str | None = Field(None, min_length=1, max_length=80)
+    color: str | None = Field(None, pattern="^#[0-9a-fA-F]{6}$")
+    description: str | None = Field(None, max_length=500)
+
+
+class ProjectSummaryOut(BaseModel):
+    id: str
+    name: str
+    color: str
+    description: str
+    item_count: int
+    created_at: float
+    updated_at: float
+
+
+class ProjectItemIn(BaseModel):
+    kind: str = Field(pattern="^(take|transcript|dub|book)$")
+    id: str
+
+
+class ProjectItemOut(BaseModel):
+    kind: str
+    id: str
+    title: str
+    subtitle: str
+    created_at: float | None
+    added_at: float
+    missing: bool = False
+
+
+class ExportRecordOut(BaseModel):
+    id: str
+    kind: str
+    item_id: str
+    title: str
+    format: str
+    path: str
+    bytes: int
+    at: float
+    exists: bool = Field(description="Whether the file is still at that path")
+
+
+class ProjectOut(ProjectSummaryOut):
+    items: list[ProjectItemOut]
+    exports: list[ExportRecordOut]

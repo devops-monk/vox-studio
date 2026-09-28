@@ -57,6 +57,7 @@ def speech_item(services: Services, ctx: JobContext, spec: dict[str, Any]) -> di
         dest = _unique(Path(out_dir) / f"{safe_name(spec['name'])}.wav")
         shutil.copyfile(services.settings.takes_dir / f"{result['take_id']}.wav", dest)
         result["output"] = str(dest)
+        services.store.record_export("take", result["take_id"], spec["name"], "wav", str(dest), dest.stat().st_size)
     if src := spec.get("source_path"):
         services.store.mark_watch_done(spec["watch_id"], src, result.get("output"))
     return result
@@ -78,6 +79,7 @@ def transcribe_item(services: Services, ctx: JobContext, spec: dict[str, Any]) -
             dest = _unique(Path(out_dir) / f"{safe_name(source.stem)}.{fmt}")
             dest.write_text(EXPORTS[fmt][1](t), encoding="utf-8")
             outputs.append(str(dest))
+            services.store.record_export("transcript", t.id, t.title, fmt, str(dest), dest.stat().st_size)
         result["outputs"] = outputs
     if spec.get("watch_id"):
         services.store.mark_watch_done(spec["watch_id"], str(source), ";".join(result.get("outputs", [])))

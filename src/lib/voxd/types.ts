@@ -30,6 +30,10 @@ export type BookSummary = Schemas['BookSummaryOut']
 export type Chapter = Schemas['ChapterOut']
 export type Batch = Schemas['BatchOut']
 export type WatchFolder = Schemas['WatchFolderOut']
+export type Project = Schemas['ProjectOut']
+export type ProjectSummary = Schemas['ProjectSummaryOut']
+export type ExportRecord = Schemas['ExportRecordOut']
+export type ProjectKind = 'take' | 'transcript' | 'dub' | 'book'
 export interface Timing {
   start: number
   end: number

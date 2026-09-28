@@ -10,6 +10,8 @@ import { voxd } from '@/lib/voxd/client'
 import { useDub, useDubLanguages, useDubs, useEngines, useJob, useModels, useVoices } from '@/lib/voxd/queries'
 import type { Dub, DubLine } from '@/lib/voxd/types'
 import { cn } from '@/lib/cn'
+import { AddToProject } from '@/components/add-to-project'
+import { useFocus } from '@/lib/store/focus'
 import { DownloadBar, ModelActions, ModelArt } from '@/features/models/model-parts'
 
 const clock = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`
@@ -304,6 +306,7 @@ function Editor({ id, onDeleted }: { id: string; onDeleted: () => void }) {
             </option>
           ))}
         </select>
+        <AddToProject kind="dub" id={dub.id} />
         <Button variant="primary" disabled={busy || !dub.segments.length} onClick={() => void render()}>
           <Wand2 size={13} /> {hasDub ? (dub.stale ? 'Render again' : 'Re-render') : 'Render dub'}
         </Button>
@@ -445,7 +448,7 @@ export function DubPage() {
   const whisper = (models ?? []).filter((m) => m.engine === 'whisper')
   const ready = whisper.some((m) => m.status === 'installed')
   const dubs = useDubs().data ?? []
-  const [selected, setSelected] = useState<string | null>(null)
+  const [selected, setSelected] = useState<string | null>(() => useFocus.getState().take('dub'))
   const [creating, setCreating] = useState(false)
 
   useEffect(() => {

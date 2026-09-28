@@ -26,6 +26,7 @@ Every message is JSON: `{"type": "...", "data": {...}}`.
 | `books.changed` | `{"id": …}` | A book was imported, edited, narrated or exported |
 | `batches.changed` | `{"id": …}` | A batch was created or removed. Item progress comes through `job` events. |
 | `watch.changed` | `{"id": …}` | A watch folder was added, changed, or picked up a new file |
+| `projects.changed` | `{"id": …}` | A project or its items changed |
 | `take.created` | a [take object](takes.md#take-object), without `audio_url` | Whenever a new take is saved, by any client |
 
 More event types will be added over time. Ignore any `type` you don't recognize.

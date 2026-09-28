@@ -9,6 +9,8 @@ import { voxd } from '@/lib/voxd/client'
 import { useBook, useBooks, useChapterTimings, useEngines, useJob, useVoices } from '@/lib/voxd/queries'
 import type { Book, BookSummary, Chapter, Timing } from '@/lib/voxd/types'
 import { cn } from '@/lib/cn'
+import { AddToProject } from '@/components/add-to-project'
+import { useFocus } from '@/lib/store/focus'
 import { DownloadBar } from '@/features/models/model-parts'
 
 type Kind = 'story' | 'audiobook'
@@ -318,6 +320,7 @@ function BookView({ id, kind, onBack }: { id: string; kind: Kind; onBack: () => 
             { value: 'story', label: 'Character voices' },
           ]}
         />
+        <AddToProject kind="book" id={book.id} />
         <Button variant="primary" disabled={busy} onClick={() => render()}>
           <Wand2 size={13} /> {renderedCount === book.chapters.length ? 'Up to date' : renderedCount ? 'Narrate the rest' : 'Narrate book'}
         </Button>
@@ -451,7 +454,7 @@ function BookView({ id, kind, onBack }: { id: string; kind: Kind; onBack: () => 
 }
 
 export function LongformPage({ kind }: { kind: Kind }) {
-  const [open, setOpen] = useState<string | null>(null)
+  const [open, setOpen] = useState<string | null>(() => useFocus.getState().take('book'))
   if (open) return <BookView key={open} id={open} kind={kind} onBack={() => setOpen(null)} />
   return <Library kind={kind} onOpen={setOpen} />
 }

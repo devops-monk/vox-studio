@@ -198,8 +198,13 @@ Work goes one milestone at a time. Tick `[x]` only after the item is verified in
 - [x] Verified: two items spoken into an output folder; a file dropped into a watched folder was spoken automatically and the card updated live
 - [x] Docs: batch reference and guide
 
-### M12 — Projects
-- [ ] Group renders, dubs and books into projects, with export history and reveal-in-Finder
+### M12 — Projects ✅
+- [x] Projects (name, colour, description) holding takes, transcripts, dubs and books; membership lookup; deleted items shown as missing; deleting a project keeps its items
+- [x] Export history: every saved file (takes, transcripts, dubs, books, batch outputs) recorded with path, size and format, plus a still-exists check; global and per project
+- [x] Projects page: coloured tiles, project view (grouped items with Play/Open, remove, rename, recolour, delete), exports with Show in Finder (Tauri opener plugin, reveal-only permission)
+- [x] “Add to project” popover in Studio take cards, Transcribe, Dub and book headers (rendered in a portal so cards can't cover it), with inline new-project creation
+- [x] Deep links: Open from a project jumps to that dub, transcript or book
+- [x] Docs: projects reference and guide
 
 ### M13 — Tools
 - [ ] Voice conversion, loudness normalize, noise clean, pronunciation dictionary

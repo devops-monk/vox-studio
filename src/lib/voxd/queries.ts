@@ -278,3 +278,9 @@ export function useBatches() {
   })
 }
 export const useWatchFolders = () => useQuery({ queryKey: ['watch-folders'], queryFn: voxd.watchFolders, enabled: useReady(), refetchInterval: 10_000 })
+
+export const useProjects = () => useQuery({ queryKey: ['projects'], queryFn: voxd.projects, enabled: useReady() })
+export const useProject = (id: string | null) => useQuery({ queryKey: ['project', id], queryFn: () => voxd.project(id!), enabled: useReady() && !!id })
+export const useMembership = (kind: string, id: string, enabled: boolean) =>
+  useQuery({ queryKey: ['membership', kind, id], queryFn: () => voxd.membership(kind, id), enabled: useReady() && enabled })
+export const useExportHistory = () => useQuery({ queryKey: ['exports'], queryFn: voxd.exportHistory, enabled: useReady() })

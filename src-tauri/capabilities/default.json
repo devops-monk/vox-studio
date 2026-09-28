@@ -3,5 +3,5 @@
   "identifier": "default",
   "description": "Main window permissions",
   "windows": ["main", "dictation"],
-  "permissions": ["core:default", "core:window:allow-start-dragging", "dialog:allow-save", "dialog:allow-open"]
+  "permissions": ["core:default", "core:window:allow-start-dragging", "dialog:allow-save", "dialog:allow-open", "opener:allow-reveal-item-in-dir"]
 }
