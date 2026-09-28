@@ -6158,6 +6158,176 @@
         }
       }
     },
+    "/v1/ratings": {
+      "post": {
+        "tags": [
+          "Compare"
+        ],
+        "summary": "Record a blind comparison",
+        "description": "Which of two voices read `text` better. Feeds the per-language leaderboard.",
+        "operationId": "add_rating_v1_ratings_post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RatingIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RatingOut"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Compare"
+        ],
+        "summary": "Forget ratings",
+        "operationId": "clear_ratings_v1_ratings_delete",
+        "parameters": [
+          {
+            "name": "language",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Language"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeletedCountOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/ratings/leaderboard": {
+      "get": {
+        "tags": [
+          "Compare"
+        ],
+        "summary": "Best voices, by blind rating",
+        "operationId": "ratings_leaderboard_v1_ratings_leaderboard_get",
+        "parameters": [
+          {
+            "name": "language",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Only this language, e.g. `en`",
+              "title": "Language"
+            },
+            "description": "Only this language, e.g. `en`"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LeaderboardOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/keys": {
       "get": {
         "tags": [
@@ -7769,6 +7939,19 @@
         ],
         "title": "DeleteTakesIn"
       },
+      "DeletedCountOut": {
+        "properties": {
+          "deleted": {
+            "type": "integer",
+            "title": "Deleted"
+          }
+        },
+        "type": "object",
+        "required": [
+          "deleted"
+        ],
+        "title": "DeletedCountOut"
+      },
       "DeletedOut": {
         "properties": {
           "deleted": {
@@ -8895,6 +9078,83 @@
         ],
         "title": "JobOut"
       },
+      "LeaderboardOut": {
+        "properties": {
+          "language": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Language"
+          },
+          "ratings": {
+            "type": "integer",
+            "title": "Ratings"
+          },
+          "voices": {
+            "items": {
+              "$ref": "#/components/schemas/LeaderboardRow"
+            },
+            "type": "array",
+            "title": "Voices"
+          }
+        },
+        "type": "object",
+        "required": [
+          "language",
+          "ratings",
+          "voices"
+        ],
+        "title": "LeaderboardOut"
+      },
+      "LeaderboardRow": {
+        "properties": {
+          "engine": {
+            "type": "string",
+            "title": "Engine"
+          },
+          "voice": {
+            "type": "string",
+            "title": "Voice"
+          },
+          "score": {
+            "type": "number",
+            "title": "Score",
+            "description": "Elo rating (starts at 1000)"
+          },
+          "games": {
+            "type": "integer",
+            "title": "Games"
+          },
+          "wins": {
+            "type": "integer",
+            "title": "Wins"
+          },
+          "losses": {
+            "type": "integer",
+            "title": "Losses"
+          },
+          "ties": {
+            "type": "integer",
+            "title": "Ties"
+          }
+        },
+        "type": "object",
+        "required": [
+          "engine",
+          "voice",
+          "score",
+          "games",
+          "wins",
+          "losses",
+          "ties"
+        ],
+        "title": "LeaderboardRow"
+      },
       "LibraryVoiceOut": {
         "properties": {
           "engine": {
@@ -9487,6 +9747,118 @@
           "text"
         ],
         "title": "PronunciationPreviewOut"
+      },
+      "RatedVoice": {
+        "properties": {
+          "engine": {
+            "type": "string",
+            "title": "Engine"
+          },
+          "voice": {
+            "type": "string",
+            "title": "Voice"
+          }
+        },
+        "type": "object",
+        "required": [
+          "engine",
+          "voice"
+        ],
+        "title": "RatedVoice"
+      },
+      "RatingIn": {
+        "properties": {
+          "language": {
+            "type": "string",
+            "maxLength": 12,
+            "minLength": 2,
+            "title": "Language",
+            "description": "Language of the sentence, e.g. `en` or `es`"
+          },
+          "text": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Text",
+            "description": "The sentence both voices read"
+          },
+          "a": {
+            "$ref": "#/components/schemas/RatedVoice"
+          },
+          "b": {
+            "$ref": "#/components/schemas/RatedVoice"
+          },
+          "winner": {
+            "type": "string",
+            "enum": [
+              "a",
+              "b",
+              "tie"
+            ],
+            "title": "Winner"
+          }
+        },
+        "type": "object",
+        "required": [
+          "language",
+          "text",
+          "a",
+          "b",
+          "winner"
+        ],
+        "title": "RatingIn"
+      },
+      "RatingOut": {
+        "properties": {
+          "language": {
+            "type": "string",
+            "maxLength": 12,
+            "minLength": 2,
+            "title": "Language",
+            "description": "Language of the sentence, e.g. `en` or `es`"
+          },
+          "text": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Text",
+            "description": "The sentence both voices read"
+          },
+          "a": {
+            "$ref": "#/components/schemas/RatedVoice"
+          },
+          "b": {
+            "$ref": "#/components/schemas/RatedVoice"
+          },
+          "winner": {
+            "type": "string",
+            "enum": [
+              "a",
+              "b",
+              "tie"
+            ],
+            "title": "Winner"
+          },
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "at": {
+            "type": "number",
+            "title": "At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "language",
+          "text",
+          "a",
+          "b",
+          "winner",
+          "id",
+          "at"
+        ],
+        "title": "RatingOut"
       },
       "SegmentOut": {
         "properties": {

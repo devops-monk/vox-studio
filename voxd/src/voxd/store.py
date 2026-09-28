@@ -210,6 +210,20 @@ MIGRATIONS: list[str] = [
         last_used_at  REAL
     );
     """,
+    """
+    CREATE TABLE ratings (
+        id        TEXT PRIMARY KEY,
+        language  TEXT NOT NULL,
+        text      TEXT NOT NULL,
+        a_engine  TEXT NOT NULL,
+        a_voice   TEXT NOT NULL,
+        b_engine  TEXT NOT NULL,
+        b_voice   TEXT NOT NULL,
+        winner    TEXT NOT NULL CHECK (winner IN ('a', 'b', 'tie')),
+        at        REAL NOT NULL
+    );
+    CREATE INDEX ratings_language ON ratings(language, at);
+    """,
 ]
 
 ACTIVE = ("queued", "running")
@@ -804,6 +818,28 @@ class Store:
         if (table, column) not in allowed:
             raise ValueError(f"{table}.{column} is not an allowed lookup")
         return {r[0] for r in self._db.execute(f"SELECT {column} FROM {table}") if r[0]}
+
+    # --- blind comparisons ------------------------------------------------------
+
+    def add_rating(self, r: dict) -> None:
+        with self._lock:
+            self._db.execute(
+                "INSERT INTO ratings VALUES (?,?,?,?,?,?,?,?,?)",
+                (r["id"], r["language"], r["text"], r["a_engine"], r["a_voice"], r["b_engine"], r["b_voice"], r["winner"], r["at"]),
+            )
+
+    def list_ratings(self, language: str | None = None) -> list[dict]:
+        if language:
+            rows = self._db.execute("SELECT * FROM ratings WHERE language = ? ORDER BY at", (language,))
+        else:
+            rows = self._db.execute("SELECT * FROM ratings ORDER BY at")
+        return [dict(r) for r in rows]
+
+    def clear_ratings(self, language: str | None = None) -> int:
+        with self._lock:
+            if language:
+                return self._db.execute("DELETE FROM ratings WHERE language = ?", (language,)).rowcount
+            return self._db.execute("DELETE FROM ratings").rowcount
 
     # --- API keys ---------------------------------------------------------------
 

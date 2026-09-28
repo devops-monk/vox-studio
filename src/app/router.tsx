@@ -17,6 +17,7 @@ import { BatchPage } from '@/features/batch/batch-page'
 import { ProjectsPage } from '@/features/projects/projects-page'
 import { ToolsPage } from '@/features/tools/tools-page'
 import { EditorPage } from '@/features/editor/editor-page'
+import { ComparePage } from '@/features/compare/compare-page'
 import { DeveloperPage } from '@/features/developer/developer-page'
 import { IntegrationsPage } from '@/features/integrations/integrations-page'
 
@@ -40,6 +41,7 @@ const pages: Record<string, () => React.ReactNode> = {
   '/projects': ProjectsPage,
   '/tools': ToolsPage,
   '/editor': EditorPage,
+  '/compare': ComparePage,
   '/developer': DeveloperPage,
   '/integrations': IntegrationsPage,
 }

@@ -289,3 +289,4 @@ export const useConnection = () => useQuery({ queryKey: ['connection'], queryFn:
 export const useApiKeys = () => useQuery({ queryKey: ['api-keys'], queryFn: voxd.apiKeys, enabled: useReady() })
 export const useOpenApi = () => useQuery({ queryKey: ['openapi'], queryFn: voxd.openapi, enabled: useReady(), staleTime: Infinity })
 export const useStorage = () => useQuery({ queryKey: ['storage'], queryFn: voxd.storage, enabled: useReady(), staleTime: 30_000 })
+export const useLeaderboard = (language: string) => useQuery({ queryKey: ['leaderboard', language], queryFn: () => voxd.leaderboard(language), enabled: useReady() && !!language })

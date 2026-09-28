@@ -3,6 +3,7 @@ import {
   BookOpen,
   Boxes,
   Scissors,
+  Scale,
   Code2,
   Copy,
   Film,
@@ -58,6 +59,7 @@ export const NAV: NavSection[] = [
     items: [
       { path: '/voices', label: 'Voices', icon: Library, description: 'Your voices, presets and consent records.', milestone: 'M5', keywords: ['library', 'saved', 'gallery'] },
       { path: '/editor', label: 'Editor', icon: Scissors, description: 'Trim, splice and polish takes on a timeline.', milestone: 'M19', keywords: ['edit', 'trim', 'cut', 'splice', 'fade', 'gain'] },
+      { path: '/compare', label: 'Compare', icon: Scale, description: 'Blind-test voices to find the one you prefer.', milestone: 'M20', keywords: ['ab', 'blind', 'rating', 'best voice', 'leaderboard'] },
       { path: '/history', label: 'History', icon: History, description: 'Every take you have generated.', milestone: 'M7', keywords: ['takes'] },
       { path: '/projects', label: 'Projects', icon: FolderKanban, description: 'Group renders, dubs and books.', milestone: 'M12' },
       { path: '/batch', label: 'Batch', icon: Layers, description: 'Queue many jobs and watch folders.', milestone: 'M11', keywords: ['queue'] },

@@ -12,6 +12,7 @@ VoxStudio is a private voice studio that runs entirely on your computer. These d
 | [Clone a voice](guides/clone.md) | Make a voice from a short recording |
 | [Your voice library](guides/voices.md) | Browse, favorite, tag, share and import voices |
 | [Editor](guides/editor.md) | Trim, split, splice, fade and polish takes on a timeline |
+| [Compare voices](guides/compare.md) | Blind A/B tests and your favourite voices per language |
 | [History](guides/history.md) | Find, replay, star, save and clean up takes |
 | [Projects](guides/projects.md) | Group your work; find every exported file |
 | [Install, update & automate](guides/desktop.md) | Installing, updates, menus, `voxstudio://` links, uninstalling |
@@ -46,6 +47,7 @@ VoxStudio is a private voice studio that runs entirely on your computer. These d
 | [Voices](api/reference/voices.md) | `GET /v1/voices`, library, favorites and tags |
 | [Custom voices](api/reference/custom-voices.md) | Create, rename or delete voices; export and import `.voxvoice` |
 | [Projects & exports](api/reference/projects.md) | Projects, items, membership, export history |
+| [Compare](api/reference/compare.md) | Blind ratings and the per-language leaderboard |
 | [Tools & pronunciations](api/reference/tools.md) | Clean audio, voice conversion, pronunciation dictionary |
 | [Batch & watch folders](api/reference/batch.md) | Batches of speech/transcription; folders processed automatically |
 | [Stories & audiobooks](api/reference/books.md) | Import EPUB/DOCX/TXT/MD, cast, resumable render, timings, M4B/MP3 |

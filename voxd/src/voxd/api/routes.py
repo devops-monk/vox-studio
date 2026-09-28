@@ -20,7 +20,7 @@ from ..voices import export_bundle, read_bundle
 from ..design import apply_sliders, design, parse_description, parse_recipe
 from ..keys import authenticate, create_key
 from ..pronounce import pronouncer
-from .. import editor, storage, tools
+from .. import compare, editor, storage, tools
 from ..transcripts import EXPORTS, LiveSession, save_live, to_text, uploads_dir
 from ..store import Transcript
 from .. import batch as batching, books, dubbing
@@ -31,6 +31,11 @@ from ..store import DesignedVoice
 from ..speech import resolve_engine, save_take
 from ..store import Job, Take
 from .schemas import (
+    DeletedCountOut,
+    LeaderboardOut,
+    LeaderboardRow,
+    RatingIn,
+    RatingOut,
     EditIn,
     CleanupOut,
     StorageOut,
@@ -1763,6 +1768,36 @@ def connection(request: Request) -> ConnectionOut:
         url=url, api_base=f"{url}/v1", mcp_url=f"{url}/mcp", openapi_url=f"{url}/openapi.json", docs_url=f"{url}/docs",
         bridge_path=str(Path(__file__).resolve().parent.parent / "mcp_bridge.py"), auth_required=bool(services.settings.token),
     )
+
+
+# --- Blind comparisons ----------------------------------------------------------
+
+
+@router.post("/ratings", response_model=RatingOut, status_code=201, responses=ERRORS, tags=["Compare"], summary="Record a blind comparison")
+def add_rating(request: Request, body: RatingIn) -> RatingOut:
+    """Which of two voices read `text` better. Feeds the per-language leaderboard."""
+    if (body.a.engine, body.a.voice) == (body.b.engine, body.b.voice):
+        raise HTTPException(400, detail=("invalid_request", "Compare two different voices"))
+    services = _services(request)
+    row = {"id": uuid.uuid4().hex, "language": body.language.lower(), "text": body.text, "a_engine": body.a.engine, "a_voice": body.a.voice,
+           "b_engine": body.b.engine, "b_voice": body.b.voice, "winner": body.winner, "at": time.time()}
+    services.store.add_rating(row)
+    services.bus.publish("ratings.changed", {"language": row["language"]})
+    return RatingOut(id=row["id"], at=row["at"], language=row["language"], text=body.text, a=body.a, b=body.b, winner=body.winner)
+
+
+@router.get("/ratings/leaderboard", response_model=LeaderboardOut, tags=["Compare"], summary="Best voices, by blind rating")
+def ratings_leaderboard(request: Request, language: str | None = Query(None, description="Only this language, e.g. `en`")) -> LeaderboardOut:
+    ratings = _services(request).store.list_ratings(language.lower() if language else None)
+    return LeaderboardOut(language=language, ratings=len(ratings), voices=[LeaderboardRow(**r) for r in compare.leaderboard(ratings)])
+
+
+@router.delete("/ratings", response_model=DeletedCountOut, tags=["Compare"], summary="Forget ratings")
+def clear_ratings(request: Request, language: str | None = Query(None)) -> DeletedCountOut:
+    services = _services(request)
+    n = services.store.clear_ratings(language.lower() if language else None)
+    services.bus.publish("ratings.changed", {"language": language})
+    return DeletedCountOut(deleted=n)
 
 
 # --- API keys -----------------------------------------------------------------

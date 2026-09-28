@@ -262,7 +262,10 @@ Work goes one milestone at a time. Tick `[x]` only after the item is verified in
   - [x] Editor page: coloured clip blocks with canvas waveforms, drag edges to trim, drag to reorder, split at the playhead (S), delete (⌫), undo/redo (⌘Z), zoom and fit, ruler seeking, instant Web Audio preview that matches the render, clip and whole-edit panels, persisted draft
   - [x] Entry from History (scissors), “Add take” search popover
   - [x] Verified: unit tests (cut, splice across rates, fades, gain, gap, normalize, errors) and a browser e2e (split, trim, play, save, undo)
-- [ ] **M20 A/B Blind Compare:** rate two takes or engines to find your best engine per language
+- [x] **M20 A/B Blind Compare:** rate two takes or engines to find your best engine per language ✅
+  - [x] Ratings store and an Elo leaderboard per language (`/v1/ratings`, `/v1/ratings/leaderboard`); zero-sum Elo covered by a test
+  - [x] Compare page: choose language, sentence (samples for 9 languages) and 2–5 voices across engines; renders each once; random pairs and sides, up to 10 rounds; must hear both; keyboard 1/2/←/→/T; results reveal a ranking, “Use as my quick voice”, and cleanup of the test recordings (optionally kept)
+  - [x] Verified: browser e2e (3 rounds, results, quick voice set, leaderboard updated, takes cleaned up)
 - [ ] **M21 Script Markup:** inline pause, emphasis, speed and pronunciation tags with live preview
 - [ ] **M22 Drop Anywhere:** drop audio to clone, video to dub, a book to make an audiobook
 - [ ] **M23 Shortcuts & Finder:** `voxstudio://speak?...` for the Shortcuts app, and a "Dub with VoxStudio" action in Finder

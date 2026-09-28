@@ -1462,6 +1462,44 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/ratings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Record a blind comparison
+         * @description Which of two voices read `text` better. Feeds the per-language leaderboard.
+         */
+        post: operations["add_rating_v1_ratings_post"];
+        /** Forget ratings */
+        delete: operations["clear_ratings_v1_ratings_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/ratings/leaderboard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Best voices, by blind rating */
+        get: operations["ratings_leaderboard_v1_ratings_leaderboard_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/keys": {
         parameters: {
             query?: never;
@@ -2128,6 +2166,11 @@ export interface components {
             /** Ids */
             ids: string[];
         };
+        /** DeletedCountOut */
+        DeletedCountOut: {
+            /** Deleted */
+            deleted: number;
+        };
         /** DeletedOut */
         DeletedOut: {
             /** Deleted */
@@ -2610,6 +2653,35 @@ export interface components {
             /** Updated At */
             updated_at: number;
         };
+        /** LeaderboardOut */
+        LeaderboardOut: {
+            /** Language */
+            language: string | null;
+            /** Ratings */
+            ratings: number;
+            /** Voices */
+            voices: components["schemas"]["LeaderboardRow"][];
+        };
+        /** LeaderboardRow */
+        LeaderboardRow: {
+            /** Engine */
+            engine: string;
+            /** Voice */
+            voice: string;
+            /**
+             * Score
+             * @description Elo rating (starts at 1000)
+             */
+            score: number;
+            /** Games */
+            games: number;
+            /** Wins */
+            wins: number;
+            /** Losses */
+            losses: number;
+            /** Ties */
+            ties: number;
+        };
         /** LibraryVoiceOut */
         LibraryVoiceOut: {
             /**
@@ -2854,6 +2926,57 @@ export interface components {
              * @description The text with every pronunciation applied
              */
             text: string;
+        };
+        /** RatedVoice */
+        RatedVoice: {
+            /** Engine */
+            engine: string;
+            /** Voice */
+            voice: string;
+        };
+        /** RatingIn */
+        RatingIn: {
+            /**
+             * Language
+             * @description Language of the sentence, e.g. `en` or `es`
+             */
+            language: string;
+            /**
+             * Text
+             * @description The sentence both voices read
+             */
+            text: string;
+            a: components["schemas"]["RatedVoice"];
+            b: components["schemas"]["RatedVoice"];
+            /**
+             * Winner
+             * @enum {string}
+             */
+            winner: "a" | "b" | "tie";
+        };
+        /** RatingOut */
+        RatingOut: {
+            /**
+             * Language
+             * @description Language of the sentence, e.g. `en` or `es`
+             */
+            language: string;
+            /**
+             * Text
+             * @description The sentence both voices read
+             */
+            text: string;
+            a: components["schemas"]["RatedVoice"];
+            b: components["schemas"]["RatedVoice"];
+            /**
+             * Winner
+             * @enum {string}
+             */
+            winner: "a" | "b" | "tie";
+            /** Id */
+            id: string;
+            /** At */
+            at: number;
         };
         /** SegmentOut */
         SegmentOut: {
@@ -8171,6 +8294,129 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ConnectionOut"];
+                };
+            };
+        };
+    };
+    add_rating_v1_ratings_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RatingIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RatingOut"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    clear_ratings_v1_ratings_delete: {
+        parameters: {
+            query?: {
+                language?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeletedCountOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    ratings_leaderboard_v1_ratings_leaderboard_get: {
+        parameters: {
+            query?: {
+                /** @description Only this language, e.g. `en` */
+                language?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LeaderboardOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

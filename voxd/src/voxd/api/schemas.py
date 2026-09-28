@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Literal
+
 from pydantic import BaseModel, Field
 
 
@@ -628,3 +630,41 @@ class EditIn(BaseModel):
     gain_db: float = Field(0.0, ge=-40, le=20, description="Overall gain")
     normalize: bool = Field(False, description="Scale so the loudest peak is at −1 dBFS (after gain)")
     title: str | None = Field(None, max_length=200)
+
+
+class RatedVoice(BaseModel):
+    engine: str
+    voice: str
+
+
+class RatingIn(BaseModel):
+    language: str = Field(min_length=2, max_length=12, description="Language of the sentence, e.g. `en` or `es`")
+    text: str = Field(min_length=1, max_length=2000, description="The sentence both voices read")
+    a: RatedVoice
+    b: RatedVoice
+    winner: Literal["a", "b", "tie"]
+
+
+class RatingOut(RatingIn):
+    id: str
+    at: float
+
+
+class LeaderboardRow(BaseModel):
+    engine: str
+    voice: str
+    score: float = Field(description="Elo rating (starts at 1000)")
+    games: int
+    wins: int
+    losses: int
+    ties: int
+
+
+class LeaderboardOut(BaseModel):
+    language: str | None
+    ratings: int
+    voices: list[LeaderboardRow]
+
+
+class DeletedCountOut(BaseModel):
+    deleted: int

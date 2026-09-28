@@ -221,6 +221,9 @@ export const voxd = {
   },
 
   editTakes: (body: import('./schema').components['schemas']['EditIn']) => call(api().POST('/v1/takes/edit', { body })),
+  rate: (body: import('./schema').components['schemas']['RatingIn']) => call(api().POST('/v1/ratings', { body })),
+  leaderboard: (language?: string) => call(api().GET('/v1/ratings/leaderboard', { params: { query: language ? { language } : {} } })),
+  clearRatings: (language?: string) => call(api().DELETE('/v1/ratings', { params: { query: language ? { language } : {} } })),
   starTake: (id: string, starred: boolean) => call(api().PUT('/v1/takes/{take_id}/star', { params: { path: { take_id: id } }, body: { starred } })),
   exportTake: (id: string, path: string, overwrite = false) =>
     noContent(api().POST('/v1/takes/{take_id}/export', { params: { path: { take_id: id } }, body: { path, overwrite } })),
