@@ -11,13 +11,17 @@
   - For CI, store its contents in the `TAURI_SIGNING_PRIVATE_KEY` secret.
 - **Apple Developer ID (optional):** set the `APPLE_*` secrets listed in `.github/workflows/release.yml` to sign and notarize macOS builds. Without them, builds are ad-hoc signed.
 
-## Release from a Mac
-```bash
-npm version 0.2.0 --no-git-tag-version   # bump package.json (Cargo/tauri read it)
-CI=true npm run release:mac              # .app, .dmg, signed updater archive
-scripts/publish-update.sh "What's new…"  # uploads to vox-studio.devops-monk.com/updates and updates latest.json
-```
-`CI=true` skips the Finder step that lays out the DMG window, which fails in non-GUI shells.
+## Make a release
+1. Bump the version in `package.json` (Tauri and Cargo read it). Also bump `voxd/pyproject.toml` if voxd changed.
+2. Commit, then push a tag. The **Release** workflow builds macOS (Apple silicon and Intel), Windows and Linux, and creates a **draft** GitHub release with every installer, signed updater archives and `latest.json`:
+   ```bash
+   git tag -a v0.2.0 -m "VoxStudio 0.2.0" && git push origin v0.2.0
+   ```
+3. Check the draft, then publish it on GitHub (or run `gh release edit v0.2.0 --draft=false --latest`).
+4. Turn on updates for installed copies. This copies the release's `latest.json` into the website and deploys it; commit the updated file afterwards:
+   ```bash
+   scripts/publish-update.sh v0.2.0
+   ```
+5. Update the version and download links in `website/src/index.html` (the Download section).
 
-## Release all platforms (GitHub Actions)
-Push a `v*` tag. The Release workflow builds macOS (arm64 and x64), Windows and Linux, and creates a draft GitHub release that includes `latest.json`. Because the repository is private, copy the assets to the website (as `publish-update.sh` does) so the updater can reach them.
+Local builds still work (`CI=true npm run release:mac`). `CI=true` skips the Finder step that lays out the DMG window, which fails in non-GUI shells.

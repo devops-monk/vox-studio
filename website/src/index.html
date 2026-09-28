@@ -18,24 +18,26 @@
   <nav class="top glass" aria-label="Main">
     <a class="brand" href="/"><img src="/favicon.svg" alt="" /> VoxStudio</a>
     <div class="links">
-      <a href="#features">Features</a>
+      <a class="optional" href="#features">Features</a>
       <a class="optional" href="#privacy">Privacy</a>
       <a class="optional" href="#models">Models</a>
       <a class="optional" href="#developers">Developers</a>
       <a href="/docs/">Docs</a>
+      <a class="optional" href="https://github.com/devops-monk/vox-studio">GitHub</a>
+      <a class="btn small primary" href="#download">Download</a>
     </div>
   </nav>
 
   <header class="hero wrap">
     <canvas id="orb" aria-hidden="true"></canvas>
-    <span class="eyebrow">Now in development · macOS first</span>
+    <span class="eyebrow">Version 0.1.0 · macOS, Windows and Linux</span>
     <h1>Your voice studio. <span class="grad">On your Mac.</span></h1>
     <p class="lead">Speak any script, clone a voice from ten seconds of audio, dub videos into nine languages, transcribe, dictate and narrate whole books — privately, with no cloud and no subscriptions.</p>
     <div class="cta">
-      <a class="btn primary" href="/docs/guides/first-voice.html">See how it works</a>
-      <a class="btn" href="/docs/">Read the docs</a>
+      <a class="btn primary" href="#download">Download free</a>
+      <a class="btn" href="/docs/guides/first-voice.html">See how it works</a>
     </div>
-    <p class="fine">Free and open under Apache-2.0 · Downloads for macOS are coming soon</p>
+    <p class="fine">Free and open source under Apache-2.0 · <a href="https://github.com/devops-monk/vox-studio">Source on GitHub</a></p>
     <div class="shot glass"><img src="/screens/home.jpg" alt="VoxStudio home screen with the voice orb and quick speech card" width="1440" height="900" loading="eager" /></div>
   </header>
 
@@ -143,6 +145,36 @@ curl -X POST http://127.0.0.1:4870/v1/speech \
 <span class="k">ws</span>://127.0.0.1:4870/v1/transcribe/live</pre>
       </div>
     </section>
+
+    <section class="block" id="download">
+      <div class="section-head">
+        <span class="tag">Download · v0.1.0</span>
+        <h2>Get VoxStudio</h2>
+        <p class="lead">Free, no account, no subscription. It sets up its voice engine on first launch (about a minute, online once), then works offline.</p>
+      </div>
+      <div class="downloads">
+        <div class="dl glass">
+          <h4>macOS</h4>
+          <p>macOS 13.3 or later</p>
+          <a class="btn primary" href="https://github.com/devops-monk/vox-studio/releases/download/v0.1.0/VoxStudio_0.1.0_aarch64.dmg">Apple silicon (M1 and later)</a>
+          <a class="btn" href="https://github.com/devops-monk/vox-studio/releases/download/v0.1.0/VoxStudio_0.1.0_x64.dmg">Intel</a>
+        </div>
+        <div class="dl glass">
+          <h4>Windows</h4>
+          <p>Windows 10 and 11 (64-bit)</p>
+          <a class="btn primary" href="https://github.com/devops-monk/vox-studio/releases/download/v0.1.0/VoxStudio_0.1.0_x64-setup.exe">Installer (.exe)</a>
+          <a class="btn" href="https://github.com/devops-monk/vox-studio/releases/download/v0.1.0/VoxStudio_0.1.0_x64_en-US.msi">MSI package</a>
+        </div>
+        <div class="dl glass">
+          <h4>Linux</h4>
+          <p>64-bit x86</p>
+          <a class="btn primary" href="https://github.com/devops-monk/vox-studio/releases/download/v0.1.0/VoxStudio_0.1.0_amd64.AppImage">AppImage</a>
+          <a class="btn" href="https://github.com/devops-monk/vox-studio/releases/download/v0.1.0/VoxStudio_0.1.0_amd64.deb">.deb</a>
+          <a class="btn" href="https://github.com/devops-monk/vox-studio/releases/download/v0.1.0/VoxStudio-0.1.0-1.x86_64.rpm">.rpm</a>
+        </div>
+      </div>
+      <p class="fine">First open on a Mac: this early build isn’t notarized yet, so macOS asks for confirmation — Control-click VoxStudio, choose <b>Open</b>, then <b>Open</b> again (on macOS 15, use System Settings → Privacy &amp; Security → <b>Open Anyway</b>). After that it updates itself with signed updates. <a href="https://github.com/devops-monk/vox-studio/releases">All releases &amp; notes</a> · <a href="/docs/guides/desktop.html">Install guide</a></p>
+    </section>
   </main>
 
   <footer class="wrap">
@@ -151,6 +183,7 @@ curl -X POST http://127.0.0.1:4870/v1/speech \
       <a href="/docs/">Documentation</a>
       <a href="/docs/api/overview.html">API</a>
       <a href="/docs/guides/models.html">Models & licenses</a>
+      <a href="https://github.com/devops-monk/vox-studio">GitHub</a>
     </div>
   </footer>
   <script src="/orb.js"></script>

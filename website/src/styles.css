@@ -165,3 +165,13 @@ footer .row .grow { flex: 1; }
 @media (max-width: 860px) { .docs { grid-template-columns: 1fr; } .docs aside { position: static; max-height: none; } }
 
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } html { scroll-behavior: auto; } }
+
+.section-head { text-align: center; max-width: 640px; margin: 0 auto 28px; }
+.section-head .tag { font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent); }
+.section-head h2 { margin: 8px 0; }
+.downloads { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+.dl { padding: 22px; display: flex; flex-direction: column; gap: 10px; border-radius: 18px; }
+.dl h4 { margin: 0; font-size: 20px; letter-spacing: -0.01em; }
+.dl p { margin: 0 0 6px; color: var(--text-2); font-size: 14px; }
+.dl .btn { justify-content: center; }
+#download .fine { text-align: center; margin-top: 18px; }
