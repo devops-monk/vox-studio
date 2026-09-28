@@ -9,7 +9,7 @@ const useReady = () => useVoxd((s) => s.state.phase === 'ready')
 export const useEngines = () => useQuery({ queryKey: ['engines'], queryFn: voxd.engines, enabled: useReady() })
 
 export const useVoices = (engine: string) =>
-  useQuery({ queryKey: ['voices', engine], queryFn: () => voxd.voices(engine), enabled: useReady(), staleTime: Infinity })
+  useQuery({ queryKey: ['voices', engine], queryFn: () => voxd.voices(engine), enabled: useReady() && !!engine, staleTime: Infinity })
 
 export const useTakes = (limit = 50) => useQuery({ queryKey: ['takes', limit], queryFn: () => voxd.takes(limit), enabled: useReady() })
 

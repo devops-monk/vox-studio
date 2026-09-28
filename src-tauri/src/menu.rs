@@ -62,6 +62,7 @@ pub fn build(app: &AppHandle) -> tauri::Result<Menu<Wry>> {
 
     let view = SubmenuBuilder::new(app, "View")
         .item(&item("palette", "Search…", None)?)
+        .item(&item("quick", "Quick Speak", None)?)
         .item(&item("inspector", "Show Recent Takes", Some("CmdOrCtrl+Alt+I"))?)
         .item(&item("activity", "Show Activity", None)?)
         .separator()
@@ -105,6 +106,9 @@ pub fn handle(app: &AppHandle, id: &str) {
         use tauri_plugin_opener::OpenerExt;
         let _ = app.opener().open_url(url, None::<&str>);
         return;
+    }
+    if id == "quick" {
+        return crate::quick::toggle(app);
     }
     crate::show_main(app);
     if id != "main-window" {

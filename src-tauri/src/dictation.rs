@@ -119,13 +119,66 @@ pub fn insert(app: &AppHandle, text: &str, paste: bool) -> Result<InsertResult, 
 }
 
 fn send_paste() -> Result<(), String> {
+    send_command_key('v')
+}
+
+/// Press ⌘<key> (Ctrl+<key> elsewhere) in whatever app has focus.
+fn send_command_key(key: char) -> Result<(), String> {
     use enigo::{Direction, Enigo, Key, Keyboard, Settings};
     let mut enigo = Enigo::new(&Settings::default()).map_err(|e| e.to_string())?;
     let modifier = if cfg!(target_os = "macos") { Key::Meta } else { Key::Control };
     enigo.key(modifier, Direction::Press).map_err(|e| e.to_string())?;
-    let result = enigo.key(Key::Unicode('v'), Direction::Click).map_err(|e| e.to_string());
+    let result = enigo.key(Key::Unicode(key), Direction::Click).map_err(|e| e.to_string());
     enigo.key(modifier, Direction::Release).map_err(|e| e.to_string())?;
     result
+}
+
+/// The text selected in the focused app: copy it with ⌘C, read the clipboard, then put the
+/// user's clipboard back. `Ok(None)` means nothing was selected.
+pub fn copy_selection(app: &AppHandle) -> Result<Option<String>, String> {
+    if !accessibility_trusted() {
+        return Err("Speak Selection needs Accessibility access (System Settings → Privacy & Security → Accessibility)".into());
+    }
+    wait_for_modifiers_released();
+    let clipboard = app.clipboard();
+    let previous = clipboard.read_text().ok();
+    // Clear it first, so an unchanged clipboard can't be mistaken for a fresh copy.
+    clipboard.write_text(String::new()).map_err(|e| e.to_string())?;
+    send_command_key('c').map_err(|e| format!("Couldn't copy the selection: {e}"))?;
+    let mut copied = None;
+    for _ in 0..20 {
+        thread::sleep(Duration::from_millis(25));
+        if let Ok(text) = clipboard.read_text() {
+            if !text.trim().is_empty() {
+                copied = Some(text);
+                break;
+            }
+        }
+    }
+    let _ = clipboard.write_text(previous.unwrap_or_default());
+    Ok(copied)
+}
+
+/// Wait (up to a second) until ⌘ ⌥ ⌃ ⇧ are all up, so a synthetic ⌘C isn't read as ⌃⌥⌘C.
+#[cfg(target_os = "macos")]
+fn wait_for_modifiers_released() {
+    #[link(name = "CoreGraphics", kind = "framework")]
+    extern "C" {
+        fn CGEventSourceFlagsState(state_id: i32) -> u64;
+    }
+    const HID_SYSTEM_STATE: i32 = 1;
+    const MODIFIERS: u64 = 0x0002_0000 | 0x0004_0000 | 0x0008_0000 | 0x0010_0000; // shift, control, option, command
+    for _ in 0..50 {
+        if unsafe { CGEventSourceFlagsState(HID_SYSTEM_STATE) } & MODIFIERS == 0 {
+            return;
+        }
+        thread::sleep(Duration::from_millis(20));
+    }
+}
+
+#[cfg(not(target_os = "macos"))]
+fn wait_for_modifiers_released() {
+    thread::sleep(Duration::from_millis(150));
 }
 
 /// macOS only lets apps send keystrokes to other apps with Accessibility permission.

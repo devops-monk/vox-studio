@@ -4,7 +4,8 @@
   "description": "Main window permissions",
   "windows": [
     "main",
-    "dictation"
+    "dictation",
+    "quick"
   ],
   "permissions": [
     "core:default",
@@ -25,6 +26,8 @@
     },
     "updater:default",
     "process:allow-restart",
-    "deep-link:default"
+    "deep-link:default",
+    "core:window:allow-hide",
+    "core:window:allow-set-focus"
   ]
 }

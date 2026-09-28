@@ -22,6 +22,7 @@ VoxStudio is a private voice studio that runs entirely on your computer. These d
 | [Dub a video](guides/dub.md) | Translate and re-voice a video |
 | [Stories & audiobooks](guides/stories-audiobooks.md) | Import books, cast characters, narrate, read along, export M4B |
 | [Transcribe](guides/transcribe.md) | Files and live speech to text; fix and export |
+| [Quick Speak & Speak Selection](guides/quick-speak.md) | Hear anything you type or select, from any app |
 | [Dictation](guides/dictation.md) | Type with your voice in any app |
 
 ## Build with the API

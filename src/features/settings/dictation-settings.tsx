@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react'
-import { CheckCircle2, Keyboard, ShieldAlert } from 'lucide-react'
+import { ShortcutRecorder } from '@/components/shortcut-recorder'
+import { CheckCircle2, ShieldAlert } from 'lucide-react'
 import { toast } from 'sonner'
-import { Button, GlassPanel, Kbd, Switch } from '@/components/glass'
-import { acceleratorFromEvent, dictation, prettyShortcut, type DictationStatus } from '@/lib/dictation'
+import { Button, GlassPanel, Switch } from '@/components/glass'
+import { dictation, prettyShortcut, type DictationStatus } from '@/lib/dictation'
 import { isMac } from '@/lib/platform'
 import { usePrefs } from '@/lib/store/prefs'
-import { cn } from '@/lib/cn'
 
 const LANGS: [string, string][] = [
   ['', 'Detect automatically'],
@@ -30,36 +30,6 @@ function Row({ label, hint, children }: { label: string; hint?: React.ReactNode;
   )
 }
 
-function ShortcutRecorder({ value, onChange }: { value: string; onChange: (accelerator: string) => void }) {
-  const [recording, setRecording] = useState(false)
-  useEffect(() => {
-    if (!recording) return
-    const onKey = (e: KeyboardEvent) => {
-      e.preventDefault()
-      if (e.key === 'Escape') return setRecording(false)
-      const acc = acceleratorFromEvent(e)
-      if (acc) {
-        setRecording(false)
-        onChange(acc)
-      }
-    }
-    window.addEventListener('keydown', onKey, true)
-    return () => window.removeEventListener('keydown', onKey, true)
-  }, [recording, onChange])
-  return (
-    <button
-      type="button"
-      onClick={() => setRecording((r) => !r)}
-      className={cn(
-        'flex h-8 min-w-36 items-center justify-center gap-2 rounded-[8px] border px-3 text-[13px] transition-colors',
-        recording ? 'border-[var(--accent)] bg-[color-mix(in_srgb,var(--accent)_10%,transparent)] text-[var(--accent)]' : 'border-hairline bg-fill-control hover:bg-fill-hover',
-      )}
-    >
-      <Keyboard size={13} />
-      {recording ? 'Press new shortcut…' : <Kbd>{prettyShortcut(value)}</Kbd>}
-    </button>
-  )
-}
 
 export function DictationSettings() {
   const { dictation: prefs, setDictation } = usePrefs()

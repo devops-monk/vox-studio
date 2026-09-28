@@ -249,8 +249,14 @@ Work goes one milestone at a time. Tick `[x]` only after the item is verified in
 ---
 
 ## New features (unique to VoxStudio)
-- [ ] **M17 Quick Speak:** a Spotlight-style glass panel on a global hotkey; type text and hear it instantly
-- [ ] **M18 Speak Selection:** a hotkey reads the selected text in any app aloud
+- [x] **M17 Quick Speak:** a Spotlight-style glass panel on a global hotkey; type text and hear it instantly ✅
+  - [x] Separate always-on-top panel window (⌃⌥S, customizable) on the screen with the mouse, sized to its content, hides on blur
+  - [x] Return speaks (take saved to History), a voice picker across Natural/Your voices/System, ↑/↓ recall, Replay, Open in Studio (through the link queue), orb reacts to audio
+  - [x] Verified: browser e2e (take created with the chosen voice); on the built app the global shortcut opens the panel
+- [x] **M18 Speak Selection:** a hotkey reads the selected text in any app aloud ✅
+  - [x] ⌃⌥R (customizable, fires on key release): waits for modifiers to be released, clears the clipboard, sends ⌘C, reads the copied text, restores the clipboard, then the panel speaks it; queued if the panel or engine is still starting
+  - [x] Clear notices for “nothing selected” and missing Accessibility permission; also in the tray menu
+  - [ ] Not yet verified end to end on the built app: synthetic keystrokes from the test harness leaked into the terminal, so manual testing is still needed
 - [ ] **M19 Take Editor:** trim, fade, gain and splice on a waveform
 - [ ] **M20 A/B Blind Compare:** rate two takes or engines to find your best engine per language
 - [ ] **M21 Script Markup:** inline pause, emphasis, speed and pronunciation tags with live preview

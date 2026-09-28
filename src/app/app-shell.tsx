@@ -12,6 +12,7 @@ import { useDesktopIntegration } from './desktop'
 import { usePrefs } from '@/lib/store/prefs'
 import { useEffect } from 'react'
 import { dictation } from '@/lib/dictation'
+import { QUICK_DEFAULT_SHORTCUT, SELECTION_DEFAULT_SHORTCUT, quick } from '@/lib/quick'
 
 export function AppShell() {
   useApplyTheme()
@@ -21,11 +22,19 @@ export function AppShell() {
   useDesktopIntegration()
   const theme = usePrefs((s) => s.theme)
   const shortcut = usePrefs((s) => s.dictation.shortcut)
+  const quickShortcut = usePrefs((s) => s.quickShortcut)
+  const selectionShortcut = usePrefs((s) => s.selectionShortcut)
 
   // The shell registers the default shortcut at launch; apply the user's choice if different.
   useEffect(() => {
     if (dictation.available && shortcut !== 'CommandOrControl+Shift+Space') void dictation.setShortcut(shortcut).catch(() => {})
   }, [shortcut])
+  useEffect(() => {
+    if (quick.available && quickShortcut !== QUICK_DEFAULT_SHORTCUT) void quick.setShortcut(quickShortcut).catch(() => {})
+  }, [quickShortcut])
+  useEffect(() => {
+    if (quick.available && selectionShortcut !== SELECTION_DEFAULT_SHORTCUT) void quick.setSelectionShortcut(selectionShortcut).catch(() => {})
+  }, [selectionShortcut])
 
   return (
     <div className="flex h-full">

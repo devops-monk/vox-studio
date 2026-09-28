@@ -33,9 +33,13 @@ interface PrefsState {
   voiceByEngine: Record<string, string>
   onboardingDone: boolean
   dictation: { shortcut: string; paste: boolean; autoFinish: boolean; language: string }
+  /** Global shortcut for Quick Speak. */
+  quickShortcut: string
+  /** Global shortcut for Speak Selection. */
+  selectionShortcut: string
   setDictation: (patch: Partial<PrefsState['dictation']>) => void
   setTheme: (theme: ThemePref) => void
-  setAppearance: (patch: Partial<Pick<PrefsState, 'accent' | 'glass' | 'textSize' | 'startPage' | 'autoUpdate'>>) => void
+  setAppearance: (patch: Partial<Pick<PrefsState, 'accent' | 'glass' | 'textSize' | 'startPage' | 'autoUpdate' | 'quickShortcut' | 'selectionShortcut'>>) => void
   setEngine: (engine: string) => void
   setVoice: (engine: string, voice: string) => void
   finishOnboarding: () => void
@@ -56,6 +60,8 @@ export const usePrefs = create<PrefsState>()(
       voiceByEngine: {},
       onboardingDone: false,
       dictation: { shortcut: 'CommandOrControl+Shift+Space', paste: true, autoFinish: true, language: '' },
+      quickShortcut: 'Control+Alt+S',
+      selectionShortcut: 'Control+Alt+R',
       setDictation: (patch) => set((s) => ({ dictation: { ...s.dictation, ...patch } })),
       setTheme: (theme) => set({ theme }),
       setAppearance: (patch) => set(patch),

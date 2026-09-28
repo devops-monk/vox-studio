@@ -37,7 +37,10 @@ export function prettyShortcut(accelerator: string) {
 /** Turn a keydown into an accelerator string, or null if it's only modifiers. */
 export function acceleratorFromEvent(e: KeyboardEvent): string | null {
   if (['Meta', 'Control', 'Shift', 'Alt'].includes(e.key)) return null
-  const mods = [e.metaKey || e.ctrlKey ? 'CommandOrControl' : null, e.altKey ? 'Alt' : null, e.shiftKey ? 'Shift' : null].filter(Boolean)
+  // On macOS ⌘ and ⌃ are different keys; elsewhere Ctrl is the command key.
+  const command = isMac ? e.metaKey : e.metaKey || e.ctrlKey
+  const control = isMac && e.ctrlKey
+  const mods = [control ? 'Control' : null, command ? 'CommandOrControl' : null, e.altKey ? 'Alt' : null, e.shiftKey ? 'Shift' : null].filter(Boolean)
   if (!mods.length) return null // a global shortcut needs at least one modifier
   const key = e.code.startsWith('Key') ? e.code.slice(3) : e.code.startsWith('Digit') ? e.code.slice(5) : e.code === 'Space' ? 'Space' : e.key.length === 1 ? e.key.toUpperCase() : e.code
   return [...mods, key].join('+')

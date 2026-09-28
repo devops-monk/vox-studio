@@ -2,6 +2,7 @@
 
 mod dictation;
 mod menu;
+mod quick;
 mod voxd;
 
 use serde::Serialize;
@@ -90,6 +91,49 @@ fn open_links(app: &AppHandle, urls: Vec<String>) {
 struct PendingLinks(std::sync::Mutex<Vec<String>>);
 
 #[tauri::command]
+fn quick_toggle(app: AppHandle) {
+    quick::toggle(&app);
+}
+
+#[tauri::command]
+fn quick_hide(app: AppHandle) {
+    if let Some(w) = app.get_webview_window(quick::QUICK) {
+        let _ = w.hide();
+    }
+}
+
+#[tauri::command]
+fn quick_resize(app: AppHandle, height: f64) {
+    quick::resize(&app, height);
+}
+
+#[tauri::command]
+fn quick_set_shortcut(app: AppHandle, accelerator: String) -> Result<(), String> {
+    quick::register_shortcut(&app, &accelerator)
+}
+
+#[tauri::command]
+fn quick_set_selection_shortcut(app: AppHandle, accelerator: String) -> Result<(), String> {
+    quick::register_selection_shortcut(&app, &accelerator)
+}
+
+#[tauri::command]
+fn quick_take_pending(app: AppHandle) -> Option<quick::Pending> {
+    quick::take_pending(&app)
+}
+
+#[tauri::command]
+fn speak_selection(app: AppHandle) {
+    quick::speak_selection(&app);
+}
+
+/// Hand a `voxstudio://` link to the main window (used by panels such as Quick Speak).
+#[tauri::command]
+fn open_link(app: AppHandle, url: String) {
+    open_links(&app, vec![url]);
+}
+
+#[tauri::command]
 fn take_pending_links(pending: State<'_, PendingLinks>) -> Vec<String> {
     std::mem::take(&mut *pending.0.lock().unwrap())
 }
@@ -104,15 +148,19 @@ pub(crate) fn show_main(app: &AppHandle) {
 
 fn build_tray(app: &tauri::App) -> tauri::Result<()> {
     let dictate = MenuItemBuilder::with_id("dictate", "Start dictation").accelerator(dictation::DEFAULT_SHORTCUT).build(app)?;
+    let speak = MenuItemBuilder::with_id("quick", "Quick Speak…").accelerator(quick::DEFAULT_SHORTCUT).build(app)?;
+    let selection = MenuItemBuilder::with_id("selection", "Speak Selection").accelerator(quick::SELECTION_SHORTCUT).build(app)?;
     let open = MenuItemBuilder::with_id("open", "Open VoxStudio").build(app)?;
     let quit = MenuItemBuilder::with_id("quit", "Quit VoxStudio").build(app)?;
-    let menu = MenuBuilder::new(app).items(&[&dictate, &open, &PredefinedMenuItem::separator(app)?, &quit]).build()?;
+    let menu = MenuBuilder::new(app).items(&[&dictate, &speak, &selection, &open, &PredefinedMenuItem::separator(app)?, &quit]).build()?;
     TrayIconBuilder::with_id("voxstudio")
         .icon(tauri::image::Image::from_bytes(include_bytes!("../icons/32x32.png"))?)
         .tooltip("VoxStudio")
         .menu(&menu)
         .on_menu_event(|app, event| match event.id().as_ref() {
             "dictate" => dictation::toggle(app),
+            "quick" => quick::toggle(app),
+            "selection" => quick::speak_selection(app),
             "open" => show_main(app),
             "quit" => app.exit(0),
             _ => {}
@@ -138,6 +186,7 @@ pub fn run() {
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .manage(DictationState::default())
         .manage(PendingLinks::default())
+        .manage(quick::QuickState::default())
         .menu(|app| menu::build(app))
         .on_menu_event(|app, event| menu::handle(app, event.id().as_ref()))
         .setup(|app| {
@@ -157,6 +206,12 @@ pub fn run() {
             if let Err(e) = dictation::register_shortcut(app.handle(), dictation::DEFAULT_SHORTCUT) {
                 eprintln!("[dictation] {e}");
             }
+            if let Err(e) = quick::register_shortcut(app.handle(), quick::DEFAULT_SHORTCUT) {
+                eprintln!("[quick] {e}");
+            }
+            if let Err(e) = quick::register_selection_shortcut(app.handle(), quick::SELECTION_SHORTCUT) {
+                eprintln!("[quick] {e}");
+            }
             build_tray(app)?;
             Ok(())
         })
@@ -166,6 +221,14 @@ pub fn run() {
             voxd_restart,
             client_log,
             take_pending_links,
+            open_link,
+            quick_toggle,
+            quick_hide,
+            quick_resize,
+            quick_set_shortcut,
+            quick_set_selection_shortcut,
+            quick_take_pending,
+            speak_selection,
             dictation_toggle,
             dictation_insert,
             dictation_hide,
